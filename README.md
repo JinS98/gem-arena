@@ -36,6 +36,8 @@
 
 `reserveCard(state, playerId, action)`는 공개 카드 ID 또는 비공개 덱 단계 중 하나를 예약합니다. 최대 3장까지 보관하고 은행에 황금이 있으면 1개를 받습니다. 반환값의 `excess`가 양수면 후속 reducer가 `discarding`으로 연결해야 합니다. 반환된 전체 상태에는 비공개 덱과 예약 카드 ID가 있으므로 클라이언트에 그대로 전송하지 않습니다. 공개/개인 상태 분리는 22일차에 연결합니다.
 
+귀족 방문은 `eligibleNobleIds`, `resolveNobleVisit`, `chooseNoble`로 처리합니다. 구매 카드의 영구 할인만 조건에 포함하며, 턴 마무리 시 한 명만 자격이 있으면 자동 방문하고 여러 명이면 `choosingNoble`에서 한 명을 고릅니다. `turnNobleResolved`는 같은 턴의 중복 방문을 막으며 다음 턴 시작 시 reducer가 초기화해야 합니다.
+
 ## Firebase 로컬 에뮬레이터
 
 실제 Firebase 프로젝트나 로그인 없이 `demo-gem-arena` 프로젝트 ID로 Auth·Firestore·Functions를 실행합니다. Firebase CLI는 프로젝트 개발 의존성에 포함되어 있습니다. Firestore 에뮬레이터에는 Java JDK 11 이상이 필요합니다(현재 검증 환경은 JDK 21). JDK를 새로 설치했다면 터미널을 다시 열어 `java -version`을 확인하세요.

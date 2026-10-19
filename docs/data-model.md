@@ -24,6 +24,10 @@
 
 `ServerGameState`는 모든 플레이어의 예약 ID와 비공개 덱을 포함하는 **서버 전용 상태**입니다. 덱 예약 ID는 해당 플레이어의 `reservedCardIds`에만 추가하지만 전체 상태를 클라이언트로 보내면 비밀이 노출됩니다. 22일차 공개 뷰/개인 상태 분리 전까지 이 객체를 전송하지 않습니다.
 
+## 귀족 방문 상태 (11일차)
+
+플레이어의 `nobleIds`는 방문 완료된 귀족 ID를 담고, `score`에는 카드 점수와 귀족 점수가 함께 누적됩니다. `ServerGameState.turnNobleResolved`는 현재 턴의 귀족 판정 완료 여부이며 시작 시 `false`입니다. 기본 행동과 필요한 보석 반환 이후 `resolveNobleVisit`을 호출합니다. 자격자가 없으면 완료 표시만, 한 명이면 즉시 방문과 3점 추가를, 여러 명이면 `phase: 'choosingNoble'`을 반환합니다. 여러 명 중 하나를 `chooseNoble`로 고른 뒤 완료 표시하고 `playing`으로 되돌립니다. 후속 reducer는 턴을 넘길 때 이 값을 `false`로 재설정하고 최종 라운드를 판정합니다.
+
 ```text
 rooms/{roomId}                      방 상태·멤버십
 rooms/{roomId}/players/{uid}        공개 프로필·준비 상태

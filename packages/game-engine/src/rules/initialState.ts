@@ -57,12 +57,12 @@ export function createInitialGameState(playerIds: readonly string[], seed: numbe
   const players: Record<string, PlayerState> = Object.fromEntries(
     playerIds.map((uid, seatIndex) => [uid, {
       uid, seatIndex, gems: makeInventory(), purchasedCardIds: [],
-      reservedCardIds: [], score: 0,
+      reservedCardIds: [], nobleIds: [], score: 0,
     }]),
   );
 
   return {
-    phase: 'playing', version: 0,
+    phase: 'playing', version: 0, turnNobleResolved: false,
     turnIndex: Math.floor(random() * playerIds.length),
     playerOrder: [...playerIds], players,
     bank: makeInventory(GEMS_PER_COLOR[playerIds.length], 5),

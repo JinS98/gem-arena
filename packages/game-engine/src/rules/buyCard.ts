@@ -6,7 +6,7 @@ export type BuyCardAction = Extract<GameAction, { type: 'BUY_CARD' }>;
 
 /** Apply a purchase to private game state without advancing the turn or version. */
 export function buyCard(state: ServerGameState, playerId: string, action: BuyCardAction): ServerGameState {
-  if (state.phase !== 'playing' || state.playerOrder[state.turnIndex] !== playerId ||
+  if (state.phase !== 'playing' || state.turnNobleResolved || state.playerOrder[state.turnIndex] !== playerId ||
       !Object.hasOwn(state.players, playerId)) {
     throw new RangeError('현재 플레이어의 구매 턴이 아닙니다');
   }

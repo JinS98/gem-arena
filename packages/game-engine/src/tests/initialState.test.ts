@@ -10,6 +10,7 @@ describe('게임 초기화', () => {
     const state = createInitialGameState(ids, 42);
     expect(state.phase).toBe('playing');
     expect(state.version).toBe(0);
+    expect(state.turnNobleResolved).toBe(false);
     expect(state.playerOrder).toEqual(ids);
     expect(state.turnIndex).toBeGreaterThanOrEqual(0);
     expect(state.turnIndex).toBeLessThan(playerCount);
@@ -23,7 +24,7 @@ describe('게임 초기화', () => {
     ids.forEach((uid, seatIndex) => {
       expect(state.players[uid]).toEqual({
         uid, seatIndex, gems: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
-        purchasedCardIds: [], reservedCardIds: [], score: 0,
+        purchasedCardIds: [], reservedCardIds: [], nobleIds: [], score: 0,
       });
     });
     expect(state.finalRoundTriggeredBy).toBeNull();

@@ -141,6 +141,7 @@ describe('카드 구매 상태 갱신', () => {
     const action = { type: 'BUY_CARD', source: 'market', cardId, payment } as const;
     expect(() => buyCard(state, other, action)).toThrow(RangeError);
     expect(() => buyCard({ ...state, phase: 'discarding' }, actor, action)).toThrow(RangeError);
+    expect(() => buyCard({ ...state, turnNobleResolved: true }, actor, action)).toThrow(RangeError);
     expect(() => buyCard(state, actor, { ...action, source: 'reserved' })).toThrow(RangeError);
     expect(() => buyCard(state, actor, { ...action, cardId: 'missing' })).toThrow(RangeError);
     const reservedByOther: ServerGameState = {

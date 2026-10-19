@@ -127,6 +127,8 @@ describe('카드 예약 상태 갱신', () => {
     expect(() => reserveCard(state, other, { type: 'RESERVE_CARD', cardId })).toThrow(RangeError);
     expect(() => reserveCard({ ...state, phase: 'discarding' }, actor,
       { type: 'RESERVE_CARD', cardId })).toThrow(RangeError);
+    expect(() => reserveCard({ ...state, turnNobleResolved: true }, actor,
+      { type: 'RESERVE_CARD', cardId })).toThrow(RangeError);
     expect(() => reserveCard({ ...state, bank: { ...state.bank, gold: -1 } }, actor,
       { type: 'RESERVE_CARD', cardId })).toThrow(RangeError);
     expect(() => reserveCard({ ...state, decks: { ...state.decks, 2: [] } }, actor,

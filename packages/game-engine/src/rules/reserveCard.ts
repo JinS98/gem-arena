@@ -13,7 +13,7 @@ function isCardLevel(value: unknown): value is CardLevel {
 export function reserveCard(
   state: ServerGameState, playerId: string, action: ReserveCardAction,
 ): ReserveCardResult {
-  if (state.phase !== 'playing' || state.playerOrder[state.turnIndex] !== playerId ||
+  if (state.phase !== 'playing' || state.turnNobleResolved || state.playerOrder[state.turnIndex] !== playerId ||
       !Object.hasOwn(state.players, playerId)) {
     throw new RangeError('현재 플레이어의 예약 턴이 아닙니다');
   }
