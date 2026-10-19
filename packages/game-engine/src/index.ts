@@ -7,3 +7,4 @@ export * from './rules/payment';
 export * from './rules/buyCard';
 export * from './rules/reserveCard';
 export * from './rules/nobles';
+export * from './rules/turnEnd';

@@ -10,7 +10,7 @@
 
 ## 초기 서버 게임 상태 (6일차)
 
-`createInitialGameState(playerIds, seed)`는 참가 순서로 나열한 서로 다른 2~4명의 UID와 `0`~`4294967295`의 정수 시드를 받습니다. 잘못된 인원·ID·시드는 `RangeError`로 거부합니다. 반환 상태는 `phase: 'playing'`, `version: 0`, 참가 순서의 `playerOrder`와 `seatIndex`, 모두 0인 플레이어 보석·점수·카드 목록으로 시작합니다. 첫 턴의 `turnIndex`는 시드 기반으로 선택합니다.
+`createInitialGameState(playerIds, seed)`는 참가 순서로 나열한 서로 다른 2~4명의 UID와 `0`~`4294967295`의 정수 시드를 받습니다. 잘못된 인원·ID·시드는 `RangeError`로 거부합니다. 반환 상태는 `phase: 'playing'`, `version: 0`, 참가 순서의 `playerOrder`와 `seatIndex`, 모두 0인 플레이어 보석·점수·카드 목록으로 시작합니다. 첫 턴의 `turnIndex`는 시드 기반으로 선택하고 `firstPlayerIndex`에 보존합니다.
 
 일반 보석 은행은 2/3/4명일 때 색마다 4/5/7개이며 황금 보석은 5개입니다. 단계별 40/30/20장 카드 ID를 각각 셔플해 4장씩 시장에 놓고 나머지 36/26/16장을 서버 전용 덱에 둡니다. 귀족 10명 중 인원보다 1명 많은 3/4/5명을 공개합니다. 같은 참가 순서와 시드는 같은 결과를 만들며 원본 카드 목록은 변경하지 않습니다. 호출자는 시드를 서버에서 생성하고 재현이 필요하면 서버 전용으로 보관합니다. `ServerGameState.decks`를 공개 상태로 보내서는 안 됩니다.
 
@@ -26,7 +26,13 @@
 
 ## 귀족 방문 상태 (11일차)
 
-플레이어의 `nobleIds`는 방문 완료된 귀족 ID를 담고, `score`에는 카드 점수와 귀족 점수가 함께 누적됩니다. `ServerGameState.turnNobleResolved`는 현재 턴의 귀족 판정 완료 여부이며 시작 시 `false`입니다. 기본 행동과 필요한 보석 반환 이후 `resolveNobleVisit`을 호출합니다. 자격자가 없으면 완료 표시만, 한 명이면 즉시 방문과 3점 추가를, 여러 명이면 `phase: 'choosingNoble'`을 반환합니다. 여러 명 중 하나를 `chooseNoble`로 고른 뒤 완료 표시하고 `playing`으로 되돌립니다. 후속 reducer는 턴을 넘길 때 이 값을 `false`로 재설정하고 최종 라운드를 판정합니다.
+플레이어의 `nobleIds`는 방문 완료된 귀족 ID를 담고, `score`에는 카드 점수와 귀족 점수가 함께 누적됩니다. `ServerGameState.turnNobleResolved`는 현재 턴의 귀족 판정 완료 여부이며 시작 시 `false`입니다. 기본 행동과 필요한 보석 반환 이후 `resolveNobleVisit`을 호출합니다. 자격자가 없으면 완료 표시만, 한 명이면 즉시 방문과 3점 추가를, 여러 명이면 `phase: 'choosingNoble'`을 반환합니다. 여러 명 중 하나를 `chooseNoble`로 고른 뒤 완료 표시하고 `playing`으로 되돌립니다. `completeTurn`이 다음 턴을 시작할 때 이 값을 `false`로 재설정합니다.
+
+## 최종 라운드와 승자 상태 (12일차)
+
+`firstPlayerIndex`는 초기 무작위 첫 플레이어의 고정 좌석 번호입니다. `turnIndex`는 매 턴 이동합니다. 한 라운드의 마지막 좌석은 `(firstPlayerIndex + playerOrder.length - 1) % playerOrder.length`로 계산합니다. 이 기준이 있어야 첫 플레이어가 참가 순서의 0번이 아니어도 모든 플레이어의 턴 수가 같습니다.
+
+`completeTurn`은 `phase: 'playing'`이고 현재 플레이어의 `turnNobleResolved`가 `true`일 때만 실행합니다. 현재 점수가 15점 이상이면 `finalRoundTriggeredBy`에 최초 도달 플레이어를 기록하고, 라운드 마지막 좌석의 턴이 끝나면 `phase: 'finished'`와 `winnerIds`를 설정합니다. 다음 턴으로 진행하면 `turnNobleResolved`를 `false`로 초기화합니다. 종료 상태의 `turnIndex`는 마지막 턴 플레이어를 가리키며 `version`은 reducer가 갱신합니다. `determineWinnerIds`는 점수 우선, 구매 카드 수가 적은 순으로 공동 승리까지 판정합니다. 기권자 제외는 기권 상태를 추가하는 26일차 작업에서 연결합니다.
 
 ```text
 rooms/{roomId}                      방 상태·멤버십

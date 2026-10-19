@@ -14,6 +14,7 @@ describe('게임 초기화', () => {
     expect(state.playerOrder).toEqual(ids);
     expect(state.turnIndex).toBeGreaterThanOrEqual(0);
     expect(state.turnIndex).toBeLessThan(playerCount);
+    expect(state.firstPlayerIndex).toBe(state.turnIndex);
     expect(state.bank).toEqual({
       white: gemsPerColor, blue: gemsPerColor, green: gemsPerColor,
       red: gemsPerColor, black: gemsPerColor, gold: 5,
