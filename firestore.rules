@@ -1,0 +1,7 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 기본값: 모든 직접 접근 거부. 20~27일차에 최소 권한 규칙 작성.
+    match /{document=**} { allow read, write: if false; }
+  }
+}
