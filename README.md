@@ -28,6 +28,8 @@
 
 `createInitialGameState(playerIds, seed)`는 참가 순서대로 2~4명의 ID와 32비트 정수 시드를 받아 인원별 은행, 단계별 카드 덱·공개 시장, 귀족, 무작위 첫 턴을 만듭니다. 같은 입력과 시드면 결과가 같습니다. 호출 서버가 예측하기 어려운 시드를 생성하고 필요하면 서버 전용으로 보관해야 합니다. 반환값에는 비공개 덱 순서가 들어 있으므로 클라이언트에 그대로 전송하지 않습니다.
 
+보석 규칙은 `canTakeGems`, `takeGems`, `excessGemCount`, `discardExcessGems`로 제공합니다. 획득·반환 함수는 원본 은행과 보유량을 바꾸지 않고 새 수량을 반환하며, 불법 조합이나 초과분과 다른 반환량은 `RangeError`로 거부합니다. `takeGems`의 `excess`가 0보다 크면 이후 상태 전이에서 `discarding` 단계로 연결해야 합니다.
+
 ## Firebase 로컬 에뮬레이터
 
 실제 Firebase 프로젝트나 로그인 없이 `demo-gem-arena` 프로젝트 ID로 Auth·Firestore·Functions를 실행합니다. Firebase CLI는 프로젝트 개발 의존성에 포함되어 있습니다. Firestore 에뮬레이터에는 Java JDK 11 이상이 필요합니다(현재 검증 환경은 JDK 21). JDK를 새로 설치했다면 터미널을 다시 열어 `java -version`을 확인하세요.
