@@ -26,6 +26,8 @@
 
 엔진은 독자 수치의 개발 카드 90장(1/2/3단계 40/30/20장)과 귀족 10명을 고정 ID로 제공합니다. `DEVELOPMENT_CARDS`, `NOBLES`를 초기 덱 구성에 사용하고 `getDevelopmentCard(id)`, `getNoble(id)`로 조회합니다. `validateCatalog(cards, nobles)`는 개수·단계/색 분포·ID 중복·점수·비용/요구량을 검사하고 오류 경로를 반환합니다. 카드 비용과 귀족 조건에는 일반 보석 5색만 들어가며 황금 보석은 포함되지 않습니다.
 
+`createInitialGameState(playerIds, seed)`는 참가 순서대로 2~4명의 ID와 32비트 정수 시드를 받아 인원별 은행, 단계별 카드 덱·공개 시장, 귀족, 무작위 첫 턴을 만듭니다. 같은 입력과 시드면 결과가 같습니다. 호출 서버가 예측하기 어려운 시드를 생성하고 필요하면 서버 전용으로 보관해야 합니다. 반환값에는 비공개 덱 순서가 들어 있으므로 클라이언트에 그대로 전송하지 않습니다.
+
 ## Firebase 로컬 에뮬레이터
 
 실제 Firebase 프로젝트나 로그인 없이 `demo-gem-arena` 프로젝트 ID로 Auth·Firestore·Functions를 실행합니다. Firebase CLI는 프로젝트 개발 의존성에 포함되어 있습니다. Firestore 에뮬레이터에는 Java JDK 11 이상이 필요합니다(현재 검증 환경은 JDK 21). JDK를 새로 설치했다면 터미널을 다시 열어 `java -version`을 확인하세요.
