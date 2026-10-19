@@ -7,7 +7,7 @@
 - [x] [2일차 — 기본판 규칙 명세·예외 케이스 표 작성](daily/day-02.md)
 - [x] [3일차 — pnpm 모노레포·React/Vite·TypeScript 세팅](daily/day-03.md)
 - [x] [4일차 — Firebase Emulator·Auth·Firestore·Functions 세팅](daily/day-04.md)
-- [ ] [5일차 — 게임 도메인 타입·정적 카드/귀족 데이터 구축](daily/day-05.md)
+- [x] [5일차 — 게임 도메인 타입·정적 카드/귀족 데이터 구축](daily/day-05.md)
 
 ## 게임 엔진
 - [ ] [6일차 — 인원별 보석·덱·시장 초기화와 셔플 테스트](daily/day-06.md)

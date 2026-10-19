@@ -1,9 +1,11 @@
 export type GemColor = 'white' | 'blue' | 'green' | 'red' | 'black';
 export type Gem = GemColor | 'gold';
 export type Inventory = Record<Gem, number>;
+export type ColorCounts = Record<GemColor, number>;
 export type CardLevel = 1 | 2 | 3;
 export type GamePhase = 'waiting' | 'playing' | 'discarding' | 'choosingNoble' | 'finished';
-export interface DevelopmentCard { id:string; level:CardLevel; bonusColor:GemColor; points:number; cost:Record<GemColor,number> }
+export interface DevelopmentCard { id:string; level:CardLevel; bonusColor:GemColor; points:number; cost:ColorCounts }
+export interface Noble { id:string; points:number; requirements:ColorCounts }
 export interface PlayerState { uid:string; seatIndex:number; gems:Inventory; purchasedCardIds:string[]; reservedCardIds:string[]; score:number }
 export interface ServerGameState { phase:GamePhase; version:number; turnIndex:number; playerOrder:string[]; players:Record<string,PlayerState>; bank:Inventory; market:Record<CardLevel,(string|null)[]>; decks:Record<CardLevel,string[]>; availableNobleIds:string[]; finalRoundTriggeredBy:string|null; winnerIds:string[] }
 export type GameAction =
