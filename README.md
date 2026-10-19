@@ -34,6 +34,8 @@
 
 `buyCard(state, playerId, action)`는 현재 플레이어의 시장 또는 본인 예약 카드 구매에 결제 규칙을 적용하고, 카드 소유·점수·시장·덱을 함께 갱신합니다. 시장 구매 시 해당 단계 덱 맨 앞 카드로 같은 칸을 보충하며 덱이 비면 `null`로 유지합니다. 이 순수 함수는 턴·버전을 진행하지 않습니다. 턴 종료와 멱등성 처리는 후속 reducer·서버 작업에서 연결합니다.
 
+`reserveCard(state, playerId, action)`는 공개 카드 ID 또는 비공개 덱 단계 중 하나를 예약합니다. 최대 3장까지 보관하고 은행에 황금이 있으면 1개를 받습니다. 반환값의 `excess`가 양수면 후속 reducer가 `discarding`으로 연결해야 합니다. 반환된 전체 상태에는 비공개 덱과 예약 카드 ID가 있으므로 클라이언트에 그대로 전송하지 않습니다. 공개/개인 상태 분리는 22일차에 연결합니다.
+
 ## Firebase 로컬 에뮬레이터
 
 실제 Firebase 프로젝트나 로그인 없이 `demo-gem-arena` 프로젝트 ID로 Auth·Firestore·Functions를 실행합니다. Firebase CLI는 프로젝트 개발 의존성에 포함되어 있습니다. Firestore 에뮬레이터에는 Java JDK 11 이상이 필요합니다(현재 검증 환경은 JDK 21). JDK를 새로 설치했다면 터미널을 다시 열어 `java -version`을 확인하세요.
