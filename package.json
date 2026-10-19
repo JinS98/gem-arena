@@ -1,0 +1,18 @@
+{
+  "name": "gem-arena",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.9",
+  "scripts": {
+    "dev": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev",
+    "build": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web build && corepack pnpm --filter @gem-arena/functions build",
+    "test": "corepack pnpm --filter @gem-arena/engine test",
+    "typecheck": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm -r typecheck",
+    "dev:emulators": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev --mode emulator",
+    "emulators": "corepack pnpm --filter @gem-arena/functions build && firebase emulators:start --project demo-gem-arena --only auth,firestore,functions",
+    "test:emulators": "corepack pnpm --filter @gem-arena/functions build && firebase emulators:exec --project demo-gem-arena --only auth,firestore,functions \"node apps/web/scripts/verify-emulators.mjs\""
+  },
+  "devDependencies": {
+    "firebase-tools": "^15.34.0"
+  }
+}
