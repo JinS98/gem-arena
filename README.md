@@ -2,7 +2,7 @@
 
 스플렌더 스타일의 **2~4인 온라인 턴제 전략 게임**을 위한 개발 초기 프로젝트입니다.
 
-> 현재 상태: **프로젝트 뼈대 + 화면 미리보기 + 엔진 도메인 타입·카드/귀족 데이터·보석 규칙 예시**. 온라인 게임/서버 API는 아직 구현되지 않았습니다.
+> 현재 상태: **프로젝트 뼈대 + 화면 미리보기 + 엔진 도메인 타입·카드/귀족 데이터·초기화·보석/결제 규칙**. 온라인 게임/서버 API는 아직 구현되지 않았습니다.
 
 ## 빠른 시작
 
@@ -29,6 +29,8 @@
 `createInitialGameState(playerIds, seed)`는 참가 순서대로 2~4명의 ID와 32비트 정수 시드를 받아 인원별 은행, 단계별 카드 덱·공개 시장, 귀족, 무작위 첫 턴을 만듭니다. 같은 입력과 시드면 결과가 같습니다. 호출 서버가 예측하기 어려운 시드를 생성하고 필요하면 서버 전용으로 보관해야 합니다. 반환값에는 비공개 덱 순서가 들어 있으므로 클라이언트에 그대로 전송하지 않습니다.
 
 보석 규칙은 `canTakeGems`, `takeGems`, `excessGemCount`, `discardExcessGems`로 제공합니다. 획득·반환 함수는 원본 은행과 보유량을 바꾸지 않고 새 수량을 반환하며, 불법 조합이나 초과분과 다른 반환량은 `RangeError`로 거부합니다. `takeGems`의 `excess`가 0보다 크면 이후 상태 전이에서 `discarding` 단계로 연결해야 합니다.
+
+구매 결제는 `countCardBonuses(purchasedCardIds)`, `remainingCardCost(cost, bonuses)`, `canPayForCard(cost, bonuses, held, payment)`, `payForCard(bank, held, cost, bonuses, payment)`로 계산합니다. 황금 보석은 남은 모든 색의 비용을 대신할 수 있으며 제출한 일반·황금 보석은 정확히 남은 비용과 일치해야 합니다. `payForCard`는 보석 이동만 처리하고 카드 소유·점수·시장 갱신은 9일차 작업에서 연결합니다.
 
 ## Firebase 로컬 에뮬레이터
 

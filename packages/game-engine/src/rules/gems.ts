@@ -4,7 +4,7 @@ export const GEM_COLORS: readonly GemColor[] = ['white', 'blue', 'green', 'red',
 const GEMS: readonly Gem[] = [...GEM_COLORS, 'gold'];
 const GEM_LIMIT = 10;
 
-function isValidInventory(value: unknown): value is Inventory {
+export function isValidInventory(value: unknown): value is Inventory {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
   const counts = value as Record<string, unknown>;
   return Object.keys(counts).length === GEMS.length && GEMS.every((gem) =>
