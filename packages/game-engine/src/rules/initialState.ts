@@ -63,7 +63,7 @@ export function createInitialGameState(playerIds: readonly string[], seed: numbe
 
   const firstPlayerIndex = Math.floor(random() * playerIds.length);
   return {
-    phase: 'playing', version: 0, turnNobleResolved: false,
+    phase: 'playing', version: 0, turnNobleResolved: false, consecutivePasses: 0,
     firstPlayerIndex, turnIndex: firstPlayerIndex,
     playerOrder: [...playerIds], players,
     bank: makeInventory(GEMS_PER_COLOR[playerIds.length], 5),

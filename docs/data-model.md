@@ -34,6 +34,12 @@
 
 `completeTurn`은 `phase: 'playing'`이고 현재 플레이어의 `turnNobleResolved`가 `true`일 때만 실행합니다. 현재 점수가 15점 이상이면 `finalRoundTriggeredBy`에 최초 도달 플레이어를 기록하고, 라운드 마지막 좌석의 턴이 끝나면 `phase: 'finished'`와 `winnerIds`를 설정합니다. 다음 턴으로 진행하면 `turnNobleResolved`를 `false`로 초기화합니다. 종료 상태의 `turnIndex`는 마지막 턴 플레이어를 가리키며 `version`은 reducer가 갱신합니다. `determineWinnerIds`는 점수 우선, 구매 카드 수가 적은 순으로 공동 승리까지 판정합니다. 기권자 제외는 기권 상태를 추가하는 26일차 작업에서 연결합니다.
 
+## 상태 전이 reducer (13일차)
+
+`reduceGameAction(state, playerId, action)`은 현재 턴 플레이어의 행동 하나를 검증해 새 `ServerGameState`를 반환합니다. `playing`에서는 보석 획득·카드 구매·예약·조건부 패스를, `discarding`에서는 초과 보석 반환만, `choosingNoble`에서는 귀족 선택만 허용합니다. 기본 행동 후 보석이 10개를 넘으면 반환을 기다리고, 그렇지 않으면 귀족 방문과 턴 완료까지 처리합니다. 정상 행동마다 `version`을 정확히 1 증가시키며 거부된 행동은 입력 상태를 변경하지 않습니다.
+
+`consecutivePasses`는 자산·점수 변화가 없는 연속 패스 수입니다. 합법적인 기본 행동이 생기면 패스를 거부하고, 기본 행동이나 패스로 인한 귀족 방문은 연속 패스를 끊습니다. 참가자 모두 연속 패스하면 현재 점수와 동점 규칙으로 종료합니다. 이 값은 초기 상태에서 0이며 기권자가 생기면 활성 인원 기준으로 조정해야 합니다. API의 인증·버전 충돌·`actionId` 멱등성은 서버 구현에서 처리합니다.
+
 ```text
 rooms/{roomId}                      방 상태·멤버십
 rooms/{roomId}/players/{uid}        공개 프로필·준비 상태

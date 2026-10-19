@@ -9,7 +9,7 @@
 - Node.js 22 권장 (Corepack으로 pnpm 9.15.9 사용)
 - `corepack pnpm install`
 - `npm run dev` → Vite 개발 서버
-- `npm test` → 게임 엔진의 초기 테스트
+- `npm test` → 게임 엔진 테스트
 - `npm run build` → 엔진과 웹 빌드
 - `npm run typecheck` → 엔진을 빌드한 뒤 전체 워크스페이스 타입 검사
 - 실제 Firebase 프로젝트를 연결할 때만 `.env.example`을 `apps/web/.env`로 복사하고 콘솔 값을 입력
@@ -32,13 +32,15 @@
 
 구매 결제는 `countCardBonuses(purchasedCardIds)`, `remainingCardCost(cost, bonuses)`, `canPayForCard(cost, bonuses, held, payment)`, `payForCard(bank, held, cost, bonuses, payment)`로 계산합니다. 황금 보석은 남은 모든 색의 비용을 대신할 수 있으며 제출한 일반·황금 보석은 정확히 남은 비용과 일치해야 합니다. `payForCard`는 보석 이동만 처리합니다.
 
-`buyCard(state, playerId, action)`는 현재 플레이어의 시장 또는 본인 예약 카드 구매에 결제 규칙을 적용하고, 카드 소유·점수·시장·덱을 함께 갱신합니다. 시장 구매 시 해당 단계 덱 맨 앞 카드로 같은 칸을 보충하며 덱이 비면 `null`로 유지합니다. 이 순수 함수는 턴·버전을 진행하지 않습니다. 턴 종료와 멱등성 처리는 후속 reducer·서버 작업에서 연결합니다.
+`buyCard(state, playerId, action)`는 현재 플레이어의 시장 또는 본인 예약 카드 구매에 결제 규칙을 적용하고, 카드 소유·점수·시장·덱을 함께 갱신합니다. 시장 구매 시 해당 단계 덱 맨 앞 카드로 같은 칸을 보충하며 덱이 비면 `null`로 유지합니다. 이 순수 함수는 턴·버전을 진행하지 않습니다.
 
-`reserveCard(state, playerId, action)`는 공개 카드 ID 또는 비공개 덱 단계 중 하나를 예약합니다. 최대 3장까지 보관하고 은행에 황금이 있으면 1개를 받습니다. 반환값의 `excess`가 양수면 후속 reducer가 `discarding`으로 연결해야 합니다. 반환된 전체 상태에는 비공개 덱과 예약 카드 ID가 있으므로 클라이언트에 그대로 전송하지 않습니다. 공개/개인 상태 분리는 22일차에 연결합니다.
+`reserveCard(state, playerId, action)`는 공개 카드 ID 또는 비공개 덱 단계 중 하나를 예약합니다. 최대 3장까지 보관하고 은행에 황금이 있으면 1개를 받습니다. 반환값의 `excess`가 양수면 reducer가 `discarding`으로 연결합니다. 반환된 전체 상태에는 비공개 덱과 예약 카드 ID가 있으므로 클라이언트에 그대로 전송하지 않습니다. 공개/개인 상태 분리는 22일차에 연결합니다.
 
 귀족 방문은 `eligibleNobleIds`, `resolveNobleVisit`, `chooseNoble`로 처리합니다. 구매 카드의 영구 할인만 조건에 포함하며, 턴 마무리 시 한 명만 자격이 있으면 자동 방문하고 여러 명이면 `choosingNoble`에서 한 명을 고릅니다. `turnNobleResolved`는 같은 턴의 중복 방문을 막습니다.
 
-`completeTurn(state, playerId)`는 귀족 판정이 완료된 턴의 점수를 확인하고 다음 턴으로 넘깁니다. 15점 이상이면 `firstPlayerIndex`를 기준으로 현재 라운드의 남은 턴을 마친 뒤 종료합니다. `determineWinnerIds(state)`는 최고 점수, 그다음 구매 카드 수가 적은 순으로 승자를 정하며 둘 다 같으면 공동 승자를 반환합니다. 두 함수는 원본 상태를 변경하지 않고 `version`도 올리지 않습니다. 13일차 reducer가 기본 행동부터 턴 완료까지 연결하고 버전을 갱신합니다.
+`completeTurn(state, playerId)`는 귀족 판정이 완료된 턴의 점수를 확인하고 다음 턴으로 넘깁니다. 15점 이상이면 `firstPlayerIndex`를 기준으로 현재 라운드의 남은 턴을 마친 뒤 종료합니다. `determineWinnerIds(state)`는 최고 점수, 그다음 구매 카드 수가 적은 순으로 승자를 정하며 둘 다 같으면 공동 승자를 반환합니다. 두 함수는 원본 상태를 변경하지 않고 `version`도 올리지 않습니다.
+
+`reduceGameAction(state, playerId, action)`은 기본 행동 하나와 필요한 보석 반환·귀족 선택을 단계에 따라 처리합니다. 유효한 요청마다 `version`을 한 번 올리며, 보석·카드·점수·원본 객체를 변경하지 않는 순수 상태 전이를 반환합니다. 합법적인 기본 행동이 전혀 없을 때만 `PASS`를 허용하고 전원이 자산·점수 변화 없이 연속 패스하면 종료합니다. 인증, `expectedVersion`, `actionId` 중복 처리는 서버 API 단계에서 검증합니다.
 
 ## Firebase 로컬 에뮬레이터
 

@@ -11,6 +11,7 @@ describe('게임 초기화', () => {
     expect(state.phase).toBe('playing');
     expect(state.version).toBe(0);
     expect(state.turnNobleResolved).toBe(false);
+    expect(state.consecutivePasses).toBe(0);
     expect(state.playerOrder).toEqual(ids);
     expect(state.turnIndex).toBeGreaterThanOrEqual(0);
     expect(state.turnIndex).toBeLessThan(playerCount);
