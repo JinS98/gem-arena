@@ -26,7 +26,7 @@ export function PlayerPanel({ player, isCurrent, gems = player.gems }: { player:
           </span>
         ))}
       </div>
-      {player.isLocal && (
+      {isCurrent && (
         <><div className="player-panel__inventory">
           <span>보유 보석</span><strong>{totalGems} <small>/ 10</small></strong>
         </div><div className="player-panel__held" aria-label="내 보유 보석">

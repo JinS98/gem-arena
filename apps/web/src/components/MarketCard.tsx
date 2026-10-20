@@ -2,9 +2,11 @@ import { CARD_COLORS } from '@gem-arena/engine';
 import type { DevelopmentCard } from '@gem-arena/engine';
 import { GemIcon, gemNames } from './GemIcon';
 
-export function MarketCard({ card, onSelect, disabled = false }: { card: DevelopmentCard; onSelect: () => void; disabled?: boolean }) {
+export function MarketCard({ card, onSelect, disabled = false, featured = false }: {
+  card: DevelopmentCard; onSelect: () => void; disabled?: boolean; featured?: boolean;
+}) {
   return (
-    <button type="button" className={`market-card market-card--${card.bonusColor}`} onClick={onSelect} disabled={disabled} aria-label={`${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 구매 또는 예약 보기`}>
+    <button type="button" className={`market-card market-card--${card.bonusColor}${featured ? ' market-card--featured' : ''}`} onClick={onSelect} disabled={disabled} aria-label={`${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 구매 또는 예약 보기`}>
       <div className="market-card__top">
         <span className="market-card__level">LEVEL {card.level}</span>
         <span className="market-card__points">{card.points}<small>점</small></span>

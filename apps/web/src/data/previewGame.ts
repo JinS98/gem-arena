@@ -28,7 +28,6 @@ export const previewGame: {
   bank: Inventory;
   nobles: Noble[];
   market: Record<CardLevel, DevelopmentCard[]>;
-  deckCounts: Record<CardLevel, number>;
 } = {
   currentPlayerId: 'player-1',
   players: [
@@ -58,5 +57,4 @@ export const previewGame: {
     2: cards(['L2-BLACK-03', 'L2-GREEN-05', 'L2-RED-02', 'L2-WHITE-06']),
     3: cards(['L3-BLUE-02', 'L3-WHITE-04', 'L3-BLACK-03', 'L3-RED-01']),
   },
-  deckCounts: { 1: 26, 2: 21, 3: 13 },
 };

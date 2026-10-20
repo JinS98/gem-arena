@@ -8,7 +8,8 @@ const regularColors: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 
 export function GemActionPanel() {
   const { bank, gems, mode, phase, selectedColors, returned, notice,
-    setMode, changeReturn, takeSelected, confirmReturn, loadDiscardExample, reset } = useDemoGemStore();
+    setMode, changeReturn, takeSelected, confirmReturn, loadDiscardExample,
+    loadNobleExample, loadFinalRoundExample, advanceTurn, reset } = useDemoGemStore();
   const takeColors = mode === 'pair' && selectedColors.length === 1
     ? [selectedColors[0], selectedColors[0]] : selectedColors;
   const canConfirmTake = phase === 'selecting' && canTakeGems(bank, takeColors);
@@ -20,7 +21,7 @@ export function GemActionPanel() {
     <section className="side-card gem-action" aria-labelledby="gem-action-title">
       <span className="eyebrow">LOCAL PRACTICE</span>
       <h2 id="gem-action-title">턴 연습</h2>
-      <p className="gem-action__intro">보석 획득 또는 카드 행동 한 가지를 연습하세요. 실제 대전에는 반영되지 않습니다.</p>
+      <p className="gem-action__intro">현재 플레이어의 보석 획득 또는 카드 행동 한 가지를 연습하세요. 실제 대전에는 반영되지 않습니다.</p>
 
       {phase === 'selecting' && <>
         <div className="gem-action__modes" role="group" aria-label="보석 획득 방식">
@@ -56,11 +57,14 @@ export function GemActionPanel() {
         <button className="gem-action__submit" type="button" onClick={confirmReturn} disabled={selectedReturnCount !== excess}>선택한 보석 반환</button>
       </>}
 
-      {phase === 'completed' && <div className="gem-action__complete"><span aria-hidden="true">✓</span><strong>연습 턴 완료</strong><p>샘플 상태에 이번 행동이 반영됐습니다.</p></div>}
+      {phase === 'choosingNoble' && <div className="gem-action__complete"><span aria-hidden="true">✧</span><strong>귀족 선택</strong><p>시장 위의 귀족 중 강조된 한 명을 선택하세요.</p></div>}
+      {phase === 'completed' && <><div className="gem-action__complete"><span aria-hidden="true">✓</span><strong>턴 완료</strong><p>엔진이 다음 플레이어를 정했습니다.</p></div><button className="gem-action__submit" type="button" onClick={advanceTurn}>다음 플레이어 시작</button></>}
 
       <p className="gem-action__notice" role="status" aria-live="polite">{notice || `현재 보유 ${gemCount(gems)} / 10개`}</p>
       <div className="gem-action__examples">
         <button type="button" onClick={loadDiscardExample}>9개 보유 상황</button>
+        <button type="button" onClick={loadNobleExample}>귀족·종료 상황</button>
+        <button type="button" onClick={loadFinalRoundExample}>최종 턴 상황</button>
         <button type="button" onClick={reset}>처음부터</button>
       </div>
     </section>

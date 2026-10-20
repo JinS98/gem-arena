@@ -104,6 +104,7 @@ button{cursor:pointer}
 .market-card{--card-tone:#e4d4b9;--card-deep:#59786c;min-width:0;min-height:184px;display:flex;flex-direction:column;overflow:hidden;border-radius:9px;border:1px solid #e9dabe;background:var(--card-tone);color:#203329;text-align:left;padding:0;box-shadow:0 8px 20px #0004,inset 0 1px #fff9;transition:transform .2s,box-shadow .2s}
 .market-card:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 13px 25px #0006}
 .market-card:focus-visible{outline:3px solid #e7c989;outline-offset:3px}
+.market-card--featured{outline:3px solid #e7bb69;outline-offset:2px;box-shadow:0 0 24px #e7bb6980,0 8px 20px #0004}
 .market-card:disabled{cursor:not-allowed;filter:saturate(.7);opacity:.7}
 .market-card-empty{min-height:184px;display:grid;place-items:center;border:1px dashed #ffffff3b;border-radius:9px;color:#9aada1;font-size:11px}
 .market-card--white{--card-tone:#e3dfd1;--card-deep:#8caaa0}
@@ -212,6 +213,25 @@ button{cursor:pointer}
 .card-modal__reserve{background:#d8b1761c;color:#f1d9ac}
 .card-modal__actions button:disabled{opacity:.4;cursor:not-allowed}
 .card-modal .card-modal__footnote{margin:10px 0 0;font-size:10px}
+.nobles-section__prompt{margin:11px 0;padding:10px 12px;border:1px solid #e2bd72a8;border-radius:8px;background:#d5ac5b20;color:#f4dfb5;font-size:11px;line-height:1.5}
+.noble-card--choice{text-align:left;font:inherit;transition:transform .2s,box-shadow .2s}
+.noble-card--choice:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 0 0 2px #f2d385,0 14px 26px #0005}
+.noble-card--choice:not(:disabled):focus-visible{outline:3px solid #f5dd98;outline-offset:3px}
+.noble-card--choice:disabled{opacity:.48;cursor:not-allowed}
+.result-backdrop{position:fixed;inset:0;z-index:60;display:grid;place-items:center;padding:20px;background:#02100bdc;backdrop-filter:blur(9px)}
+.result-modal{width:min(100%,520px);max-height:90vh;overflow-y:auto;padding:30px;border:1px solid #dab97f87;border-radius:18px;background:radial-gradient(circle at 50% 0,#2f5945,#102a20 65%);box-shadow:0 30px 90px #000b;text-align:center}
+.result-modal__emblem{width:56px;height:56px;display:grid;place-items:center;margin:16px auto 10px;border:1px solid #eed39d;border-radius:50%;background:#e6c4851c;color:#f4d89e;font-size:33px}
+.result-modal h2{font-size:30px;margin:7px 0}
+.result-modal__winner{margin:8px 0;color:#f4d99e;font-size:18px;font-weight:800}
+.result-modal__rule{margin:0 0 23px;color:#b5cbb8;font-size:11px;line-height:1.6}
+.result-modal__ranking{list-style:none;padding:0;margin:0 0 24px;display:grid;gap:7px;text-align:left}
+.result-modal__ranking li{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:center;padding:12px 14px;border:1px solid #ffffff26;border-radius:9px;background:#ffffff0c}
+.result-modal__ranking li.is-winner{border-color:#e0c17a;background:#dfbd7540}
+.result-modal__ranking li span{font-size:13px;font-weight:800}
+.result-modal__ranking li small{grid-column:1;color:#bacdb7;font-size:10px}
+.result-modal__ranking li strong{grid-column:2;grid-row:1/3;color:#f4d99e;font-size:20px}
+.result-modal>button{width:100%;padding:13px;border:0;border-radius:8px;background:#d9b777;color:#183527;font-size:12px;font-weight:800}
+.result-modal>button:focus-visible{outline:3px solid #fff0bb;outline-offset:3px}
 @media(max-width:600px){.reserved-section__cards{display:flex;overflow-x:auto;padding:2px 2px 10px}.card-modal{padding:18px}}
 @media(max-width:1280px){.site-main{padding-left:26px;padding-right:26px}.site-header__inner{padding:0 26px}.game-layout{grid-template-columns:210px minmax(0,1fr);gap:18px}.bank-column{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px}.legend-card,.gem-action{margin-top:0}.gem-bank__list{grid-template-columns:repeat(3,1fr);column-gap:12px}.noble-card__emblem{display:none}}
 @media(max-width:800px){.site-header__tag{display:none}.site-header nav{gap:14px;font-size:11px}.site-main{padding:0 18px 48px}.site-header__inner{padding:0 18px}.game-layout{grid-template-columns:minmax(0,1fr)}.players-column{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}.column-heading{grid-column:1/-1;height:auto;margin:0 0 8px}.players-list{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))}.turn-help{grid-column:1/-1;margin-top:2px}.bank-column{grid-column:auto;grid-row:2}.board-column{grid-row:3}.noble-card{min-height:75px}.welcome-page__decoration{opacity:.28;right:-10%}}
