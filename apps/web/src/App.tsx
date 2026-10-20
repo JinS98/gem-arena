@@ -1,6 +1,14 @@
-import { Link, Route, Routes, useParams } from 'react-router-dom';
-import { useGameUIStore } from './stores/gameUIStore';
-function Home() { return <section><h2>친구와 함께 즐기는 전략 보드게임</h2><p>현재는 프로젝트 초기 뼈대입니다. 방 생성·대전 기능은 19~26일차에 구현합니다.</p><Link to="/lobby">로비 미리보기 →</Link></section> }
-function Lobby() { return <section><h2>로비</h2><p>초대 코드와 준비 상태 UI는 추후 구현합니다.</p><Link to="/game/demo">게임판 미리보기</Link></section> }
-function Game() { const { roomId } = useParams(); const selected = useGameUIStore(s=>s.selectedCardId); const select = useGameUIStore(s=>s.selectCard); return <section><h2>게임판 미리보기</h2><p>Room: {roomId}</p><p>게임 상태는 아직 서버와 연결되지 않았습니다.</p><button onClick={()=>select(selected ? null : 'preview-card')}>{selected ? '선택 해제' : '예시 카드 선택'}</button></section> }
-export default function App() { return <main><header><h1>💎 Gem Arena</h1><nav><Link to="/">홈</Link> · <Link to="/lobby">로비</Link></nav></header><Routes><Route path="/" element={<Home/>}/><Route path="/lobby" element={<Lobby/>}/><Route path="/game/:roomId" element={<Game/>}/></Routes></main> }
+import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { GameBoardPage } from './pages/GameBoardPage';
+
+function Home() {
+  return <section className="welcome-page"><span className="eyebrow">WELCOME TO GEM ARENA</span><h1>빛을 모아,<br /><em>전략을 완성하세요.</em></h1><p>친구들과 함께하는 보석 전략 게임. 지금은 게임판의 화면 구성을 미리 볼 수 있습니다.</p><div className="welcome-page__actions"><Link className="primary-link" to="/game/demo">게임판 미리보기 <span aria-hidden="true">↗</span></Link><Link className="text-link" to="/lobby">로비 보기</Link></div><div className="welcome-page__decoration" aria-hidden="true"><span /><span /><span /></div></section>;
+}
+
+function Lobby() {
+  return <section className="empty-page"><span className="eyebrow">LOBBY PREVIEW</span><h1>로비</h1><p>방 생성과 초대 코드는 20~21일차에 연결됩니다. 게임판 레이아웃을 먼저 확인해 보세요.</p><Link className="primary-link" to="/game/demo">게임판 미리보기</Link></section>;
+}
+
+export default function App() {
+  return <div className="app-shell"><header className="site-header"><div className="site-header__inner"><Link className="brand" to="/" aria-label="Gem Arena 홈"><span className="brand__mark" aria-hidden="true">◆</span><span>GEM <strong>ARENA</strong></span></Link><nav aria-label="주 메뉴"><NavLink to="/" end>홈</NavLink><NavLink to="/lobby">로비</NavLink><NavLink to="/game/demo">게임판 미리보기</NavLink></nav><span className="site-header__tag">LOCAL PREVIEW</span></div></header><main className="site-main"><Routes><Route path="/" element={<Home />} /><Route path="/lobby" element={<Lobby />} /><Route path="/game/:roomId" element={<GameBoardPage />} /></Routes></main></div>;
+}
