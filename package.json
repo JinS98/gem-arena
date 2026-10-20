@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev",
     "build": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web build && corepack pnpm --filter @gem-arena/functions build",
-    "test": "corepack pnpm --filter @gem-arena/engine test",
+    "test": "corepack pnpm --filter @gem-arena/engine test && corepack pnpm --filter @gem-arena/web test",
     "typecheck": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm -r typecheck",
     "dev:emulators": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev --mode emulator",
     "emulators": "corepack pnpm --filter @gem-arena/functions build && firebase emulators:start --project demo-gem-arena --only auth,firestore,functions",
