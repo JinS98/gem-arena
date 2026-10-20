@@ -14,4 +14,5 @@ export type GameAction =
  | { type:'RESERVE_CARD'; cardId?:string; level?:CardLevel }
  | { type:'DISCARD_GEMS'; gems:Inventory }
  | { type:'CHOOSE_NOBLE'; nobleId:string }
- | { type:'PASS' };
+ | { type:'PASS' }
+ | { type:'TIMEOUT' };

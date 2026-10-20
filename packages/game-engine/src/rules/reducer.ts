@@ -1,8 +1,8 @@
 import { CARD_COLORS, getDevelopmentCard } from '../data/catalog';
-import type { GameAction, ServerGameState } from '../types/index';
+import type { GameAction, Gem, Inventory, ServerGameState } from '../types/index';
 import { buyCard } from './buyCard';
 import { discardExcessGems, excessGemCount, isValidInventory, takeGems } from './gems';
-import { chooseNoble, resolveNobleVisit } from './nobles';
+import { chooseNoble, eligibleNobleIds, resolveNobleVisit } from './nobles';
 import { countCardBonuses, remainingCardCost } from './payment';
 import { reserveCard } from './reserveCard';
 import { completeTurn, determineWinnerIds } from './turnEnd';
@@ -45,6 +45,32 @@ function finishAfterBasicAction(state: ServerGameState, playerId: string, excess
   return finishResolvedTurn(resolveNobleVisit(state, playerId), playerId);
 }
 
+/** Settle a local turn whose clock expired, including mandatory follow-up choices. */
+function finishTimedOutTurn(state: ServerGameState, playerId: string): ServerGameState {
+  let pending = state;
+  if (pending.phase === 'discarding') {
+    let excess = excessGemCount(pending.players[playerId].gems);
+    const returned = { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 } satisfies Inventory;
+    for (const color of ['white', 'blue', 'green', 'red', 'black', 'gold'] as Gem[]) {
+      returned[color] = Math.min(excess, pending.players[playerId].gems[color]);
+      excess -= returned[color];
+    }
+    const transfer = discardExcessGems(pending.bank, pending.players[playerId].gems, returned);
+    pending = { ...pending, phase: 'playing', bank: transfer.bank,
+      players: { ...pending.players, [playerId]: { ...pending.players[playerId], gems: transfer.gems } } };
+    pending = resolveNobleVisit(pending, playerId);
+  } else if (pending.phase === 'playing') {
+    if (pending.turnNobleResolved) throw new RangeError('이미 완료된 턴입니다');
+    pending = { ...pending, turnNobleResolved: true, consecutivePasses: pending.consecutivePasses + 1 };
+  }
+  if (pending.phase === 'choosingNoble') {
+    const firstEligible = eligibleNobleIds(pending, playerId)[0];
+    if (!firstEligible) throw new RangeError('선택할 귀족이 없습니다');
+    pending = chooseNoble(pending, playerId, { type: 'CHOOSE_NOBLE', nobleId: firstEligible });
+  }
+  return finishResolvedTurn(pending, playerId);
+}
+
 /** Apply one authorized action to private state; caller handles identity, version conflicts and idempotency. */
 export function reduceGameAction(
   state: ServerGameState, playerId: string, action: GameAction,
@@ -67,6 +93,10 @@ export function reduceGameAction(
     throw new RangeError('초과 보석 반환 단계가 필요합니다');
   }
   if (!action || typeof action !== 'object') throw new RangeError('행동이 유효하지 않습니다');
+
+  if (action.type === 'TIMEOUT') {
+    return { ...finishTimedOutTurn(state, playerId), version: state.version + 1 };
+  }
 
   let next: ServerGameState;
   if (state.phase === 'discarding') {

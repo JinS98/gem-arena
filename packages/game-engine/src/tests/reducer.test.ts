@@ -189,6 +189,41 @@ describe('게임 행동 reducer', () => {
     expect(() => reduceGameAction(finished, actor, { type: 'PASS' })).toThrow(RangeError);
   });
 
+  it('시간 초과는 합법 행동이 있어도 자원을 바꾸지 않고 턴을 넘긴다', () => {
+    const { state, actor, other } = game();
+    const snapshot = structuredClone(state);
+    const next = reduceGameAction(state, actor, { type: 'TIMEOUT' });
+    expect(next.playerOrder[next.turnIndex]).toBe(other);
+    expect(next.consecutivePasses).toBe(1);
+    expect(next.version).toBe(1);
+    expect(gemTotals(next)).toEqual(gemTotals(state));
+    expect(allCardIds(next)).toEqual(allCardIds(state));
+    expect(state).toEqual(snapshot);
+  });
+
+  it('보석 반환 중 시간 초과는 초과분을 반환한 뒤 턴을 마친다', () => {
+    const { state: initial, actor, other } = game();
+    const state = withGems(initial, actor, { ...empty, white: 3, blue: 3, green: 3 });
+    const pending = reduceGameAction(state, actor, { type: 'TAKE_GEMS', colors: ['white', 'blue', 'green'] });
+    const next = reduceGameAction(pending, actor, { type: 'TIMEOUT' });
+    expect(next.playerOrder[next.turnIndex]).toBe(other);
+    expect(next.phase).toBe('playing');
+    expect(next.version).toBe(2);
+    expect(Object.values(next.players[actor].gems).reduce((sum, count) => sum + count, 0)).toBe(10);
+    expect(gemTotals(next)).toEqual(gemTotals(initial));
+  });
+
+  it('귀족 선택 중 시간 초과는 공개 목록의 첫 적격 귀족을 방문한다', () => {
+    const { state: initial, actor, other } = game();
+    const state = grantTwoNobles(initial, actor);
+    const pending = reduceGameAction(state, actor, { type: 'TAKE_GEMS', colors: ['white', 'blue', 'green'] });
+    const firstEligible = pending.availableNobleIds[0];
+    const next = reduceGameAction(pending, actor, { type: 'TIMEOUT' });
+    expect(next.playerOrder[next.turnIndex]).toBe(other);
+    expect(next.players[actor].nobleIds).toEqual([firstEligible]);
+    expect(next.version).toBe(2);
+  });
+
   it('행동이 가능한 카드가 남아 있으면 빈 은행이어도 패스를 거부한다', () => {
     const state = stalledGame();
     const actor = state.playerOrder[state.turnIndex];

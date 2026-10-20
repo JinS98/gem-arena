@@ -5,7 +5,8 @@ import { previewGame } from '../data/previewGame';
 import type { PreviewPlayer } from '../data/previewGame';
 
 export type GemMode = 'different' | 'pair';
-export type GemPracticePhase = 'selecting' | 'discarding' | 'choosingNoble' | 'completed' | 'finished';
+export type GemPracticePhase = 'awaitingStart' | 'selecting' | 'discarding' | 'choosingNoble' | 'completed' | 'finished';
+export const TURN_DURATION_MS = 3 * 60 * 1000;
 
 const localGems = previewGame.players.find((player) => player.isLocal)!.gems;
 const emptyInventory = (): Inventory => ({ white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 });
@@ -101,7 +102,8 @@ function localPlayers(count: 2 | 3 | 4): PreviewPlayer[] {
 function newLocalGame(count: 2 | 3 | 4) {
   const players = localPlayers(count);
   const seed = crypto.getRandomValues(new Uint32Array(1))[0];
-  return initialPractice(createInitialGameState(players.map((player) => player.id), seed), 'fullGame', players);
+  return { ...initialPractice(createInitialGameState(players.map((player) => player.id), seed), 'fullGame', players),
+    phase: 'awaitingStart' as GemPracticePhase, turnDeadlineAt: null };
 }
 
 interface DemoGemState extends ReturnType<typeof fromEngineState> {
@@ -113,6 +115,10 @@ interface DemoGemState extends ReturnType<typeof fromEngineState> {
   selectedColors: GemColor[];
   returned: Inventory;
   notice: string;
+  turnDeadlineAt: number | null;
+  turnWarningPlayed: boolean;
+  markTurnWarning: () => boolean;
+  expireTurn: () => void;
   setMode: (mode: GemMode) => void;
   selectColor: (color: GemColor) => void;
   changeReturn: (color: Gem, delta: -1 | 1) => void;
@@ -128,6 +134,7 @@ interface DemoGemState extends ReturnType<typeof fromEngineState> {
   reserveDeckCard: (level: CardLevel) => boolean;
   passTurn: () => boolean;
   startNewGame: (count: 2 | 3 | 4) => void;
+  beginGame: () => void;
   restart: () => void;
   reset: () => void;
 }
@@ -139,6 +146,8 @@ function initialPractice(
     game, scenario, players, ...fromEngineState(game),
     mode: 'different' as GemMode, phase: 'selecting' as GemPracticePhase,
     selectedColors: [] as GemColor[], returned: emptyInventory(), notice: '',
+    turnDeadlineAt: scenario === 'fullGame' ? Date.now() + TURN_DURATION_MS : null,
+    turnWarningPlayed: false,
   };
 }
 
@@ -154,11 +163,37 @@ function applyAction(
 ) {
   const next = reduceGameAction(state.game, state.currentPlayerId, action);
   return { game: next, ...fromEngineState(next), phase: uiPhase(next),
-    selectedColors: [] as GemColor[], returned: emptyInventory(), notice };
+    selectedColors: [] as GemColor[], returned: emptyInventory(), notice,
+    turnDeadlineAt: next.phase !== 'finished' && next.turnIndex === state.game.turnIndex
+      ? state.turnDeadlineAt : null };
 }
 
 export const useDemoGemStore = create<DemoGemState>((set, get) => ({
   ...initialPractice(),
+  markTurnWarning: () => {
+    const state = get();
+    if (state.scenario !== 'fullGame' || state.turnDeadlineAt === null || state.turnWarningPlayed ||
+        state.phase === 'completed' || state.phase === 'finished') return false;
+    set({ turnWarningPlayed: true });
+    return true;
+  },
+  expireTurn: () => {
+    const state = get();
+    if (state.scenario !== 'fullGame' || state.turnDeadlineAt === null ||
+        Date.now() < state.turnDeadlineAt || state.phase === 'completed' || state.phase === 'finished') return;
+    try {
+      const next = applyAction(state, { type: 'TIMEOUT' }, '3분이 지나 이번 턴을 자동으로 마쳤습니다.');
+      if (next.phase === 'completed' && next.game.phase === 'playing') {
+        const nextPlayer = state.players.find((player) => player.id === next.currentPlayerId)?.name ?? '다음 플레이어';
+        set({ ...next, phase: 'selecting', turnDeadlineAt: Date.now() + TURN_DURATION_MS,
+          turnWarningPlayed: false, notice: `3분이 지나 ${nextPlayer}님의 차례로 자동 전환됐습니다.` });
+      } else {
+        set({ ...next, turnDeadlineAt: null });
+      }
+    } catch (error) {
+      set({ notice: error instanceof Error ? error.message : '턴을 자동으로 마치지 못했습니다.', turnDeadlineAt: null });
+    }
+  },
   setMode: (mode) => set((state) => state.phase === 'selecting'
     ? { mode, selectedColors: [], notice: '' } : {}),
   selectColor: (color) => set((state) => {
@@ -277,7 +312,7 @@ export const useDemoGemStore = create<DemoGemState>((set, get) => ({
   },
   loadNobleExample: () => {
     set({ ...initialPractice(nobleFinishGame(), 'nobleFinish'),
-      notice: '1단계 빨간 개발 카드를 구매하세요. 귀족 한 명을 선택하면 15점으로 게임이 종료됩니다.' });
+      notice: '빨간 1단계 카드 구매 후 귀족을 선택하면 15점으로 종료됩니다.' });
   },
   loadFinalRoundExample: () => {
     const base = initialGame();
@@ -301,11 +336,16 @@ export const useDemoGemStore = create<DemoGemState>((set, get) => ({
     }
   },
   advanceTurn: () => set((state) => state.phase === 'completed' && state.game.phase === 'playing'
-    ? { phase: 'selecting', notice: `${state.players.find((player) => player.id === state.currentPlayerId)?.name ?? '플레이어'}님의 차례입니다.` } : {}),
+    ? { phase: 'selecting', turnDeadlineAt: state.scenario === 'fullGame' ? Date.now() + TURN_DURATION_MS : null,
+      turnWarningPlayed: false,
+      notice: `${state.players.find((player) => player.id === state.currentPlayerId)?.name ?? '플레이어'}님의 차례입니다.` } : {}),
   startNewGame: (count) => {
     if (count !== 2 && count !== 3 && count !== 4) return;
-    set({ ...newLocalGame(count), notice: `${count}인 로컬 게임을 시작했습니다.` });
+    set({ ...newLocalGame(count), notice: `${count}인 로컬 게임이 준비됐습니다. 게임 시작을 누르면 첫 턴이 시작됩니다.` });
   },
+  beginGame: () => set((state) => state.scenario === 'fullGame' && state.phase === 'awaitingStart'
+    ? { phase: 'selecting', turnDeadlineAt: Date.now() + TURN_DURATION_MS,
+      turnWarningPlayed: false, notice: `${state.players.find((player) => player.id === state.currentPlayerId)?.name ?? '첫 번째 플레이어'}님의 차례입니다.` } : {}),
   restart: () => {
     const state = get();
     set(state.scenario === 'fullGame' ? newLocalGame(state.players.length as 2 | 3 | 4) : initialPractice());
