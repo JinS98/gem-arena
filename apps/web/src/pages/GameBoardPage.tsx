@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { countCardBonuses, eligibleNobleIds, getDevelopmentCard, getNoble } from '@gem-arena/engine';
 import type { CardLevel } from '@gem-arena/engine';
@@ -8,7 +9,6 @@ import { GameResultModal } from '../components/GameResultModal';
 import { MarketCard } from '../components/MarketCard';
 import { NobleGallery } from '../components/NobleGallery';
 import { PlayerPanel } from '../components/PlayerPanel';
-import { previewGame } from '../data/previewGame';
 import { useDemoGemStore } from '../stores/demoGemStore';
 import { useGameUIStore } from '../stores/gameUIStore';
 
@@ -16,11 +16,13 @@ const levels: CardLevel[] = [3, 2, 1];
 
 export function GameBoardPage() {
   const { roomId } = useParams();
+  const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
   const { bank, mode, phase, selectedColors, selectColor, market, decks,
-    reservedCardIds, game, scenario, currentPlayerId, chooseNoble, reset } = useDemoGemStore();
+    reservedCardIds, game, players, scenario, currentPlayerId, chooseNoble,
+    reserveDeckCard, startNewGame, restart, reset } = useDemoGemStore();
   const { selectedCard, selectCard, closeCard } = useGameUIStore();
   const selectedCardData = selectedCard ? getDevelopmentCard(selectedCard.id) : undefined;
-  const currentPlayer = previewGame.players.find((player) => player.id === currentPlayerId);
+  const currentPlayer = players.find((player) => player.id === currentPlayerId);
   const availableNobles = game.availableNobleIds.map((id) => getNoble(id)).filter((noble) => noble !== undefined);
   const nobleChoices = phase === 'choosingNoble' ? eligibleNobleIds(game, currentPlayerId) : [];
   if (roomId !== 'demo') {
@@ -29,18 +31,27 @@ export function GameBoardPage() {
 
   return (
     <div className="game-page">
-      <div className="preview-notice"><span className="preview-notice__dot" />로컬 게임 연습<span> · 실제 대전 연결 전</span></div>
+      <div className="preview-notice"><span className="preview-notice__dot" />{scenario === 'fullGame' ? `${players.length}인 로컬 게임` : '로컬 게임 연습'}<span> · 실제 대전 연결 전</span></div>
       <div className="game-heading">
         <div><span className="eyebrow">THE BOARD · {game.playerOrder.length} PLAYERS</span><h1>게임판</h1><p>{scenario === 'nobleFinish' && phase === 'selecting'
           ? '금색 테두리의 1단계 빨간 카드를 구매하세요. 귀족 선택 후 15점으로 게임이 종료됩니다.'
-          : '보석을 모으고, 카드를 구매하고, 귀족을 맞이하세요.'}</p></div>
-        <div className="turn-pill"><span className="turn-pill__light" /><div><small>{phase === 'finished' ? '승자' : phase === 'completed' ? '다음 차례' : phase === 'choosingNoble' ? '귀족 선택' : '현재 차례'}</small><strong>{phase === 'finished' ? game.winnerIds.map((id) => previewGame.players.find((player) => player.id === id)?.name ?? id).join(' · ') : currentPlayer?.name ?? '플레이어'}</strong></div></div>
+          : '보석을 모으고, 카드를 구매하고, 귀족을 맞이하세요.'}</p>
+          <div className="local-match-controls" role="group" aria-label="새 로컬 게임">
+            <label htmlFor="local-player-count">인원</label>
+            <select id="local-player-count" value={playerCount} onChange={(event) => setPlayerCount(Number(event.target.value) as 2 | 3 | 4)}>
+              <option value={2}>2명</option><option value={3}>3명</option><option value={4}>4명</option>
+            </select>
+            <button type="button" onClick={() => startNewGame(playerCount)}>새 로컬 게임</button>
+            {scenario === 'fullGame' && <button type="button" className="local-match-controls__secondary" onClick={reset}>샘플로 돌아가기</button>}
+          </div>
+        </div>
+        <div className="turn-pill"><span className="turn-pill__light" /><div><small>{phase === 'finished' ? '승자' : phase === 'completed' ? '다음 차례' : phase === 'choosingNoble' ? '귀족 선택' : '현재 차례'}</small><strong>{phase === 'finished' ? game.winnerIds.map((id) => players.find((player) => player.id === id)?.name ?? id).join(' · ') : currentPlayer?.name ?? '플레이어'}</strong></div></div>
       </div>
 
       <div className="game-layout">
         <aside className="players-column" aria-label="플레이어 현황">
           <div className="column-heading"><span className="eyebrow">PLAYERS</span><h2>플레이어</h2></div>
-          <div className="players-list">{previewGame.players.map((player) => {
+          <div className="players-list">{players.map((player) => {
             const live = game.players[player.id];
             return <PlayerPanel player={{ ...player, score: live.score,
               bonuses: countCardBonuses(live.purchasedCardIds), purchasedCount: live.purchasedCardIds.length,
@@ -57,7 +68,10 @@ export function GameBoardPage() {
             <div className="section-heading"><div><span className="eyebrow">MARKET</span><h2 id="market-title">개발 카드 시장</h2></div><span className="section-heading__meta">단계별 4장</span></div>
             <div className="market-levels">{levels.map((level) => (
               <div className="market-row" key={level}>
-                <div className="market-row__label"><span>LEVEL</span><strong>{level}</strong><small>덱 {decks[level].length}장</small></div>
+                <div className="market-row__label"><span>LEVEL</span><strong>{level}</strong><small>덱 {decks[level].length}장</small>
+                  <button type="button" className="market-row__reserve-deck" onClick={() => reserveDeckCard(level)}
+                    disabled={phase !== 'selecting' || decks[level].length === 0 || reservedCardIds.length >= 3}
+                    aria-label={`${level}단계 덱 맨 위 카드 예약`}>덱 예약</button></div>
                 <div className="market-row__cards">{market[level].map((id, slot) => {
                   const card = id ? getDevelopmentCard(id) : undefined;
                   return card ? <MarketCard card={card} key={`${level}-${slot}`} onSelect={() => selectCard(card.id, 'market')}
@@ -84,7 +98,8 @@ export function GameBoardPage() {
       </div>
       {selectedCard && selectedCardData && <CardActionModal key={`${selectedCard.source}-${selectedCard.id}`}
         card={selectedCardData} source={selectedCard.source} onClose={closeCard} />}
-      {phase === 'finished' && <GameResultModal game={game} players={previewGame.players} onRestart={reset} />}
+      {phase === 'finished' && <GameResultModal game={game} players={players} onRestart={restart}
+        restartLabel={scenario === 'fullGame' ? '같은 인원으로 새 게임' : '새 연습 시작'} />}
     </div>
   );
 }

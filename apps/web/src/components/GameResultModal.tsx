@@ -2,8 +2,8 @@ import { useEffect, useRef } from 'react';
 import type { ServerGameState } from '@gem-arena/engine';
 import type { PreviewPlayer } from '../data/previewGame';
 
-export function GameResultModal({ game, players, onRestart }: {
-  game: ServerGameState; players: PreviewPlayer[]; onRestart: () => void;
+export function GameResultModal({ game, players, onRestart, restartLabel = '새 연습 시작' }: {
+  game: ServerGameState; players: PreviewPlayer[]; onRestart: () => void; restartLabel?: string;
 }) {
   const restartRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { restartRef.current?.focus(); }, []);
@@ -31,7 +31,7 @@ export function GameResultModal({ game, players, onRestart }: {
             </li>;
           })}
         </ol>
-        <button ref={restartRef} type="button" onClick={onRestart}>새 연습 시작</button>
+        <button ref={restartRef} type="button" onClick={onRestart}>{restartLabel}</button>
       </section>
     </div>
   );

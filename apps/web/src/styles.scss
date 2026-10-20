@@ -48,6 +48,11 @@ button{cursor:pointer}
 .game-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin:22px 0 30px}
 .game-heading h1{font-size:clamp(34px,4vw,54px);line-height:1.15;letter-spacing:-.06em;margin:7px 0 7px}
 .game-heading p{color:#aebfb4;margin:0;font-size:13px}
+.local-match-controls{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:17px;font-size:11px;color:#b9cdbc}
+.local-match-controls select,.local-match-controls button{min-height:30px;padding:5px 9px;border:1px solid #c3aa79a3;border-radius:6px;background:#19372a;color:#f3e4bf;font-size:11px;font-weight:700}
+.local-match-controls button{background:#d8b778;color:#173328}
+.local-match-controls .local-match-controls__secondary{background:transparent;color:#e2cb9c}
+.local-match-controls button:hover{filter:brightness(1.12)}
 .turn-pill{display:flex;align-items:center;gap:12px;background:#14392d;border:1px solid #6d9a714b;border-radius:11px;padding:10px 23px 10px 13px;min-width:135px;box-shadow:inset 0 1px #ffffff0c}
 .turn-pill__light{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle,#e3c889 0 24%,#8fac74 27% 50%,#3b654d 53%);box-shadow:0 0 19px #d9b66c77}
 .turn-pill small,.turn-pill strong{display:block}
@@ -100,6 +105,9 @@ button{cursor:pointer}
 .market-row__label span{font-size:9px;letter-spacing:.16em;font-weight:700}
 .market-row__label strong{font-size:31px;line-height:1.1}
 .market-row__label small{font-size:9px;color:#a7baa8;white-space:nowrap}
+.market-row__reserve-deck{width:90%;margin-top:5px;padding:5px 1px;border:1px solid #d8ba78a8;border-radius:5px;background:#d8ba7826;color:#f2d498;font-size:9px;font-weight:800;line-height:1.2}
+.market-row__reserve-deck:disabled{opacity:.4;cursor:not-allowed}
+.market-row__reserve-deck:not(:disabled):hover{background:#d8ba7850}
 .market-row__cards{min-width:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
 .market-card{--card-tone:#e4d4b9;--card-deep:#59786c;min-width:0;min-height:184px;display:flex;flex-direction:column;overflow:hidden;border-radius:9px;border:1px solid #e9dabe;background:var(--card-tone);color:#203329;text-align:left;padding:0;box-shadow:0 8px 20px #0004,inset 0 1px #fff9;transition:transform .2s,box-shadow .2s}
 .market-card:not(:disabled):hover{transform:translateY(-3px);box-shadow:0 13px 25px #0006}
@@ -161,6 +169,8 @@ button{cursor:pointer}
 .gem-action__submit{width:100%;padding:11px 12px;border:0;border-radius:7px;background:#d8b176;color:#193327;font-size:11px;font-weight:800;transition:background .2s}
 .gem-action__submit:not(:disabled):hover{background:#edca94}
 .gem-action__submit:disabled{background:#566a57;color:#b5c3af;cursor:not-allowed}
+.gem-action__pass{width:100%;margin-top:7px;padding:9px;border:1px solid #a8bd9a66;border-radius:7px;background:transparent;color:#c2d2b9;font-size:10px;font-weight:700}
+.gem-action__pass:disabled{opacity:.4;cursor:not-allowed}
 .gem-action__notice{min-height:30px;margin:12px 0 4px;font-size:10px;line-height:1.5;color:#e6d3ab}
 .gem-action__examples{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #ffffff1b;padding-top:11px}
 .gem-action__examples button{padding:0;border:0;background:none;color:#b9cbbb;text-decoration:underline;text-underline-offset:3px;font-size:10px}
