@@ -68,6 +68,29 @@ button{cursor:pointer}
 .identity-card__ready strong{color:#f1d49c}
 .identity-card__ready small{display:block;margin-top:7px;color:#aebfc7;font-size:11px;line-height:1.6}
 .identity-card__next{margin:19px 0 0;color:#9eacc1;font-size:11px;line-height:1.6}
+.identity-card__rooms{display:flex;flex-direction:column;gap:10px;margin-top:24px;padding-top:22px;border-top:1px solid #e8c18136}
+.identity-card__rooms h3{margin:0;color:#f2d8a4;font-size:17px}
+.identity-card__rooms p{margin:0 0 4px;color:#aebfc7;font-size:12px;line-height:1.6}
+.identity-card__rooms label{margin:8px 0 0}
+.identity-card__join{display:flex;gap:8px}
+.identity-card__join input{min-width:0;flex:1;letter-spacing:.14em;text-transform:uppercase}
+.identity-card__join button{flex:none}
+.identity-card__rooms .identity-card__error{margin:0;min-height:0}
+.waiting-room{max-width:1080px;margin:auto;padding:72px 24px;color:#f4f0e5}
+.waiting-room__heading h1{font-size:clamp(38px,5vw,58px);margin:12px 0}
+.waiting-room__heading p,.waiting-room__panel p{color:#afbdd0;line-height:1.6}
+.waiting-room__grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px}
+.waiting-room__panel,.waiting-room__error{padding:28px;border:1px solid #c9aa7459;border-radius:16px;background:linear-gradient(145deg,#1f2b43,#111a2e 75%)}
+.waiting-room__panel h2{margin:12px 0 18px}
+.waiting-room__code{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:17px 0;padding:12px 14px;border:1px solid #e8c18158;border-radius:9px;background:#0d1729}
+.waiting-room__code strong{color:#f1d49c;font-size:clamp(20px,3vw,31px);letter-spacing:.14em}
+.waiting-room__code button{padding:9px 12px;border:1px solid #d8b778;border-radius:7px;background:#d8b778;color:#142037;font-weight:800}
+.waiting-room__players{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
+.waiting-room__players li{display:flex;align-items:center;gap:12px;padding:11px;border:1px solid #ffffff20;border-radius:8px;background:#ffffff0a}
+.waiting-room__players small{margin-left:auto;color:#d8b778}
+.waiting-room__seat{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;background:#cda567;color:#172237;font-weight:900}
+.waiting-room__error{margin-top:28px;color:#ffb4a9}
+@media(max-width:700px){.waiting-room__grid{grid-template-columns:1fr}.waiting-room{padding:48px 18px}.waiting-room__panel{padding:22px}}
 @media(max-width:800px){.identity-page{grid-template-columns:1fr;gap:32px;max-width:570px;padding:54px 18px}.identity-page__intro h1{font-size:46px}.identity-card{padding:25px}}
 .rules-page{max-width:1120px;margin:0 auto;padding:42px 0 84px}
 .rules-page__hero{padding:12px 0 30px}

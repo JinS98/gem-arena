@@ -17,4 +17,4 @@
 
 대표 오류: `UNAUTHENTICATED`, `INVALID_NICKNAME`, `INVALID_ROOM_CODE`, `ROOM_NOT_FOUND`, `ROOM_FULL`, `ROOM_NOT_WAITING`, `NOT_ROOM_MEMBER`, `NOT_HOST`, `NOT_READY`, `NOT_YOUR_TURN`, `INVALID_ACTION`, `VERSION_CONFLICT`, `ACTION_ID_REUSED`, `GAME_FINISHED`. 클라이언트는 오류를 사용자에게 설명하고 서버 상태를 다시 구독한다.
 
-**현재 함수는 구현되지 않았으며 위 표는 설계 계약이다.**
+`createRoom`과 `joinRoom`은 20일차에 구현했다. 두 함수는 Firebase Auth 인증을 요구하며 `roomId`, `roomCode`, `seatIndex`를 반환한다. 오류는 Callable `HttpsError`의 `details.reason`에 `UNAUTHENTICATED`, `INVALID_NICKNAME`, `INVALID_ROOM_CODE`, `ROOM_NOT_FOUND`, `ROOM_FULL`, `ROOM_NOT_WAITING`, `ALREADY_IN_ROOM` 중 해당 값을 담는다. 그 외 함수는 이후 일차의 설계 계약이다.

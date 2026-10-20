@@ -56,7 +56,7 @@
 
 웹의 에뮬레이터 모드는 `apps/web/.env.emulator`의 데모 설정을 사용합니다. `http://localhost:5173/lobby`에서 익명 로그인과 닉네임 입력을 확인할 수 있습니다. 로그인 복원을 기다린 다음 필요할 때만 새 UID를 만들며, 닉네임은 Firebase Auth 프로필에 기본값으로 저장합니다. 같은 브라우저에서 새로고침하면 UID와 닉네임이 돌아옵니다. 브라우저 데이터를 지우거나 에뮬레이터를 재시작하면 기존 익명 계정을 복구할 수 없습니다. 실제 프로젝트에서는 Firebase Console에서 **Authentication → 로그인 방법 → 익명**을 활성화하고 `apps/web/.env`에 프로젝트 설정을 넣어야 합니다. 방마다 확정되는 닉네임은 20일차 `createRoom`/`joinRoom`에 전달하며, 입장 화면의 기본값은 방별 닉네임을 대신하지 않습니다.
 
-현재 Firestore 규칙은 모든 클라이언트 읽기·쓰기를 거부합니다. `emulatorHealth`는 로그인한 호출자에게만 응답하는 읽기 전용 연결 확인 함수입니다. 방 생성·참가와 서버 게임 API는 이후 일차에 구현합니다.
+현재 Firestore 규칙은 방 참가자에게 해당 방과 참가자 목록 읽기만 허용합니다. 초대 코드 색인 읽기와 모든 클라이언트 쓰기는 거부하며, 방 생성·참가는 `createRoom`/`joinRoom` Callable Function이 처리합니다.
 
 ## 문서
 
@@ -74,3 +74,16 @@
 4. 공개 배포 시 원작 명칭·이미지·카드 데이터의 권리를 확인하고 독자 자산을 사용합니다.
 
 [노션 기획서](https://app.notion.com/p/3fec883fa20281a9b445eac2b9e1ea5b)
+
+## 비공개 방 생성·참가 (20일차)
+
+에뮬레이터에서 확인할 때는 Firebase Console 설정이 필요하지 않습니다. `npm run emulators`와 `npm run dev:emulators`를 각각 실행한 뒤, 서로 다른 브라우저 프로필의 `/lobby`에서 방 생성과 코드 참가를 확인하세요. 개발 서버가 5173 대신 다른 포트를 표시하면 그 주소를 사용합니다. `npm run test:rooms`는 에뮬레이터를 종료한 상태에서 실행합니다.
+
+실제 Firebase 프로젝트에서 이 기능을 사용하려면 다음 순서로 준비합니다.
+
+1. Firebase Console → **Authentication → 로그인 방법**에서 **익명** 로그인이 활성화되어 있는지 확인합니다.
+2. **빌드 → Firestore Database → 데이터베이스 만들기**에서 기본 데이터베이스를 만듭니다. 처음 생성한다면 Standard edition, 프로덕션 모드를 선택하고 데이터 위치를 결정합니다. 현재 Functions 리전은 서울(`asia-northeast3`)입니다. 기존 데이터베이스가 있다면 다시 만들지 않습니다.
+3. Cloud Functions 배포에는 Firebase **Blaze 요금제**가 필요합니다. Firebase Console의 요금제에서 확인합니다.
+4. 로컬에서 `npm run build` 후 `firebase deploy --only functions,firestore:rules --project <PROJECT_ID>`로 Functions와 저장소의 `firestore.rules`를 함께 배포합니다. 실제 배포는 별도 요청 시 진행합니다. 배포한 규칙은 Console에서 직접 편집한 규칙을 덮어씁니다.
+
+참고: [Firestore 시작하기](https://firebase.google.com/docs/firestore/quickstart), [Functions 배포와 요금제](https://firebase.google.com/docs/functions/get-started), [규칙 배포](https://firebase.google.com/docs/rules/manage-deploy).

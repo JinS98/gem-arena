@@ -1,7 +1,8 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import type { User } from 'firebase/auth';
 import { ensureAnonymousSession, nicknameError, savePreferredNickname } from '../services/playerIdentity';
+import { createRoom, joinRoom, roomErrorMessage } from '../services/rooms';
 
 type SessionState =
   | { status: 'loading' }
@@ -23,12 +24,16 @@ function readableError(error: unknown): string {
 }
 
 export function LobbyPage() {
+  const navigate = useNavigate();
   const [session, setSession] = useState<SessionState>({ status: 'loading' });
   const [nickname, setNickname] = useState('');
   const [savedNickname, setSavedNickname] = useState('');
   const [formError, setFormError] = useState('');
   const [saving, setSaving] = useState(false);
   const [attempt, setAttempt] = useState(0);
+  const [roomCode, setRoomCode] = useState('');
+  const [roomError, setRoomError] = useState('');
+  const [roomBusy, setRoomBusy] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -65,6 +70,25 @@ export function LobbyPage() {
     }
   }
 
+  async function enterRoom(kind: 'create' | 'join') {
+    if (session.status !== 'ready' || roomBusy) return;
+    const error = nicknameError(nickname);
+    if (error) {
+      setFormError(error);
+      return;
+    }
+    setRoomError('');
+    setRoomBusy(true);
+    try {
+      const access = kind === 'create' ? await createRoom(nickname) : await joinRoom(roomCode, nickname);
+      navigate(`/rooms/${access.roomId}`);
+    } catch (error) {
+      setRoomError(roomErrorMessage(error));
+    } finally {
+      setRoomBusy(false);
+    }
+  }
+
   return <section className="identity-page">
     <div className="identity-page__intro">
       <span className="eyebrow">ENTER THE ARENA</span>
@@ -86,7 +110,17 @@ export function LobbyPage() {
           <button className="identity-card__submit" type="submit" disabled={saving || (nickname.trim() === savedNickname && Boolean(savedNickname))}>{saving ? '저장 중…' : savedNickname ? '닉네임 변경' : '닉네임 저장'}</button>
         </form>
         {savedNickname && <div className="identity-card__ready" role="status"><strong>{savedNickname}</strong>님, 입장 준비가 끝났습니다.<small>방을 만들거나 참가할 때 이 닉네임을 기본값으로 사용합니다. 방마다 변경할 수 있습니다.</small></div>}
-        <p className="identity-card__next">방 생성과 초대 코드 입장은 20일차 작업에서 연결됩니다.</p>
+        <div className="identity-card__rooms">
+          <h3>비공개 방</h3>
+          <p>닉네임을 입력한 뒤 방을 만들거나 받은 초대 코드로 참가하세요.</p>
+          <button type="button" className="identity-card__submit" onClick={() => enterRoom('create')} disabled={roomBusy}>새 방 만들기</button>
+          <label htmlFor="room-code">초대 코드</label>
+          <div className="identity-card__join">
+            <input id="room-code" value={roomCode} onChange={event => { setRoomCode(event.target.value.toUpperCase()); setRoomError(''); }} maxLength={8} autoCapitalize="characters" autoComplete="off" placeholder="8자리 코드" disabled={roomBusy} />
+            <button type="button" className="identity-card__secondary" onClick={() => enterRoom('join')} disabled={roomBusy}>방 참가</button>
+          </div>
+          {roomError && <p className="identity-card__error" role="alert">{roomError}</p>}
+        </div>
       </>}
     </div>
   </section>;

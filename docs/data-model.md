@@ -43,12 +43,13 @@
 ```text
 rooms/{roomId}                      방 상태·멤버십
 rooms/{roomId}/players/{uid}        공개 프로필·준비 상태
+roomCodes/{roomCode}                서버 전용 초대 코드 색인
 rooms/{roomId}/game/publicState     공개 시장·턴·점수
 rooms/{roomId}/privateState/server  서버 전용 덱·전체 게임 상태
 rooms/{roomId}/privatePlayers/{uid} 개인 비공개 예약 카드
 rooms/{roomId}/actions/{actionId}   멱등성 기록
 ```
 
-클라이언트는 `privateState/server` 읽기 불가. `privatePlayers/{uid}`는 해당 uid만 읽기 가능. 서버 Admin SDK는 Security Rules를 우회하므로 인증·인가를 함수에서 검증합니다.
+현재 클라이언트는 방 참가자인 경우 방과 참가자 문서만 읽을 수 있습니다. `privateState/server` 읽기 거부와 `privatePlayers/{uid}`의 본인 전용 읽기는 해당 기능을 구현할 때 규칙에 추가합니다. 서버 Admin SDK는 Security Rules를 우회하므로 인증·인가를 함수에서 검증합니다.
 
-1일차 요구사항에 따라 방에는 방장 UID·단계(대기/진행/종료)·참가 순서가 필요합니다. 플레이어에는 준비 상태와 기권 상태가 필요합니다. 실제 필드와 전이 로직은 구현 일차에 정의하며, 위 경로만으로 권한이 보장되는 것은 아닙니다.
+20일차 구현에서 방 문서는 `roomCode`, `hostUid`, `status`, `playerOrder`, `capacity`, `createdAt`, `updatedAt`을 저장합니다. 참가자 문서는 `uid`, `nickname`, `seatIndex`, `ready`, `forfeited`, `joinedAt`을 저장합니다. `roomCodes/{roomCode}`는 `roomId`를 가리키며 클라이언트가 직접 읽을 수 없습니다. 방과 참가자 문서도 해당 방의 참가자에게만 읽기를 허용합니다. 준비·시작 전이는 21일차에 구현합니다.

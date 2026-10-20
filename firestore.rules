@@ -1,7 +1,22 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 기본값: 모든 직접 접근 거부. 20~27일차에 최소 권한 규칙 작성.
+    function roomMember(roomId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
+    }
+
+    match /rooms/{roomId} {
+      allow get: if roomMember(roomId);
+      allow list, write: if false;
+
+      match /players/{uid} {
+        allow get, list: if roomMember(roomId);
+        allow write: if false;
+      }
+    }
+
+    // 초대 코드 인덱스와 게임 비공개 상태는 서버에서만 접근한다.
     match /{document=**} { allow read, write: if false; }
   }
 }
