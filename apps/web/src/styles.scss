@@ -76,6 +76,8 @@ button{cursor:pointer}
 .player-panel__inventory{display:flex;align-items:center;justify-content:space-between;border-top:1px solid #ffffff16;margin-top:13px;padding-top:10px;font-size:10px;color:#b5c7b8}
 .player-panel__inventory strong{color:#f1d9a9;font-size:13px}
 .player-panel__inventory small{font-weight:400;color:#8ca794}
+.player-panel__held{display:flex;gap:4px;flex-wrap:wrap;margin-top:8px}
+.player-panel__held>span{display:flex;align-items:center;gap:2px;background:#ffffff0c;padding:4px;border-radius:4px;color:#e5f0e5;font-size:10px;font-weight:700}
 .side-card{border:1px solid #ffffff16;background:#11271f;border-radius:13px;padding:19px 17px;box-shadow:0 8px 18px #0000001e}
 .turn-help{margin-top:17px;background:linear-gradient(135deg,#22392e,#172b24)}
 .turn-help h2{font-size:15px;line-height:1.35;margin-top:10px}
@@ -134,14 +136,47 @@ button{cursor:pointer}
 .side-card__heading{display:flex;align-items:flex-start;justify-content:space-between}
 .side-card__symbol{font-size:27px;line-height:1;color:#d4ae6c}
 .gem-bank__list{list-style:none;margin:17px 0 0;padding:0;display:grid;gap:2px}
-.gem-bank__item{display:flex;align-items:center;gap:10px;padding:9px 1px;border-bottom:1px solid #ffffff12;font-size:11px;color:#d6e2d7}
+.gem-bank__item{border-bottom:1px solid #ffffff12;font-size:11px;color:#d6e2d7}
 .gem-bank__item:last-child{border:0}
-.gem-bank__item strong{margin-left:auto;font-size:15px;color:#f2dcad}
+.gem-bank__button{width:100%;display:flex;align-items:center;gap:10px;padding:9px 5px;border:1px solid transparent;border-radius:7px;background:transparent;color:#d6e2d7;text-align:left;transition:background .18s,border-color .18s}
+.gem-bank__button:not(:disabled):hover{background:#ffffff12}
+.gem-bank__button--selected{background:#d8b77824;border-color:#d8b778bb}
+.gem-bank__button:disabled{opacity:.5;cursor:not-allowed}
+.gem-bank__button--static{opacity:.8}
+.gem-bank__button strong{margin-left:auto;font-size:15px;color:#f2dcad}
+.gem-action{margin-top:16px;border-color:#d7b57a55;background:linear-gradient(145deg,#1a3529,#10271f)}
+.gem-action h2{margin-top:6px}
+.gem-action__intro,.gem-action__hint{font-size:11px;line-height:1.6;color:#bacdbb}
+.gem-action__intro{margin:12px 0 16px}
+.gem-action__hint{margin:12px 0}
+.gem-action__modes{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:3px;border-radius:8px;background:#071b16}
+.gem-action__modes button{border:0;border-radius:6px;padding:9px 4px;background:transparent;color:#9eb5a3;font-size:10px;font-weight:700}
+.gem-action__modes button.is-active{background:#b99d6e;color:#122c22}
+.gem-action__selection{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 0;border-top:1px solid #ffffff18;font-size:10px;color:#9fb6a5}
+.gem-action__selection strong{color:#e9d3a4;text-align:right;font-size:10px}
+.gem-action__submit{width:100%;padding:11px 12px;border:0;border-radius:7px;background:#d8b176;color:#193327;font-size:11px;font-weight:800;transition:background .2s}
+.gem-action__submit:not(:disabled):hover{background:#edca94}
+.gem-action__submit:disabled{background:#566a57;color:#b5c3af;cursor:not-allowed}
+.gem-action__notice{min-height:30px;margin:12px 0 4px;font-size:10px;line-height:1.5;color:#e6d3ab}
+.gem-action__examples{display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid #ffffff1b;padding-top:11px}
+.gem-action__examples button{padding:0;border:0;background:none;color:#b9cbbb;text-decoration:underline;text-underline-offset:3px;font-size:10px}
+.gem-action__examples button:hover{color:#f4d6a3}
+.gem-action__return-list{display:grid;gap:5px;margin:12px 0}
+.gem-action__return-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid #ffffff14;font-size:10px}
+.gem-action__return-row>span:nth-child(2){flex:1}
+.gem-action__return-row small{display:block;color:#8fab99;font-size:9px}
+.gem-action__return-row button{width:22px;height:22px;display:grid;place-items:center;padding:0;border:1px solid #b5bfaa6b;border-radius:5px;background:#ffffff12;color:#fff;font-size:14px;line-height:1}
+.gem-action__return-row button:disabled{opacity:.3;cursor:not-allowed}
+.gem-action__return-row strong{min-width:10px;text-align:center}
+.gem-action__complete{padding:17px 10px;margin:14px 0 2px;border-radius:8px;background:#b2ca9c1c;text-align:center}
+.gem-action__complete>span{display:grid;place-items:center;width:27px;height:27px;margin:0 auto 8px;border-radius:50%;background:#c7dca8;color:#143022;font-weight:800}
+.gem-action__complete strong{font-size:12px;color:#e8eecd}
+.gem-action__complete p{font-size:10px;line-height:1.6;color:#b7c7aa;margin:7px 0 0}
 .legend-card{margin-top:16px}
 .legend-card h2{margin-bottom:16px}
 .legend-card__row{display:flex;gap:10px;border-top:1px solid #ffffff14;padding:11px 0}
 .legend-card__row span{color:#c6a878;font-size:10px;font-weight:800}
 .legend-card__row p{margin:0;font-size:11px;color:#b8cbbd;line-height:1.6}
-@media(max-width:1280px){.site-main{padding-left:26px;padding-right:26px}.site-header__inner{padding:0 26px}.game-layout{grid-template-columns:210px minmax(0,1fr);gap:18px}.bank-column{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px}.legend-card{margin-top:0}.gem-bank__list{grid-template-columns:repeat(3,1fr);column-gap:12px}.noble-card__emblem{display:none}}
-@media(max-width:800px){.site-header__tag{display:none}.site-header nav{gap:14px;font-size:11px}.site-main{padding:0 18px 48px}.site-header__inner{padding:0 18px}.game-layout{grid-template-columns:minmax(0,1fr)}.players-column{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}.column-heading{grid-column:1/-1;height:auto;margin:0 0 8px}.players-list{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))}.turn-help{grid-column:1/-1;margin-top:2px}.board-column{grid-row:2}.bank-column{grid-column:auto}.noble-card{min-height:75px}.welcome-page__decoration{opacity:.28;right:-10%}}
-@media(max-width:600px){.site-header__inner{min-height:62px;gap:10px}.brand{font-size:13px;gap:8px}.brand__mark{width:26px;height:26px;font-size:15px}.site-header nav a:first-child,.site-header nav a:nth-child(2){display:none}.site-header nav a{padding:21px 0}.site-main{padding:0 12px 40px}.game-page{padding-top:18px}.game-heading{align-items:flex-start;margin:18px 0 24px}.game-heading h1{font-size:34px}.game-heading p{font-size:11px;max-width:220px;line-height:1.5}.turn-pill{min-width:96px;padding:7px 9px;gap:6px}.turn-pill__light{width:20px;height:20px}.players-list{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}.player-panel{flex:0 0 190px;scroll-snap-align:start}.nobles-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.market-row{grid-template-columns:43px minmax(0,1fr);gap:5px}.market-row__label strong{font-size:23px}.market-row__label span,.market-row__label small{font-size:7px}.market-row__cards{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 10px;gap:8px}.market-card{flex:0 0 138px;scroll-snap-align:start;min-height:174px}.bank-column{grid-template-columns:1fr}.gem-bank__list{grid-template-columns:repeat(2,1fr)}.welcome-page{padding:70px 12px}.welcome-page p{font-size:14px}.welcome-page__decoration{width:70vw;height:70vw;right:-18%;top:42%}}
+@media(max-width:1280px){.site-main{padding-left:26px;padding-right:26px}.site-header__inner{padding:0 26px}.game-layout{grid-template-columns:210px minmax(0,1fr);gap:18px}.bank-column{grid-column:1/-1;display:grid;grid-template-columns:1fr 1fr;gap:16px}.legend-card,.gem-action{margin-top:0}.gem-bank__list{grid-template-columns:repeat(3,1fr);column-gap:12px}.noble-card__emblem{display:none}}
+@media(max-width:800px){.site-header__tag{display:none}.site-header nav{gap:14px;font-size:11px}.site-main{padding:0 18px 48px}.site-header__inner{padding:0 18px}.game-layout{grid-template-columns:minmax(0,1fr)}.players-column{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}.column-heading{grid-column:1/-1;height:auto;margin:0 0 8px}.players-list{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr))}.turn-help{grid-column:1/-1;margin-top:2px}.bank-column{grid-column:auto;grid-row:2}.board-column{grid-row:3}.noble-card{min-height:75px}.welcome-page__decoration{opacity:.28;right:-10%}}
+@media(max-width:600px){.site-header__inner{min-height:62px;gap:10px}.brand{font-size:13px;gap:8px}.brand__mark{width:26px;height:26px;font-size:15px}.site-header nav a:first-child,.site-header nav a:nth-child(2){display:none}.site-header nav a{padding:21px 0}.site-main{padding:0 12px 40px}.game-page{padding-top:18px}.game-heading{align-items:flex-start;margin:18px 0 24px}.game-heading h1{font-size:34px}.game-heading p{font-size:11px;max-width:220px;line-height:1.5}.turn-pill{min-width:96px;padding:7px 9px;gap:6px}.turn-pill__light{width:20px;height:20px}.players-list{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:6px}.player-panel{flex:0 0 190px;scroll-snap-align:start}.player-panel__held{gap:2px}.player-panel__held>span{padding:2px;font-size:9px}.nobles-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.market-row{grid-template-columns:43px minmax(0,1fr);gap:5px}.market-row__label strong{font-size:23px}.market-row__label span,.market-row__label small{font-size:7px}.market-row__cards{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;padding:2px 2px 10px;gap:8px}.market-card{flex:0 0 138px;scroll-snap-align:start;min-height:174px}.bank-column{grid-template-columns:1fr}.gem-bank__list{grid-template-columns:repeat(2,1fr)}.welcome-page{padding:70px 12px}.welcome-page p{font-size:14px}.welcome-page__decoration{width:70vw;height:70vw;right:-18%;top:42%}}

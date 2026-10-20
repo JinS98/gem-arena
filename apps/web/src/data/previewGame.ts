@@ -40,7 +40,7 @@ export const previewGame: {
     },
     {
       id: 'player-2', name: '서윤', initials: '서', score: 5, isLocal: false,
-      gems: { white: 0, blue: 2, green: 1, red: 0, black: 1, gold: 1 },
+      gems: { white: 0, blue: 1, green: 1, red: 0, black: 1, gold: 1 },
       bonuses: { white: 1, blue: 0, green: 1, red: 2, black: 1 },
       purchasedCount: 5, reservedCount: 2,
     },
@@ -51,7 +51,7 @@ export const previewGame: {
       purchasedCount: 7, reservedCount: 0,
     },
   ],
-  bank: { white: 3, blue: 3, green: 2, red: 2, black: 3, gold: 4 },
+  bank: { white: 3, blue: 4, green: 2, red: 2, black: 3, gold: 4 },
   nobles: [NOBLES[0], NOBLES[3], NOBLES[6], NOBLES[9]],
   market: {
     1: cards(['L1-WHITE-05', 'L1-BLUE-03', 'L1-GREEN-04', 'L1-RED-07']),

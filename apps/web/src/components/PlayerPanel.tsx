@@ -4,8 +4,8 @@ import { GemIcon, gemNames } from './GemIcon';
 
 const colors: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 
-export function PlayerPanel({ player, isCurrent }: { player: PreviewPlayer; isCurrent: boolean }) {
-  const totalGems = Object.values(player.gems).reduce((sum, count) => sum + count, 0);
+export function PlayerPanel({ player, isCurrent, gems = player.gems }: { player: PreviewPlayer; isCurrent: boolean; gems?: PreviewPlayer['gems'] }) {
+  const totalGems = Object.values(gems).reduce((sum, count) => sum + count, 0);
   return (
     <article className={`player-panel${isCurrent ? ' player-panel--current' : ''}`} aria-label={`${player.name}, ${player.score}점${isCurrent ? ', 현재 차례' : ''}`}>
       <div className="player-panel__top">
@@ -27,9 +27,11 @@ export function PlayerPanel({ player, isCurrent }: { player: PreviewPlayer; isCu
         ))}
       </div>
       {player.isLocal && (
-        <div className="player-panel__inventory">
+        <><div className="player-panel__inventory">
           <span>보유 보석</span><strong>{totalGems} <small>/ 10</small></strong>
-        </div>
+        </div><div className="player-panel__held" aria-label="내 보유 보석">
+          {([...colors, 'gold'] as const).map((color) => <span key={color} title={`${gemNames[color]} ${gems[color]}개`}><GemIcon color={color} small />{gems[color]}</span>)}
+        </div></>
       )}
     </article>
   );
