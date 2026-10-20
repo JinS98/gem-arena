@@ -18,9 +18,9 @@ export function GemActionPanel() {
 
   return (
     <section className="side-card gem-action" aria-labelledby="gem-action-title">
-      <span className="eyebrow">GEM PRACTICE</span>
-      <h2 id="gem-action-title">보석 획득 연습</h2>
-      <p className="gem-action__intro">샘플 보석을 선택해 규칙을 확인하세요. 실제 게임 상태는 바뀌지 않습니다.</p>
+      <span className="eyebrow">LOCAL PRACTICE</span>
+      <h2 id="gem-action-title">턴 연습</h2>
+      <p className="gem-action__intro">보석 획득 또는 카드 행동 한 가지를 연습하세요. 실제 대전에는 반영되지 않습니다.</p>
 
       {phase === 'selecting' && <>
         <div className="gem-action__modes" role="group" aria-label="보석 획득 방식">
@@ -56,7 +56,7 @@ export function GemActionPanel() {
         <button className="gem-action__submit" type="button" onClick={confirmReturn} disabled={selectedReturnCount !== excess}>선택한 보석 반환</button>
       </>}
 
-      {phase === 'completed' && <div className="gem-action__complete"><span aria-hidden="true">✓</span><strong>연습 턴 완료</strong><p>획득한 보석과 은행 수량이 반영됐습니다.</p></div>}
+      {phase === 'completed' && <div className="gem-action__complete"><span aria-hidden="true">✓</span><strong>연습 턴 완료</strong><p>샘플 상태에 이번 행동이 반영됐습니다.</p></div>}
 
       <p className="gem-action__notice" role="status" aria-live="polite">{notice || `현재 보유 ${gemCount(gems)} / 10개`}</p>
       <div className="gem-action__examples">

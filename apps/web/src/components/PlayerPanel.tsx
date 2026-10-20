@@ -15,7 +15,7 @@ export function PlayerPanel({ player, isCurrent, gems = player.gems }: { player:
             <strong>{player.name}</strong>
             {player.isLocal && <span className="player-panel__self">나</span>}
           </div>
-          <span className="player-panel__status">{isCurrent ? '현재 차례' : `${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약`}</span>
+          <span className="player-panel__status">{isCurrent ? `현재 차례 · ${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약` : `${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약`}</span>
         </div>
         <div className="player-panel__score"><strong>{player.score}</strong><span>점</span></div>
       </div>

@@ -1,5 +1,14 @@
 import { create } from 'zustand';
-import type { DevelopmentCard } from '@gem-arena/engine';
-type CardId = DevelopmentCard['id'];
-interface UIState { selectedCardId: CardId | null; selectCard: (id: CardId | null) => void }
-export const useGameUIStore = create<UIState>(set => ({selectedCardId: null, selectCard: id => set({selectedCardId:id})}));
+type CardSource = 'market' | 'reserved';
+interface SelectedCard { id: string; source: CardSource }
+interface UIState {
+  selectedCard: SelectedCard | null;
+  selectCard: (id: string, source: CardSource) => void;
+  closeCard: () => void;
+}
+
+export const useGameUIStore = create<UIState>((set) => ({
+  selectedCard: null,
+  selectCard: (id, source) => set({ selectedCard: { id, source } }),
+  closeCard: () => set({ selectedCard: null }),
+}));
