@@ -11,6 +11,7 @@ export function RoomPage() {
   const [myUid, setMyUid] = useState('');
   const [room, setRoom] = useState<WaitingRoom | null>(null);
   const [error, setError] = useState('');
+  const [roomRetry, setRoomRetry] = useState(0);
   const [copied, setCopied] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState('');
@@ -41,7 +42,7 @@ export function RoomPage() {
       cancelled = true;
       unsubscribeRoom();
     };
-  }, [roomId]);
+  }, [roomId, roomRetry]);
 
   async function copyCode() {
     if (!room) return;
@@ -107,7 +108,7 @@ export function RoomPage() {
 
   return <section className="waiting-room">
     <div className="waiting-room__heading"><span className="eyebrow">PRIVATE ROOM</span><h1>대기실</h1><p>초대 코드를 친구에게 알려주면 같은 방에 참가할 수 있습니다.</p></div>
-    {error && <div className="waiting-room__error" role="alert">{error}<br /><Link to="/lobby">로비로 돌아가기</Link></div>}
+    {error && <div className="waiting-room__error" role="alert"><p>{error}</p><div className="waiting-room__error-actions"><button type="button" onClick={() => setRoomRetry(value => value + 1)}>방 다시 불러오기</button><Link to="/lobby">로비로 돌아가기</Link></div></div>}
     {!error && !room && <p role="status">방 정보를 불러오고 있습니다…</p>}
     {!error && room && <div className="waiting-room__grid">
       <div className="waiting-room__panel">

@@ -8,6 +8,7 @@ import { nicknameError, normalizeNickname } from './nickname';
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const codePattern = /^[A-HJ-NP-Z2-9]{8}$/;
 const roomCapacity = 4;
+const roomRequestTimeoutMs = 8000;
 
 class RoomActionError extends Error {
   details: { reason: string };
@@ -26,6 +27,37 @@ function validNickname(value: string): string {
 function generateRoomCode(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(8));
   return Array.from(bytes, byte => alphabet[byte & 31]).join('');
+}
+
+async function ensureFirestoreEmulator(): Promise<void> {
+  if (import.meta.env.VITE_USE_FIREBASE_EMULATORS !== 'true') return;
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 2500);
+  try {
+    await fetch('http://127.0.0.1:8080/', { mode: 'no-cors', cache: 'no-store', signal: controller.signal });
+  } catch {
+    throw new RoomActionError('EMULATOR_UNAVAILABLE');
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export async function withRoomRequestTimeout<T>(request: Promise<T>): Promise<T> {
+  let timer: number | undefined;
+  try {
+    return await Promise.race([request, new Promise<T>((_, reject) => {
+      timer = window.setTimeout(() => reject(new RoomActionError('REQUEST_TIMEOUT')), roomRequestTimeoutMs);
+    })]);
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+export function isRoomConnectionError(error: unknown): boolean {
+  const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
+  const details = error && typeof error === 'object' && 'details' in error ? error.details : null;
+  const reason = details && typeof details === 'object' && 'reason' in details ? details.reason : null;
+  return code === 'unavailable' || reason === 'EMULATOR_UNAVAILABLE' || reason === 'REQUEST_TIMEOUT';
 }
 
 export interface RoomAccess {
@@ -94,6 +126,7 @@ async function existingMemberAccess(roomRef: DocumentReference, code: string, ui
 
 export async function createRoom(nickname: string): Promise<RoomAccess> {
   const name = validNickname(nickname);
+  await ensureFirestoreEmulator();
   const uid = (await ensureAnonymousSession()).uid;
   const { db } = getFirebase();
   const roomCode = generateRoomCode();
@@ -113,6 +146,7 @@ export async function createRoom(nickname: string): Promise<RoomAccess> {
 export async function joinRoom(roomCode: string, nickname: string): Promise<RoomAccess> {
   const code = roomCode.trim().toUpperCase();
   if (!codePattern.test(code)) throw new RoomActionError('INVALID_ROOM_CODE');
+  await ensureFirestoreEmulator();
   const uid = (await ensureAnonymousSession()).uid;
   const roomRef = doc(getFirebase().db, 'rooms', code);
   if (nicknameError(nickname)) {
@@ -178,6 +212,8 @@ export function roomErrorMessage(error: unknown): string {
   const details = error && typeof error === 'object' && 'details' in error ? error.details : null;
   const reason = details && typeof details === 'object' && 'reason' in details ? details.reason : null;
   switch (reason) {
+    case 'EMULATOR_UNAVAILABLE': return '로컬 Firestore 에뮬레이터에 연결할 수 없습니다. npm run emulators를 실행한 뒤 다시 시도해 주세요.';
+    case 'REQUEST_TIMEOUT': return '방 요청이 8초 넘게 응답하지 않았습니다. 연결을 확인한 뒤 같은 버튼으로 결과를 다시 확인해 주세요.';
     case 'ROOM_CODE_COLLISION': return '초대 코드를 만들지 못했습니다. 다시 시도해 주세요.';
     case 'ROOM_UNAVAILABLE': return '방을 찾지 못했거나, 정원이 찼거나, 이미 시작된 방입니다. 코드를 확인해 주세요.';
     case 'INVALID_NICKNAME': return '닉네임은 앞뒤 공백을 제외하고 2~16자로 입력해 주세요.';

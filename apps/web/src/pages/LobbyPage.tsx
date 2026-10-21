@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import type { User } from 'firebase/auth';
 import { ensureAnonymousSession, nicknameError, savePreferredNickname } from '../services/playerIdentity';
-import { createRoom, joinRoom, roomErrorMessage } from '../services/rooms';
+import { createRoom, isRoomConnectionError, joinRoom, roomErrorMessage, withRoomRequestTimeout,
+  type RoomAccess } from '../services/rooms';
 
 type SessionState =
   | { status: 'loading' }
@@ -20,6 +21,10 @@ function readableError(error: unknown): string {
   if (code === 'auth/operation-not-allowed') {
     return 'Firebase Authentication의 로그인 방법에서 익명 로그인을 활성화해 주세요.';
   }
+  const details = error && typeof error === 'object' && 'details' in error ? error.details : null;
+  if (details && typeof details === 'object' && 'reason' in details && details.reason === 'REQUEST_TIMEOUT') {
+    return '익명 로그인 응답이 지연되고 있습니다. 연결을 확인한 뒤 다시 시도해 주세요.';
+  }
   return '익명 로그인에 실패했습니다. 연결 상태와 Firebase 익명 인증 설정을 확인한 뒤 다시 시도해 주세요.';
 }
 
@@ -34,10 +39,11 @@ export function LobbyPage() {
   const [roomCode, setRoomCode] = useState('');
   const [roomError, setRoomError] = useState('');
   const [roomBusy, setRoomBusy] = useState(false);
+  const pendingRoomRequest = useRef<{ kind: 'create' | 'join'; promise: Promise<RoomAccess> } | null>(null);
 
   useEffect(() => {
     let active = true;
-    ensureAnonymousSession().then(user => {
+    withRoomRequestTimeout(ensureAnonymousSession()).then(user => {
       if (!active) return;
       setSession({ status: 'ready', user });
       const restored = user.displayName ?? '';
@@ -60,7 +66,7 @@ export function LobbyPage() {
     setSaving(true);
     setFormError('');
     try {
-      const saved = await savePreferredNickname(session.user, nickname);
+      const saved = await withRoomRequestTimeout(savePreferredNickname(session.user, nickname));
       setNickname(saved);
       setSavedNickname(saved);
     } catch {
@@ -80,10 +86,21 @@ export function LobbyPage() {
     setRoomError('');
     setRoomBusy(true);
     try {
-      const access = kind === 'create' ? await createRoom(nickname) : await joinRoom(roomCode, nickname);
+      let pending = pendingRoomRequest.current;
+      if (!pending || pending.kind !== kind) {
+        pending = { kind, promise: kind === 'create' ? createRoom(nickname) : joinRoom(roomCode, nickname) };
+        pendingRoomRequest.current = pending;
+        const current = pending;
+        void pending.promise.catch(() => {
+          if (pendingRoomRequest.current === current) pendingRoomRequest.current = null;
+        });
+      }
+      const access = await withRoomRequestTimeout(pending.promise);
       navigate(`/rooms/${access.roomId}`);
     } catch (error) {
-      setRoomError(roomErrorMessage(error));
+      const message = roomErrorMessage(error);
+      setRoomError(message);
+      if (isRoomConnectionError(error)) window.alert(message);
     } finally {
       setRoomBusy(false);
     }
@@ -110,10 +127,10 @@ export function LobbyPage() {
           <button className="identity-card__submit" type="submit" disabled={saving || (nickname.trim() === savedNickname && Boolean(savedNickname))}>{saving ? '저장 중…' : savedNickname ? '닉네임 변경' : '닉네임 저장'}</button>
         </form>
         {savedNickname && <div className="identity-card__ready" role="status"><strong>{savedNickname}</strong>님, 입장 준비가 끝났습니다.<small>방을 만들거나 참가할 때 이 닉네임을 기본값으로 사용합니다. 방마다 변경할 수 있습니다.</small></div>}
-        <div className="identity-card__rooms">
+        <div className="identity-card__rooms" aria-busy={roomBusy}>
           <h3>비공개 방</h3>
           <p>닉네임을 입력한 뒤 방을 만들거나 받은 초대 코드로 참가하세요.</p>
-          <button type="button" className="identity-card__submit" onClick={() => enterRoom('create')} disabled={roomBusy}>새 방 만들기</button>
+          <button type="button" className="identity-card__submit" onClick={() => enterRoom('create')} disabled={roomBusy}>{roomBusy ? '방 요청 중…' : '새 방 만들기'}</button>
           <label htmlFor="room-code">초대 코드</label>
           <div className="identity-card__join">
             <input id="room-code" value={roomCode} onChange={event => { setRoomCode(event.target.value.toUpperCase()); setRoomError(''); }} maxLength={8} autoCapitalize="characters" autoComplete="off" placeholder="8자리 코드" disabled={roomBusy} />

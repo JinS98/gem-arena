@@ -4,8 +4,9 @@ import { GemIcon, gemNames } from './GemIcon';
 
 const colors: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 
-export function PlayerPanel({ player, isCurrent, forfeited = false, gems = player.gems, bonusAnimation, gemAnimation, scoreAnimation }: {
+export function PlayerPanel({ player, isCurrent, forfeited = false, gems = player.gems, showGemNames = false, bonusAnimation, gemAnimation, scoreAnimation }: {
   player: PreviewPlayer; isCurrent: boolean; forfeited?: boolean; gems?: PreviewPlayer['gems'];
+  showGemNames?: boolean;
   bonusAnimation?: { color: GemColor; previousCount: number; phase: 'flying' | 'arrived' };
   gemAnimation?: { previous: Inventory; arrived: Inventory; phase: 'flying' | 'arrived' };
   scoreAnimation?: { previous: number; phase: 'flying' | 'arrived' };
@@ -42,7 +43,7 @@ export function PlayerPanel({ player, isCurrent, forfeited = false, gems = playe
             <span>보유 보석</span><strong>{displayedGems} <small>/ 10</small></strong>
           </div>
           <div className="player-panel__held" aria-label={`${player.name} 보유 보석`}>
-            {([...colors, 'gold'] as const).map((color) => <span className={`gem-box gem-box--${color}${gemAnimation && gemAnimation.arrived[color] > 0 ? ' player-panel__held--arrived' : ''}`} data-held-color={color} key={color} title={`${gemNames[color]} ${gems[color]}개`}><GemIcon color={color} small /><span className="player-panel__held-count" key={gemAnimation?.arrived[color] ?? 0}>{gemAnimation && gemAnimation.phase === 'flying' ? gemAnimation.previous[color] + gemAnimation.arrived[color] : gems[color]}</span></span>)}
+            {([...colors, 'gold'] as const).map((color) => <span className={`gem-box gem-box--${color}${gemAnimation && gemAnimation.arrived[color] > 0 ? ' player-panel__held--arrived' : ''}`} data-held-color={color} key={color} title={`${gemNames[color]} ${gems[color]}개`}><GemIcon color={color} small />{showGemNames && <span className="player-panel__gem-name">{gemNames[color]}</span>}<span className="player-panel__held-count" key={gemAnimation?.arrived[color] ?? 0}>{gemAnimation && gemAnimation.phase === 'flying' ? gemAnimation.previous[color] + gemAnimation.arrived[color] : gems[color]}</span></span>)}
           </div>
         </div>
       </div>

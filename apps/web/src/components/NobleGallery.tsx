@@ -19,6 +19,8 @@ export function NobleGallery({ nobles, eligibleIds = [], onChoose }: {
       <div className="nobles-grid">
         {nobles.map((noble, index) => {
           const portraitIndex = Math.max(0, NOBLES.findIndex((entry) => entry.id === noble.id)) % noblePortraits.length;
+          const requirements = CARD_COLORS.filter(color => noble.requirements[color] > 0)
+            .map(color => `${gemNames[color]} 할인 ${noble.requirements[color]}`).join(', ');
           const details = <>
             <img className="noble-card__portrait" src={noblePortraits[portraitIndex]} alt="" loading="lazy" />
             <div className="noble-card__body">
@@ -34,8 +36,8 @@ export function NobleGallery({ nobles, eligibleIds = [], onChoose }: {
           return onChoose ? <button type="button" className="noble-card noble-card--choice" key={noble.id}
             data-noble-id={noble.id}
             disabled={!eligibleIds.includes(noble.id)} onClick={() => onChoose(noble.id)}
-            aria-label={`귀족 ${index + 1} 선택, ${noble.points}점`}>{details}</button>
-            : <article className="noble-card" data-noble-id={noble.id} key={noble.id} aria-label={`귀족 ${index + 1}, ${noble.points}점`}>{details}</article>;
+            aria-label={`귀족 ${index + 1} 선택, ${noble.points}점, 필요 조건 ${requirements}`}>{details}</button>
+            : <article className="noble-card" data-noble-id={noble.id} key={noble.id} aria-label={`귀족 ${index + 1}, ${noble.points}점, 필요 조건 ${requirements}`}>{details}</article>;
         })}
       </div>
     </section>
