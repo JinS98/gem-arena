@@ -99,7 +99,23 @@ try {
   await command('Page.reload');
   await waitFor(() => evaluate("document.body?.innerText.includes('내 예약 카드') && document.body?.innerText.includes('보석 은행')"), '게임판 새로고침 복원');
   assert.equal((await roomRef.get()).data().playerOrder[0], uid);
-  console.log(`Chrome 동일 UID의 새로고침·초대 코드 재입장·게임판 복원 통과 (${roomCode})`);
+  const serverRef = roomRef.collection('privateState').doc('server');
+  await serverRef.update({ turnIndex: 0 });
+  await gameRef.update({ turnIndex: 0 });
+  await waitFor(() => evaluate("Array.from(document.querySelectorAll('.market-row__reserve-deck')).some(button => !button.disabled)"),
+    '내 차례 행동 버튼');
+  await evaluate(`(() => {
+    const button = Array.from(document.querySelectorAll('.market-row__reserve-deck'))
+      .find(candidate => !candidate.disabled);
+    button.click();
+    button.click();
+    return true;
+  })()`);
+  await waitFor(async () => (await serverRef.get()).data().version === 1, '중복 클릭 행동 확정');
+  assert.equal((await gameRef.get()).data().version, 1);
+  assert.equal((await gameRef.get()).data().players[uid].reservedCount, 1);
+  assert.equal((await roomRef.collection('actionReceipts').doc(uid).collection('actions').get()).size, 1);
+  console.log(`Chrome 동일 UID의 새로고침·재입장·게임판 복원·연속 클릭 1회 처리 통과 (${roomCode})`);
 } finally {
   socket.close();
 }

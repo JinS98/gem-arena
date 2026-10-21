@@ -142,6 +142,36 @@ try {
   assert.deepEqual((await serverRef.get()).data().winnerIds, [others[1].user.uid]);
   assert.equal((await playing.get()).data().status, 'finished');
   assert.equal((await current.leave({ roomId: playingCode })).data.status, 'forfeited');
+  const raceCode = code();
+  const raceRoom = await makeRoom(raceCode, [a, b], 'playing');
+  const raceServer = raceRoom.collection('privateState').doc('server');
+  const raceInitial = (await raceServer.get()).data();
+  const raceActor = [a, b].find(member =>
+    member.user.uid === raceInitial.playerOrder[raceInitial.turnIndex]);
+  const raceRequest = { roomId: raceCode, actionId: `race-${randomBytes(8).toString('hex')}`,
+    expectedVersion: 0, action: { type: 'TAKE_GEMS', colors: ['white', 'blue', 'green'] } };
+  const [actionOutcome, leaveOutcome] = await Promise.allSettled([
+    raceActor.submit(raceRequest), raceActor.leave({ roomId: raceCode }),
+  ]);
+  assert.equal(leaveOutcome.status, 'fulfilled');
+  assert.equal(leaveOutcome.value.data.status, 'forfeited');
+  const actionCommitted = actionOutcome.status === 'fulfilled';
+  if (!actionCommitted) {
+    assert.equal(actionOutcome.reason.details?.reason, 'NOT_ROOM_MEMBER');
+  }
+  const expectedVersion = actionCommitted ? 2 : 1;
+  assert.equal((await raceServer.get()).data().version, expectedVersion);
+  assert.equal((await raceRoom.collection('game').doc('publicState').get()).data().version,
+    expectedVersion);
+  assert.equal((await raceRoom.get()).data().players[raceActor.user.uid].forfeited, true);
+  const raceReceipt = await raceRoom.collection('actionReceipts').doc(raceActor.user.uid)
+    .collection('actions').doc(raceRequest.actionId).get();
+  assert.equal(raceReceipt.exists, actionCommitted);
+  if (actionCommitted) {
+    assert.deepEqual((await raceActor.submit(raceRequest)).data, actionOutcome.value.data);
+  }
+  assert.equal((await raceActor.leave({ roomId: raceCode })).data.version, expectedVersion);
+  assert.equal((await raceServer.get()).data().version, expectedVersion);
   console.log('대기실 퇴장·방장 승계·오프라인 재구독·기권·중복·권한·남은 한 명 승리 검증 통과');
 } finally {
   await Promise.all(apps.map(deleteApp));

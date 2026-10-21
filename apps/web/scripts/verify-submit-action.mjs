@@ -137,9 +137,18 @@ try {
   assert.deepEqual((await actor.submit(firstInput)).data, result);
   assert.equal((await room.collection('privateState').doc('server').get()).data().version, 4);
 
+  // The server commits, but the client loses the response and resends the exact request.
+  const lostResponse = input(4, take);
+  const committed = (await actor.submit(lostResponse)).data;
+  const retried = (await actor.submit(lostResponse)).data;
+  assert.deepEqual(retried, committed);
+  assert.equal(retried.version, 5);
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 5);
+  assert.equal((await room.collection('game').doc('publicState').get()).data().version, 5);
+
   await room.update({ status: 'waiting' });
-  await assert.rejects(actor.submit(input(4, take)), reasonIs('failed-precondition', 'GAME_NOT_STARTED'));
-  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 4);
+  await assert.rejects(actor.submit(input(5, take)), reasonIs('failed-precondition', 'GAME_NOT_STARTED'));
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 5);
   console.log('submitAction 인증·턴·규칙·멱등성·동시 요청 검증 통과');
 } finally {
   await Promise.all(apps.map(deleteApp));

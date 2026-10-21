@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getFirebase } from '../services/firebase';
@@ -14,6 +14,7 @@ export function RoomPage() {
   const [copied, setCopied] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [actionError, setActionError] = useState('');
+  const actionInFlight = useRef(false);
 
   useEffect(() => {
     if (!roomId) return;
@@ -53,7 +54,8 @@ export function RoomPage() {
   }
 
   async function changeReady() {
-    if (!room || !myUid || actionBusy) return;
+    if (!room || !myUid || actionInFlight.current) return;
+    actionInFlight.current = true;
     setActionBusy(true);
     setActionError('');
     try {
@@ -61,12 +63,14 @@ export function RoomPage() {
     } catch (error) {
       setActionError(roomErrorMessage(error));
     } finally {
+      actionInFlight.current = false;
       setActionBusy(false);
     }
   }
 
   async function beginGame() {
-    if (!room || actionBusy) return;
+    if (!room || actionInFlight.current) return;
+    actionInFlight.current = true;
     setActionBusy(true);
     setActionError('');
     try {
@@ -74,13 +78,15 @@ export function RoomPage() {
     } catch (error) {
       setActionError(roomErrorMessage(error));
     } finally {
+      actionInFlight.current = false;
       setActionBusy(false);
     }
   }
 
   async function depart() {
-    if (!room || actionBusy || room.status === 'finished') return;
+    if (!room || actionInFlight.current || room.status === 'finished') return;
     if (room.status === 'playing' && !window.confirm('기권하면 이 게임에 다시 참가할 수 없습니다. 기권하시겠습니까?')) return;
+    actionInFlight.current = true;
     setActionBusy(true);
     setActionError('');
     try {
@@ -89,6 +95,7 @@ export function RoomPage() {
     } catch (error) {
       setActionError(roomErrorMessage(error));
     } finally {
+      actionInFlight.current = false;
       setActionBusy(false);
     }
   }
