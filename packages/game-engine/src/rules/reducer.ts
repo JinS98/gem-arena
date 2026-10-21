@@ -1,11 +1,11 @@
-import { CARD_COLORS, getDevelopmentCard } from '../data/catalog';
-import type { GameAction, Gem, Inventory, ServerGameState } from '../types/index';
-import { buyCard } from './buyCard';
-import { discardExcessGems, excessGemCount, isValidInventory, takeGems } from './gems';
-import { chooseNoble, eligibleNobleIds, resolveNobleVisit } from './nobles';
-import { countCardBonuses, remainingCardCost } from './payment';
-import { reserveCard } from './reserveCard';
-import { completeTurn, determineWinnerIds } from './turnEnd';
+import { CARD_COLORS, getDevelopmentCard } from '../data/catalog.js';
+import type { GameAction, Gem, Inventory, ServerGameState } from '../types/index.js';
+import { buyCard } from './buyCard.js';
+import { discardExcessGems, excessGemCount, isValidInventory, takeGems } from './gems.js';
+import { chooseNoble, eligibleNobleIds, resolveNobleVisit } from './nobles.js';
+import { countCardBonuses, remainingCardCost } from './payment.js';
+import { reserveCard } from './reserveCard.js';
+import { completeTurn, determineWinnerIds } from './turnEnd.js';
 
 /** Whether this player has any legal basic action other than PASS. */
 export function hasLegalBasicAction(state: ServerGameState, playerId: string): boolean {

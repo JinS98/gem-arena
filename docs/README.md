@@ -36,7 +36,7 @@
 - [x] [19일차 — 익명 로그인·닉네임·라우팅](daily/day-19.md)
 - [x] [20일차 — 방 생성·초대 코드·참가 검증](daily/day-20.md)
 - [x] [21일차 — 로비·준비 상태·방장 시작](daily/day-21.md)
-- [ ] [22일차 — 서버 전용 덱/개인 예약 카드와 공개 뷰 분리](daily/day-22.md)
+- [ ] [22일차 — 서버 전용 덱/개인 예약 카드와 공개 뷰 분리](daily/day-22.md) (로컬 검증 완료·실환경 초기화 미연결)
 - [ ] [23일차 — submitAction 인증·턴·규칙 검증](daily/day-23.md)
 - [ ] [24일차 — Firestore Transaction·version·actionId 멱등성](daily/day-24.md)
 - [ ] [25일차 — 실시간 구독·낙관적 UI 최소화](daily/day-25.md)

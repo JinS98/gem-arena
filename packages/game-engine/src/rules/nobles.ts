@@ -1,7 +1,7 @@
-import { CARD_COLORS, getNoble } from '../data/catalog';
-import type { GameAction, ServerGameState } from '../types/index';
-import { excessGemCount } from './gems';
-import { countCardBonuses } from './payment';
+import { CARD_COLORS, getNoble } from '../data/catalog.js';
+import type { GameAction, ServerGameState } from '../types/index.js';
+import { excessGemCount } from './gems.js';
+import { countCardBonuses } from './payment.js';
 
 export type ChooseNobleAction = Extract<GameAction, { type: 'CHOOSE_NOBLE' }>;
 

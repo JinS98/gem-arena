@@ -1,4 +1,4 @@
-import type { CardLevel, ColorCounts, DevelopmentCard, GemColor, Noble } from '../types/index';
+import type { CardLevel, ColorCounts, DevelopmentCard, GemColor, Noble } from '../types/index.js';
 
 export const CARD_COLORS = ['white', 'blue', 'green', 'red', 'black'] as const satisfies readonly GemColor[];
 

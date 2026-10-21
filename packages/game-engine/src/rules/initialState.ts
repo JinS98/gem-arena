@@ -1,5 +1,5 @@
-import { DEVELOPMENT_CARDS, NOBLES } from '../data/catalog';
-import type { CardLevel, Inventory, PlayerState, ServerGameState } from '../types/index';
+import { DEVELOPMENT_CARDS, NOBLES } from '../data/catalog.js';
+import type { CardLevel, Inventory, PlayerState, ServerGameState } from '../types/index.js';
 
 const MAX_SEED = 0xffffffff;
 const GEMS_PER_COLOR: Record<number, number> = { 2: 4, 3: 5, 4: 7 };

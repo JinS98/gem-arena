@@ -4,6 +4,8 @@
 
 21일차 시작 전이는 같은 방 문서의 `status`를 `playing`으로 변경하고 `startedAt`을 추가합니다. 본인 준비 상태는 `players.{uid}.ready`에 기록합니다. 게임 덱과 턴 상태는 아직 생성하지 않습니다.
 
+22일차 로컬 구현은 `rooms/{roomCode}/privateState/server`에 전체 덱·모든 예약 정보를, `rooms/{roomCode}/game/publicState`에 덱 장수·공개 시장·점수 등을, `rooms/{roomCode}/privatePlayers/{uid}`에 해당 사용자의 예약 카드 ID만 넣습니다. 공개 문서는 방 참가자만, 개인 문서는 해당 UID의 참가자만 읽고, 서버 문서는 모든 클라이언트가 읽지 못합니다. 세 종류 모두 클라이언트 쓰기를 거부합니다. 신뢰 서버용 `initializeGameViews`가 시작한 방에만 문서를 원자적으로 생성하며, 실제 프로젝트에서 이를 호출할 백엔드는 아직 연결되지 않았습니다.
+
 엔진 타입은 `packages/game-engine/src/types/index.ts` 참고.
 
 ## 정적 게임 데이터 (5일차)

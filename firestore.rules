@@ -5,6 +5,12 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function roomMember(roomCode) {
+      let roomPath = /databases/$(database)/documents/rooms/$(roomCode);
+      return signedIn() && exists(roomPath) &&
+        request.auth.uid in get(roomPath).data.playerOrder;
+    }
+
     function validPlayer(player, uid) {
       return player.keys().hasOnly(['uid', 'nickname', 'ready', 'forfeited', 'joinedAt']) &&
         player.keys().hasAll(['uid', 'nickname', 'ready', 'forfeited', 'joinedAt']) &&
@@ -91,6 +97,20 @@ service cloud.firestore {
       allow create: if signedIn() && validRoomCreate(roomCode);
       allow update: if signedIn() &&
         (validRoomJoin() || validReadyChange() || validGameStart());
+
+      match /game/publicState {
+        allow get: if roomMember(roomCode);
+        allow list, write: if false;
+      }
+
+      match /privatePlayers/{uid} {
+        allow get: if roomMember(roomCode) && request.auth.uid == uid;
+        allow list, write: if false;
+      }
+
+      match /privateState/server {
+        allow read, write: if false;
+      }
     }
 
     match /{document=**} {

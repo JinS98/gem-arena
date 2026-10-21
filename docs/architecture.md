@@ -1,5 +1,7 @@
 # 아키텍처
 
+> **현재 구현 범위:** 20~21일차 방 생성·참가·준비·시작은 제한된 Firestore 규칙으로 동작합니다. 22일차에는 공개/개인/서버 전용 게임 문서 분리와 Admin SDK 초기화 코드를 로컬 에뮬레이터에서 검증했습니다. 아래의 Callable Functions 게임 행동 경로는 이후 구현 목표입니다. 현재 Blaze 없는 실제 프로젝트에는 신뢰할 수 있는 게임 초기화·턴 처리 백엔드가 연결되지 않았습니다.
+
 ```text
 React + Zustand(UI) → Callable Functions(검증) → game-engine(순수 규칙)
           ↑                         ↓

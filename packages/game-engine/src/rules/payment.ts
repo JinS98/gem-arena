@@ -1,7 +1,7 @@
-import { CARD_COLORS, getDevelopmentCard } from '../data/catalog';
-import type { ColorCounts, Inventory } from '../types/index';
-import { isValidInventory } from './gems';
-import type { GemTransferResult } from './gems';
+import { CARD_COLORS, getDevelopmentCard } from '../data/catalog.js';
+import type { ColorCounts, Inventory } from '../types/index.js';
+import { isValidInventory } from './gems.js';
+import type { GemTransferResult } from './gems.js';
 
 function isValidColorCounts(value: unknown): value is ColorCounts {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;

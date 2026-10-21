@@ -1,4 +1,4 @@
-import type { ServerGameState } from '../types/index';
+import type { ServerGameState } from '../types/index.js';
 
 function assertTurnOrder(state: ServerGameState): void {
   const { playerOrder, firstPlayerIndex, turnIndex } = state;

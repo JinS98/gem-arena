@@ -1,6 +1,6 @@
-import { getDevelopmentCard } from '../data/catalog';
-import type { GameAction, ServerGameState } from '../types/index';
-import { countCardBonuses, payForCard } from './payment';
+import { getDevelopmentCard } from '../data/catalog.js';
+import type { GameAction, ServerGameState } from '../types/index.js';
+import { countCardBonuses, payForCard } from './payment.js';
 
 export type BuyCardAction = Extract<GameAction, { type: 'BUY_CARD' }>;
 

@@ -1,4 +1,4 @@
-import type { Gem, GemColor, Inventory } from '../types/index';
+import type { Gem, GemColor, Inventory } from '../types/index.js';
 
 export const GEM_COLORS: readonly GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 const GEMS: readonly Gem[] = [...GEM_COLORS, 'gold'];

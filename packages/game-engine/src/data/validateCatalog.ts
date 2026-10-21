@@ -1,5 +1,5 @@
-import { CARD_COLORS } from './catalog';
-import type { CardLevel, GemColor } from '../types/index';
+import { CARD_COLORS } from './catalog.js';
+import type { CardLevel, GemColor } from '../types/index.js';
 
 export interface CatalogIssue { path: string; message: string }
 

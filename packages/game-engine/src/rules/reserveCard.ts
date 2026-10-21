@@ -1,6 +1,6 @@
-import { getDevelopmentCard } from '../data/catalog';
-import type { CardLevel, GameAction, ServerGameState } from '../types/index';
-import { excessGemCount, isValidInventory } from './gems';
+import { getDevelopmentCard } from '../data/catalog.js';
+import type { CardLevel, GameAction, ServerGameState } from '../types/index.js';
+import { excessGemCount, isValidInventory } from './gems.js';
 
 export type ReserveCardAction = Extract<GameAction, { type: 'RESERVE_CARD' }>;
 export interface ReserveCardResult { state: ServerGameState; excess: number }
