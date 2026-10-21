@@ -4,8 +4,8 @@ import { GemIcon, gemNames } from './GemIcon';
 
 const colors: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 
-export function PlayerPanel({ player, isCurrent, gems = player.gems, bonusAnimation, gemAnimation, scoreAnimation }: {
-  player: PreviewPlayer; isCurrent: boolean; gems?: PreviewPlayer['gems'];
+export function PlayerPanel({ player, isCurrent, forfeited = false, gems = player.gems, bonusAnimation, gemAnimation, scoreAnimation }: {
+  player: PreviewPlayer; isCurrent: boolean; forfeited?: boolean; gems?: PreviewPlayer['gems'];
   bonusAnimation?: { color: GemColor; previousCount: number; phase: 'flying' | 'arrived' };
   gemAnimation?: { previous: Inventory; arrived: Inventory; phase: 'flying' | 'arrived' };
   scoreAnimation?: { previous: number; phase: 'flying' | 'arrived' };
@@ -14,7 +14,7 @@ export function PlayerPanel({ player, isCurrent, gems = player.gems, bonusAnimat
     ? Object.keys(gems).reduce((sum, color) => sum + gemAnimation.previous[color as keyof Inventory] + gemAnimation.arrived[color as keyof Inventory], 0)
     : Object.values(gems).reduce((sum, count) => sum + count, 0);
   return (
-    <article className={`player-panel${isCurrent ? ' player-panel--current' : ''}`} data-player-id={player.id} aria-label={`${player.name}, ${player.score}점${isCurrent ? ', 현재 차례' : ''}`}>
+    <article className={`player-panel${isCurrent ? ' player-panel--current' : ''}`} data-player-id={player.id} aria-label={`${player.name}, ${player.score}점${forfeited ? ', 기권' : isCurrent ? ', 현재 차례' : ''}`}>
       <div className="player-panel__top">
         <span className={`player-panel__avatar${player.isLocal ? ' player-panel__avatar--local' : ''}`}>{player.initials}</span>
         <div className="player-panel__identity">
@@ -22,7 +22,7 @@ export function PlayerPanel({ player, isCurrent, gems = player.gems, bonusAnimat
             <strong>{player.name}</strong>
             {player.isLocal && <span className="player-panel__self">나</span>}
           </div>
-          <span className="player-panel__status">{isCurrent ? `현재 차례 · ${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약` : `${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약`}</span>
+          <span className="player-panel__status">{forfeited ? '기권 · 자산 제외' : isCurrent ? `현재 차례 · ${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약` : `${player.purchasedCount}장 구매 · ${player.reservedCount}장 예약`}</span>
         </div>
         <div className={`player-panel__score${scoreAnimation?.phase === 'arrived' ? ' player-panel__score--arrived' : ''}`}><strong>{scoreAnimation?.phase === 'flying' ? scoreAnimation.previous : player.score}</strong><span>점</span></div>
       </div>

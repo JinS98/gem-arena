@@ -19,7 +19,7 @@ import { submitGameAction, type SubmitGameActionRequest } from '../services/game
 import { getFirebase } from '../services/firebase';
 import { subscribeMyGameViews, type GameViewUpdate, type MyGameViews } from '../services/gameViews';
 import { ensureAnonymousSession } from '../services/playerIdentity';
-import type { WaitingRoom } from '../services/rooms';
+import { leaveRoom, roomErrorMessage, type WaitingRoom } from '../services/rooms';
 
 const levels: CardLevel[] = [3, 2, 1];
 const gems: Gem[] = [...CARD_COLORS, 'gold'];
@@ -180,7 +180,7 @@ export function MultiplayerGamePage() {
   }, [roomId]);
 
   useEffect(() => {
-    if (!roomId || !myUid || room?.status !== 'playing') return;
+    if (!roomId || !myUid || (room?.status !== 'playing' && room?.status !== 'finished')) return;
     setUpdate({ status: 'loading', views: null, fromCache: false });
     setViewError('');
     return subscribeMyGameViews(roomId, myUid, setUpdate, error => setViewError(gameReadErrorMessage(error)));
@@ -190,9 +190,9 @@ export function MultiplayerGamePage() {
   const game: PublicGameView | null = views?.publicGame ?? null;
   const me = game?.players[myUid];
   const currentUid = game?.playerOrder[game.turnIndex];
-  const myTurn = Boolean(game && currentUid === myUid && game.phase !== 'finished');
+  const myTurn = Boolean(game && currentUid === myUid && game.phase !== 'finished' && !me?.forfeited);
   const syncing = awaitingVersion !== null && (game?.version ?? -1) < awaitingVersion;
-  const canAct = Boolean(myTurn && room?.status === 'playing' && update.status === 'ready' &&
+  const canAct = Boolean(myTurn && room?.status === 'playing' && !room.players[myUid]?.forfeited && update.status === 'ready' &&
     !update.fromCache && !busy && !syncing);
 
   useEffect(() => {
@@ -220,6 +220,22 @@ export function MultiplayerGamePage() {
       const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
       setRetryRequest(code === 'functions/unavailable' || code === 'functions/deadline-exceeded' ? request : null);
       return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function forfeit() {
+    if (!roomId || busy || room?.status !== 'playing' || room.players[myUid]?.forfeited) return;
+    if (!window.confirm('기권하면 이 게임에 다시 참가할 수 없습니다. 기권하시겠습니까?')) return;
+    setBusy(true);
+    setActionError('');
+    try {
+      await leaveRoom(roomId);
+      setRetryRequest(null);
+      setSelection(null);
+    } catch (error) {
+      setActionError(roomErrorMessage(error));
     } finally {
       setBusy(false);
     }
@@ -254,7 +270,8 @@ export function MultiplayerGamePage() {
   });
 
   return <div className="multiplayer-page">
-    <div className="multiplayer-page__heading"><div><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId}</span><h1>게임판</h1></div><div className="multiplayer-page__heading-side"><Link className="text-link" to={`/rooms/${roomId}`}>대기실</Link><span className="multiplayer-page__turn">{game.phase === 'finished' ? '게임 종료' : myTurn ? '내 차례' : `${currentName} 차례`}</span></div></div>
+    <div className="multiplayer-page__heading"><div><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId}</span><h1>게임판</h1></div><div className="multiplayer-page__heading-side"><Link className="text-link" to={`/rooms/${roomId}`}>대기실</Link>{room.status === 'playing' && !me.forfeited && !room.players[myUid]?.forfeited && <button type="button" className="text-link" disabled={busy} onClick={() => void forfeit()}>기권하기</button>}<span className="multiplayer-page__turn">{game.phase === 'finished' ? '게임 종료' : me.forfeited ? '기권' : myTurn ? '내 차례' : `${currentName} 차례`}</span></div></div>
+    {me.forfeited && <p className="multiplayer-page__notice" role="status">기권했습니다. 결과는 계속 볼 수 있지만 행동하거나 다시 참가할 수 없습니다.</p>}
     {update.status === 'syncing' && <p className="multiplayer-page__notice" role="status">서버 문서의 버전을 맞추는 중입니다. 마지막 확정 상태를 표시합니다.</p>}
     {update.fromCache && <p className="multiplayer-page__notice" role="status">저장된 상태를 표시하는 중입니다. 서버 연결을 기다립니다.</p>}
     {syncing && <p className="multiplayer-page__notice" role="status">행동이 승인됐습니다. 게임판 갱신을 기다리는 중입니다.</p>}
@@ -266,7 +283,7 @@ export function MultiplayerGamePage() {
       <div className="multiplayer-opponents__list">{opponents.map(uid => {
         const player = game.players[uid];
         return player && <PlayerPanel key={uid} player={displayedPlayer(uid, player, room, myUid)}
-          isCurrent={uid === currentUid} gems={player.gems} />;
+          isCurrent={uid === currentUid} forfeited={player.forfeited} gems={player.gems} />;
       })}</div>
     </section>
 
@@ -300,7 +317,7 @@ export function MultiplayerGamePage() {
 
     <section className="multiplayer-self" aria-label="내 공개 자원과 비공개 예약 카드">
       <div className="multiplayer-section-label"><span className="eyebrow">MY TABLE</span><h2>내 자원</h2></div>
-      <PlayerPanel player={displayedPlayer(myUid, me, room, myUid)} isCurrent={myUid === currentUid} gems={me.gems} />
+      <PlayerPanel player={displayedPlayer(myUid, me, room, myUid)} isCurrent={myUid === currentUid} forfeited={me.forfeited} gems={me.gems} />
       <div className="multiplayer-self__reserved"><div><span className="eyebrow">PRIVATE CARDS</span><h3>내 예약 카드 <small>{views.privatePlayer.reservedCardIds.length}/3</small></h3></div>{views.privatePlayer.reservedCardIds.length === 0 ? <p>예약한 카드가 없습니다.</p> : <div className="multiplayer-self__cards">{views.privatePlayer.reservedCardIds.map(id => {
         const card = getDevelopmentCard(id);
         return card && <MarketCard key={id} card={card} onSelect={() => setSelection({ cardId: id, source: 'reserved' })} />;

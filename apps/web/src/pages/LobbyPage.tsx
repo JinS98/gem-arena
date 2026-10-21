@@ -73,7 +73,7 @@ export function LobbyPage() {
   async function enterRoom(kind: 'create' | 'join') {
     if (session.status !== 'ready' || roomBusy) return;
     const error = nicknameError(nickname);
-    if (error) {
+    if (error && kind === 'create') {
       setFormError(error);
       return;
     }

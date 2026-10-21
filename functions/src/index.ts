@@ -4,6 +4,7 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
 import { initializeGameViews } from './initializeGameViews.js';
 export { submitAction } from './submitAction.js';
+export { leaveRoom } from './leaveRoom.js';
 
 /** Start the trusted game state after the room host's validated waiting → playing write. */
 export const roomStarted = onDocumentUpdated({

@@ -11,6 +11,15 @@ function assertTurnOrder(state: ServerGameState): void {
   }
 }
 
+export function nextActiveTurnIndex(state: ServerGameState, fromIndex: number): number {
+  assertTurnOrder(state);
+  for (let offset = 1; offset <= state.playerOrder.length; offset++) {
+    const index = (fromIndex + offset) % state.playerOrder.length;
+    if (state.players[state.playerOrder[index]].forfeited !== true) return index;
+  }
+  throw new RangeError('활성 플레이어가 없습니다');
+}
+
 /** Return co-winners in turn order: highest score, then fewest purchased cards. */
 export function determineWinnerIds(state: ServerGameState): string[] {
   assertTurnOrder(state);
@@ -19,6 +28,7 @@ export function determineWinnerIds(state: ServerGameState): string[] {
   let winnerIds: string[] = [];
   for (const id of state.playerOrder) {
     const player = state.players[id];
+    if (player.forfeited === true) continue;
     if (!Number.isSafeInteger(player.score) || player.score < 0 ||
         !Array.isArray(player.purchasedCardIds)) {
       throw new RangeError('플레이어 점수 또는 구매 카드가 유효하지 않습니다');
@@ -32,6 +42,7 @@ export function determineWinnerIds(state: ServerGameState): string[] {
       winnerIds.push(id);
     }
   }
+  if (winnerIds.length === 0) throw new RangeError('활성 플레이어가 없습니다');
   return winnerIds;
 }
 
@@ -42,6 +53,7 @@ export function completeTurn(state: ServerGameState, playerId: string): ServerGa
   }
   assertTurnOrder(state);
   if (state.playerOrder[state.turnIndex] !== playerId ||
+      state.players[playerId].forfeited === true ||
       (state.finalRoundTriggeredBy !== null && !state.playerOrder.includes(state.finalRoundTriggeredBy))) {
     throw new RangeError('현재 플레이어 또는 최종 라운드 상태가 유효하지 않습니다');
   }
@@ -51,7 +63,9 @@ export function completeTurn(state: ServerGameState, playerId: string): ServerGa
   }
 
   const finalRoundTriggeredBy = state.finalRoundTriggeredBy ?? (score >= 15 ? playerId : null);
-  const lastIndex = (state.firstPlayerIndex + state.playerOrder.length - 1) % state.playerOrder.length;
+  const lastIndex = Array.from({ length: state.playerOrder.length }, (_, offset) =>
+    (state.firstPlayerIndex + offset) % state.playerOrder.length).filter(index =>
+    state.players[state.playerOrder[index]].forfeited !== true).at(-1);
   if (finalRoundTriggeredBy !== null && state.turnIndex === lastIndex) {
     return {
       ...state,
@@ -62,7 +76,7 @@ export function completeTurn(state: ServerGameState, playerId: string): ServerGa
   }
   return {
     ...state,
-    turnIndex: (state.turnIndex + 1) % state.playerOrder.length,
+    turnIndex: nextActiveTurnIndex(state, state.turnIndex),
     turnNobleResolved: false,
     finalRoundTriggeredBy,
   };

@@ -8,6 +8,7 @@ export interface PublicPlayerView {
   nobleIds: string[];
   score: number;
   reservedCount: number;
+  forfeited: boolean;
 }
 
 export interface PublicGameView {
@@ -45,6 +46,7 @@ export function toPublicGameView(state: ServerGameState): PublicGameView {
       nobleIds: [...player.nobleIds],
       score: player.score,
       reservedCount: player.reservedCardIds.length,
+      forfeited: player.forfeited === true,
     };
   }
   return {

@@ -10,6 +10,8 @@
 
 25일차 로컬 `roomStarted` 트리거는 방 문서가 `waiting`에서 `playing`으로 바뀔 때 초기 게임 문서를 만듭니다. 웹은 `publicState`와 본인 `privatePlayers/{uid}`를 실시간 구독하고 두 문서의 `version`이 같을 때만 새 상태를 표시합니다. 이전 일치 버전이 있으면 갱신 중에도 이를 유지합니다. 실제 프로젝트에는 트리거와 Callable을 아직 배포하지 않았습니다.
 
+26일차 로컬 `leaveRoom`은 대기 중 퇴장 시 `playerOrder`와 `players`에서 UID를 제거하고 방장을 남은 첫 참가자에게 넘깁니다. 진행 중에는 방의 `players.{uid}.forfeited`와 서버 상태의 `players.{uid}.forfeited`를 함께 설정합니다. 서버 상태에서 보석은 은행으로 반환하고 해당 플레이어의 카드·귀족·예약·점수는 제거합니다. 공개 뷰에는 기권 여부를 표시하고 개인 예약 뷰는 빈 목록으로 갱신합니다. 기권한 UID는 `playerOrder`에 남아 결과를 읽되 턴·승패·패스 종료에서는 제외됩니다. 한 명만 남으면 게임과 방을 `finished`로 표시합니다. `leaveReceipts/{uid}`는 서버 전용 퇴장 결과로, 응답 유실 뒤 같은 UID의 재요청에 원래 결과를 반환합니다.
+
 엔진 타입은 `packages/game-engine/src/types/index.ts` 참고.
 
 ## 정적 게임 데이터 (5일차)

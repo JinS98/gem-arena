@@ -69,7 +69,7 @@ export async function submitGameAction(
     if (!roomSnapshot.exists) throw new GameActionError('ROOM_NOT_FOUND', 'not-found');
     const room = roomSnapshot.data();
     if (!room || !Array.isArray(room.playerOrder) ||
-        !room.playerOrder.includes(uid) || !room.players?.[uid] || room.players[uid].forfeited === true) {
+        !room.playerOrder.includes(uid) || !room.players?.[uid]) {
       throw new GameActionError('NOT_ROOM_MEMBER', 'permission-denied');
     }
     if (receiptSnapshot.exists) {
@@ -78,6 +78,9 @@ export async function submitGameAction(
         throw new GameActionError('ACTION_ID_REUSED', 'failed-precondition');
       }
       return receipt?.result as SubmitActionResult;
+    }
+    if (room.players[uid].forfeited === true) {
+      throw new GameActionError('NOT_ROOM_MEMBER', 'permission-denied');
     }
     if (room.status !== 'playing' || !stateSnapshot.exists) {
       throw new GameActionError('GAME_NOT_STARTED', 'failed-precondition');
@@ -106,6 +109,9 @@ export async function submitGameAction(
 
     const result = { version: nextState.version, phase: nextState.phase, turnIndex: nextState.turnIndex };
     transaction.set(serverRef, nextState);
+    if (nextState.phase === 'finished') {
+      transaction.update(roomRef, { status: 'finished' });
+    }
     transaction.set(publicRef, toPublicGameView(nextState));
     for (const playerId of nextState.playerOrder) {
       transaction.set(

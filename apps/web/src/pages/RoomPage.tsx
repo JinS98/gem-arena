@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getFirebase } from '../services/firebase';
 import { ensureAnonymousSession } from '../services/playerIdentity';
-import { roomErrorMessage, setReady, startGame, type WaitingRoom } from '../services/rooms';
+import { leaveRoom, roomErrorMessage, setReady, startGame, type WaitingRoom } from '../services/rooms';
 
 export function RoomPage() {
   const { roomId } = useParams();
+  const navigate = useNavigate();
   const [myUid, setMyUid] = useState('');
   const [room, setRoom] = useState<WaitingRoom | null>(null);
   const [error, setError] = useState('');
@@ -77,6 +78,21 @@ export function RoomPage() {
     }
   }
 
+  async function depart() {
+    if (!room || actionBusy || room.status === 'finished') return;
+    if (room.status === 'playing' && !window.confirm('기권하면 이 게임에 다시 참가할 수 없습니다. 기권하시겠습니까?')) return;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      await leaveRoom(room.roomCode);
+      navigate(room.status === 'waiting' ? '/lobby' : `/game/${room.roomCode}`);
+    } catch (error) {
+      setActionError(roomErrorMessage(error));
+    } finally {
+      setActionBusy(false);
+    }
+  }
+
   const isHost = room?.hostUid === myUid;
   const readyCount = room?.playerOrder.filter(uid => room.players[uid]?.ready).length ?? 0;
   const canStart = Boolean(room && isHost && room.status === 'waiting' &&
@@ -102,8 +118,9 @@ export function RoomPage() {
           <button type="button" onClick={changeReady} disabled={actionBusy}>{room.players[myUid]?.ready ? '준비 취소' : '준비하기'}</button>
           {isHost && <button type="button" className="waiting-room__start" onClick={beginGame} disabled={actionBusy || !canStart}>게임 시작</button>}
           {!isHost && <p>방장이 게임을 시작하기를 기다리고 있습니다.</p>}
+          <button type="button" onClick={() => void depart()} disabled={actionBusy}>대기실 나가기</button>
         </div>}
-        {room.status === 'playing' && <div className="waiting-room__game-link" role="status"><p>게임이 시작되었습니다. 게임 상태가 준비되면 멀티 게임판에 카드와 보석이 표시됩니다.</p><Link className="primary-link" to={`/game/${room.roomCode}`}>멀티 게임판 열기</Link></div>}
+        {(room.status === 'playing' || room.status === 'finished') && <div className="waiting-room__game-link" role="status"><p>{room.status === 'playing' ? '게임이 시작되었습니다. 게임 상태가 준비되면 멀티 게임판에 카드와 보석이 표시됩니다.' : '게임이 종료되었습니다. 결과를 확인할 수 있습니다.'}</p><Link className="primary-link" to={`/game/${room.roomCode}`}>멀티 게임판 열기</Link>{room.status === 'playing' && !room.players[myUid]?.forfeited && <button type="button" disabled={actionBusy} onClick={() => void depart()}>기권하기</button>}</div>}
         {actionError && <p className="waiting-room__action-error" role="alert">{actionError}</p>}
       </div>
     </div>}

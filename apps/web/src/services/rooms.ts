@@ -1,6 +1,8 @@
-import { arrayUnion, doc, FieldPath, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
+import { arrayUnion, doc, FieldPath, getDoc, serverTimestamp, setDoc, updateDoc,
+  type DocumentReference } from 'firebase/firestore';
 import { getFirebase } from './firebase';
 import { ensureAnonymousSession } from './playerIdentity';
+import { httpsCallable } from 'firebase/functions';
 import { nicknameError, normalizeNickname } from './nickname';
 
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -46,6 +48,17 @@ export interface RoomPlayer {
   uid: string;
   nickname: string;
   ready: boolean;
+  forfeited: boolean;
+}
+
+export async function leaveRoom(roomCode: string): Promise<'left' | 'forfeited'> {
+  const code = roomCode.trim().toUpperCase();
+  if (!codePattern.test(code)) throw new RoomActionError('INVALID_ROOM_CODE');
+  await ensureAnonymousSession();
+  const callable = httpsCallable<{ roomId: string }, { status: 'left' | 'forfeited' }>(
+    getFirebase().functions, 'leaveRoom',
+  );
+  return (await callable({ roomId: code })).data.status;
 }
 
 function roomReference(roomCode: string) {
@@ -60,6 +73,23 @@ async function currentRoom(roomCode: string, uid: string): Promise<WaitingRoom> 
   const room = snapshot.data() as WaitingRoom;
   if (!room.players?.[uid]) throw new RoomActionError('NOT_ROOM_MEMBER');
   return room;
+}
+
+async function existingMemberAccess(roomRef: DocumentReference, code: string, uid: string): Promise<RoomAccess | null> {
+  try {
+    const snapshot = await getDoc(roomRef);
+    if (!snapshot.exists()) return null;
+    const room = snapshot.data() as WaitingRoom;
+    if (!room.players?.[uid]) return null;
+    if (room.players[uid].forfeited) throw new RoomActionError('FORFEITED');
+    return { roomId: code, roomCode: code, seatIndex: room.playerOrder.indexOf(uid) };
+  } catch (error) {
+    if (error instanceof RoomActionError) throw error;
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
+      return null;
+    }
+    throw error;
+  }
 }
 
 export async function createRoom(nickname: string): Promise<RoomAccess> {
@@ -81,11 +111,16 @@ export async function createRoom(nickname: string): Promise<RoomAccess> {
 }
 
 export async function joinRoom(roomCode: string, nickname: string): Promise<RoomAccess> {
-  const name = validNickname(nickname);
   const code = roomCode.trim().toUpperCase();
   if (!codePattern.test(code)) throw new RoomActionError('INVALID_ROOM_CODE');
   const uid = (await ensureAnonymousSession()).uid;
   const roomRef = doc(getFirebase().db, 'rooms', code);
+  if (nicknameError(nickname)) {
+    const existing = await existingMemberAccess(roomRef, code, uid);
+    if (existing) return existing;
+    throw new RoomActionError('INVALID_NICKNAME');
+  }
+  const name = normalizeNickname(nickname);
   try {
     // The rule checks the old and new document atomically, including the four-seat limit.
     // A new player cannot read the room until this write has made them a member.
@@ -97,14 +132,8 @@ export async function joinRoom(roomCode: string, nickname: string): Promise<Room
     );
   } catch (error) {
     if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
-      try {
-        const current = await getDoc(roomRef);
-        if (current.exists() && (current.data() as WaitingRoom).players?.[uid]) {
-          throw new RoomActionError('ALREADY_IN_ROOM');
-        }
-      } catch (readError) {
-        if (readError instanceof RoomActionError) throw readError;
-      }
+      const existing = await existingMemberAccess(roomRef, code, uid);
+      if (existing) return existing;
       throw new RoomActionError('ROOM_UNAVAILABLE');
     }
     throw error;
@@ -156,11 +185,14 @@ export function roomErrorMessage(error: unknown): string {
     case 'ROOM_NOT_FOUND': return '일치하는 방이 없습니다. 초대 코드를 확인해 주세요.';
     case 'ROOM_FULL': return '방 정원이 가득 찼습니다.';
     case 'ROOM_NOT_WAITING': return '이미 시작했거나 종료된 방입니다.';
-    case 'ALREADY_IN_ROOM': return '이미 이 방에 참가했습니다. 대기실 주소로 다시 들어가 주세요.';
+    case 'FORFEITED': return '이미 기권한 방에는 다시 참가할 수 없습니다. 게임 결과는 기존 방 주소에서 확인할 수 있습니다.';
     case 'NOT_ROOM_MEMBER': return '이 방의 참가자가 아닙니다.';
     case 'NOT_HOST': return '방장만 게임을 시작할 수 있습니다.';
     case 'NEED_PLAYERS': return '게임 시작에는 최소 2명이 필요합니다.';
     case 'NOT_ALL_READY': return '모든 참가자가 준비해야 시작할 수 있습니다.';
+    case 'GAME_NOT_READY': return '게임 상태를 준비 중입니다. 잠시 후 다시 시도해 주세요.';
+    case 'GAME_FINISHED': return '이미 종료된 게임입니다.';
+    case 'GAME_STATE_MISMATCH': return '방과 게임 상태가 일치하지 않습니다. 다시 시도해 주세요.';
   }
   return '방 요청을 처리하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.';
 }

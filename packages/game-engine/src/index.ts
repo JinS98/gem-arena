@@ -8,5 +8,6 @@ export * from './rules/buyCard.js';
 export * from './rules/reserveCard.js';
 export * from './rules/nobles.js';
 export * from './rules/turnEnd.js';
+export * from './rules/forfeit.js';
 export * from './rules/reducer.js';
 export * from './views/gameViews.js';

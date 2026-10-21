@@ -26,7 +26,7 @@ describe('게임 초기화', () => {
     ids.forEach((uid, seatIndex) => {
       expect(state.players[uid]).toEqual({
         uid, seatIndex, gems: { white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 },
-        purchasedCardIds: [], reservedCardIds: [], nobleIds: [], score: 0,
+        purchasedCardIds: [], reservedCardIds: [], nobleIds: [], score: 0, forfeited: false,
       });
     });
     expect(state.finalRoundTriggeredBy).toBeNull();

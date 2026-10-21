@@ -34,7 +34,8 @@ export function hasLegalBasicAction(state: ServerGameState, playerId: string): b
 
 function finishResolvedTurn(state: ServerGameState, playerId: string): ServerGameState {
   if (state.phase === 'choosingNoble') return state;
-  if (state.consecutivePasses >= state.playerOrder.length) {
+  if (state.consecutivePasses >= state.playerOrder.filter(uid =>
+    state.players[uid].forfeited !== true).length) {
     return { ...state, phase: 'finished', winnerIds: determineWinnerIds(state) };
   }
   return completeTurn(state, playerId);
@@ -80,13 +81,15 @@ export function reduceGameAction(
     throw new RangeError('게임 버전이 유효하지 않습니다');
   }
   if (!Number.isSafeInteger(state.consecutivePasses) || state.consecutivePasses < 0 ||
-      state.consecutivePasses >= state.playerOrder.length) {
+      state.consecutivePasses >= state.playerOrder.filter(uid =>
+        state.players[uid]?.forfeited !== true).length) {
     throw new RangeError('연속 패스 수가 유효하지 않습니다');
   }
   if (state.phase !== 'playing' && state.phase !== 'discarding' && state.phase !== 'choosingNoble') {
     throw new RangeError('행동할 수 없는 게임 단계입니다');
   }
-  if (state.playerOrder[state.turnIndex] !== playerId || !Object.hasOwn(state.players, playerId)) {
+  if (state.playerOrder[state.turnIndex] !== playerId || !Object.hasOwn(state.players, playerId) ||
+      state.players[playerId].forfeited === true) {
     throw new RangeError('현재 플레이어가 아닙니다');
   }
   if (state.phase === 'playing' && excessGemCount(state.players[playerId].gems) > 0) {

@@ -41,7 +41,7 @@ function initialGame(): ServerGameState {
       }
     }
     players[preview.id] = { uid: preview.id, seatIndex, gems: { ...preview.gems },
-      purchasedCardIds, reservedCardIds, nobleIds: [], score: preview.score };
+      purchasedCardIds, reservedCardIds, nobleIds: [], score: preview.score, forfeited: false };
   }
   const decks = { 1: [] as string[], 2: [] as string[], 3: [] as string[] };
   for (const level of levels) {

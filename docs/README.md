@@ -40,7 +40,7 @@
 - [ ] [23일차 — submitAction 인증·턴·규칙 검증](daily/day-23.md) (로컬 검증 완료·실서비스 미연결)
 - [ ] [24일차 — Firestore Transaction·version·actionId 멱등성](daily/day-24.md) (로컬 검증 완료·실서비스 미연결)
 - [ ] [25일차 — 실시간 구독·낙관적 UI 최소화](daily/day-25.md) (로컬 구독·게임판 검증 완료·실서비스 미연결)
-- [ ] [26일차 — 재접속·새로고침·퇴장 정책](daily/day-26.md)
+- [ ] [26일차 — 재접속·새로고침·퇴장 정책](daily/day-26.md) (로컬 퇴장·기권·Firestore 재구독·브라우저 새로고침 검증 완료, 오프라인 화면/실서비스 미검증)
 
 ## 품질·배포
 - [ ] [27일차 — Security Rules·Emulator 권한 테스트](daily/day-27.md)
