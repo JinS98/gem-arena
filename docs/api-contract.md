@@ -4,7 +4,7 @@
 
 > **21일차 구현:** `setReady`와 `startGame`도 웹 Firestore SDK를 사용합니다. 참가자 본인의 준비 전환과 방장만 가능한 시작을 보안 규칙이 검증합니다. `startGame`은 방 상태를 `playing`으로 전환하며 초기 게임 상태 생성은 이후 일차 범위입니다.
 
-> **22~23일차 로컬 구현:** 서버 전용 게임 상태·공개 뷰·개인 예약 뷰를 분리하고, `submitAction` Callable이 인증·멤버십·차례·버전·엔진 규칙을 검사합니다. 서버 상태와 뷰는 한 트랜잭션에서 갱신합니다. 실제 프로젝트에는 초기화 서버와 Callable을 연결·배포하지 않았으므로 아직 멀티 턴을 진행할 수 없습니다. `actionId` 멱등성은 24일차 범위입니다.
+> **22~24일차 로컬 구현:** 서버 전용 게임 상태·공개 뷰·개인 예약 뷰를 분리하고, `submitAction` Callable이 인증·멤버십·차례·버전·엔진 규칙을 검사합니다. 24일차에 `actionId` 처리 기록과 동시 요청 충돌 처리를 추가했습니다. 실제 프로젝트에는 초기화 서버와 Callable을 연결·배포하지 않았으므로 아직 멀티 턴을 진행할 수 없습니다.
 
 모든 API는 익명 로그인을 포함한 Firebase 인증을 요구한다. 방 생성·참가·준비·시작은 클라이언트 SDK와 제한된 Firestore 규칙으로 처리한다. 게임 상태 변경은 23일차에 신뢰 서버용 Callable로 로컬 구현했다. 세부 정책은 [요구사항](requirements.md)을 따른다.
 
@@ -17,7 +17,7 @@
 | `submitAction` | `roomId`, `actionId`, `expectedVersion`, `action` | 적용된 게임 버전·행동 확인 | 인증, 멤버십, 현재 턴, 게임 단계, 액션 규칙, 버전, 멱등성 |
 | `leaveRoom` | `roomId` | 대기실 퇴장 또는 진행 중 기권 결과 | 인증, 방 멤버십, 진행 단계별 정책 |
 
-`submitAction`의 목표 계약은 같은 `actionId`와 같은 요청 내용의 재전송이면 이전 성공 응답을 반환하고 게임 상태를 다시 변경하지 않는 것이다. 같은 `actionId`를 다른 내용으로 사용하면 `ACTION_ID_REUSED`로 거부한다. 이 멱등성은 24일차 구현 범위다. 현재 로컬 구현은 `expectedVersion`이 현재 버전과 다르면 `VERSION_CONFLICT`를 반환한다.
+`submitAction`은 같은 사용자·방의 `actionId`와 같은 요청 내용의 재전송이면 이전 성공 응답을 반환하고 게임 상태를 다시 변경하지 않는다. 같은 `actionId`를 다른 행동이나 `expectedVersion`과 함께 사용하면 `ACTION_ID_REUSED`로 거부한다. 새 ID의 `expectedVersion`이 현재 버전과 다르면 `VERSION_CONFLICT`를 반환한다. 성공 처리 기록은 서버 전용 `actionReceipts/{uid}/actions/{actionId}`에 보관하며 클라이언트가 읽거나 쓸 수 없다. 실패 요청은 기록하지 않는다.
 
 `action`의 세부 유효 조건은 [기본판 규칙 명세](game-rules.md)에 따른다. `DISCARD_GEMS`와 `CHOOSE_NOBLE`은 턴 마무리 단계의 입력이며 새 기본 행동이 아니다. `PASS`는 합법적인 기본 행동이 전혀 없을 때만 허용하는 온라인 안전장치다.
 

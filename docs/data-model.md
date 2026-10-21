@@ -6,7 +6,7 @@
 
 22일차 로컬 구현은 `rooms/{roomCode}/privateState/server`에 전체 덱·모든 예약 정보를, `rooms/{roomCode}/game/publicState`에 덱 장수·공개 시장·점수 등을, `rooms/{roomCode}/privatePlayers/{uid}`에 해당 사용자의 예약 카드 ID만 넣습니다. 공개 문서는 방 참가자만, 개인 문서는 해당 UID의 참가자만 읽고, 서버 문서는 모든 클라이언트가 읽지 못합니다. 세 종류 모두 클라이언트 쓰기를 거부합니다. 신뢰 서버용 `initializeGameViews`가 시작한 방에만 문서를 원자적으로 생성하며, 실제 프로젝트에서 이를 호출할 백엔드는 아직 연결되지 않았습니다.
 
-23일차 로컬 `submitAction`은 `privateState/server`를 읽어 인증·턴·행동을 검증하고, 갱신된 서버 상태와 공개·개인 뷰를 한 Firestore 트랜잭션으로 기록합니다. `actionId`의 처리 기록은 24일차에 추가합니다.
+23~24일차 로컬 `submitAction`은 `privateState/server`를 읽어 인증·턴·행동을 검증하고, 갱신된 서버 상태와 공개·개인 뷰를 한 Firestore 트랜잭션으로 기록합니다. 성공한 행동의 요청과 응답은 `actionReceipts/{uid}/actions/{actionId}`에 같은 트랜잭션으로 기록합니다. 이 문서는 서버 전용이며 클라이언트의 읽기·쓰기를 거부합니다.
 
 엔진 타입은 `packages/game-engine/src/types/index.ts` 참고.
 

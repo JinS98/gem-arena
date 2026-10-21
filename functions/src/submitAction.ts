@@ -1,6 +1,7 @@
-import { getApp, getApps, initializeApp } from 'firebase-admin/app';
+import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
+import { isDeepStrictEqual } from 'node:util';
 import {
   reduceGameAction,
   toPrivatePlayerView,
@@ -33,7 +34,7 @@ const action = z.discriminatedUnion('type', [
 ]);
 const requestSchema = z.object({
   roomId,
-  actionId: z.string().min(1).max(128),
+  actionId: z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),
   expectedVersion: z.number().int().nonnegative().safe(),
   action,
 }).strict();
@@ -54,18 +55,29 @@ export async function submitGameAction(
   if (!uid) throw new GameActionError('UNAUTHENTICATED', 'permission-denied');
   const parsed = requestSchema.safeParse(rawRequest);
   if (!parsed.success) throw new GameActionError('INVALID_ACTION', 'invalid-argument');
-  const { roomId: code, expectedVersion, action: requestedAction } = parsed.data;
+  const { roomId: code, actionId, expectedVersion, action: requestedAction } = parsed.data;
   const roomRef = db.collection('rooms').doc(code);
   const serverRef = roomRef.collection('privateState').doc('server');
   const publicRef = roomRef.collection('game').doc('publicState');
+  const receiptRef = roomRef.collection('actionReceipts').doc(uid).collection('actions').doc(actionId);
+  const actionRequest = { expectedVersion, action: requestedAction };
 
   return db.runTransaction(async transaction => {
-    const [roomSnapshot, stateSnapshot] = await transaction.getAll(roomRef, serverRef);
+    const [roomSnapshot, stateSnapshot, receiptSnapshot] = await transaction.getAll(
+      roomRef, serverRef, receiptRef,
+    );
     if (!roomSnapshot.exists) throw new GameActionError('ROOM_NOT_FOUND', 'not-found');
     const room = roomSnapshot.data();
     if (!room || !Array.isArray(room.playerOrder) ||
         !room.playerOrder.includes(uid) || !room.players?.[uid] || room.players[uid].forfeited === true) {
       throw new GameActionError('NOT_ROOM_MEMBER', 'permission-denied');
+    }
+    if (receiptSnapshot.exists) {
+      const receipt = receiptSnapshot.data();
+      if (!isDeepStrictEqual(receipt?.request, actionRequest)) {
+        throw new GameActionError('ACTION_ID_REUSED', 'failed-precondition');
+      }
+      return receipt?.result as SubmitActionResult;
     }
     if (room.status !== 'playing' || !stateSnapshot.exists) {
       throw new GameActionError('GAME_NOT_STARTED', 'failed-precondition');
@@ -92,6 +104,7 @@ export async function submitGameAction(
       throw new GameActionError('INVALID_ACTION', 'invalid-argument');
     }
 
+    const result = { version: nextState.version, phase: nextState.phase, turnIndex: nextState.turnIndex };
     transaction.set(serverRef, nextState);
     transaction.set(publicRef, toPublicGameView(nextState));
     for (const playerId of nextState.playerOrder) {
@@ -100,7 +113,8 @@ export async function submitGameAction(
         toPrivatePlayerView(nextState, playerId),
       );
     }
-    return { version: nextState.version, phase: nextState.phase, turnIndex: nextState.turnIndex };
+    transaction.create(receiptRef, { request: actionRequest, result });
+    return result;
   });
 }
 

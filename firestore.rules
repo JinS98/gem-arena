@@ -111,6 +111,10 @@ service cloud.firestore {
       match /privateState/server {
         allow read, write: if false;
       }
+
+      match /actionReceipts/{uid}/actions/{actionId} {
+        allow read, write: if false;
+      }
     }
 
     match /{document=**} {

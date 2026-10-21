@@ -16,7 +16,7 @@ export interface SubmitGameActionResult {
   turnIndex: number;
 }
 
-/** The caller keeps actionId stable when retrying; replay handling follows on day 24. */
+/** Keep actionId and expectedVersion unchanged when retrying the same request. */
 export async function submitGameAction(request: SubmitGameActionRequest): Promise<SubmitGameActionResult> {
   await ensureAnonymousSession();
   const callable = httpsCallable<SubmitGameActionRequest, SubmitGameActionResult>(

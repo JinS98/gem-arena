@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { deleteApp, initializeApp } from 'firebase/app';
 import { connectAuthEmulator, getAuth, signInAnonymously } from 'firebase/auth';
-import { connectFirestoreEmulator, doc, getDoc, getFirestore, setLogLevel } from 'firebase/firestore';
+import { connectFirestoreEmulator, doc, getDoc, getFirestore, setDoc, setLogLevel } from 'firebase/firestore';
 import { connectFunctionsEmulator, getFunctions, httpsCallable } from 'firebase/functions';
 
 const requireFunctions = createRequire(new URL('../../../functions/package.json', import.meta.url));
@@ -62,11 +62,13 @@ try {
   await assert.rejects(outsider.submit(input(0, take)), reasonIs('permission-denied', 'NOT_ROOM_MEMBER'));
   await assert.rejects(other.submit(input(0, take)), reasonIs('permission-denied', 'NOT_YOUR_TURN'));
   await assert.rejects(actor.submit(input(0, { type: 'TIMEOUT' })), reasonIs('invalid-argument', 'INVALID_ACTION'));
+  await assert.rejects(actor.submit({ ...input(0, take), actionId: 'bad/id' }), reasonIs('invalid-argument', 'INVALID_ACTION'));
   await assert.rejects(actor.submit(input(0, { type: 'TAKE_GEMS', colors: ['white', 'white', 'blue'] })), reasonIs('invalid-argument', 'INVALID_ACTION'));
   await assert.rejects(actor.submit(input(99, take)), reasonIs('failed-precondition', 'VERSION_CONFLICT'));
   assert.equal((await room.collection('privateState').doc('server').get()).data().version, 0);
 
-  const result = (await actor.submit(input(0, take))).data;
+  const firstInput = input(0, take);
+  const result = (await actor.submit(firstInput)).data;
   assert.equal(result.version, 1);
   assert.equal(result.phase, 'playing');
   assert.equal(result.turnIndex, (initial.turnIndex + 1) % 2);
@@ -79,6 +81,25 @@ try {
   assert.equal(published.players[actor.user.uid].gems.green, 1);
   assert.equal((await room.collection('privatePlayers').doc(actor.user.uid).get()).data().version, 1);
   assert.equal((await room.collection('privatePlayers').doc(other.user.uid).get()).data().version, 1);
+  assert.deepEqual((await actor.submit(firstInput)).data, result);
+  await assert.rejects(
+    actor.submit({ ...firstInput, action: { type: 'TAKE_GEMS', colors: ['red', 'black', 'green'] } }),
+    reasonIs('failed-precondition', 'ACTION_ID_REUSED'),
+  );
+  await assert.rejects(
+    actor.submit({ ...firstInput, expectedVersion: 1 }),
+    reasonIs('failed-precondition', 'ACTION_ID_REUSED'),
+  );
+  const receipt = room.collection('actionReceipts').doc(actor.user.uid).collection('actions').doc(firstInput.actionId);
+  assert.deepEqual((await receipt.get()).data().result, result);
+  await assert.rejects(
+    getDoc(doc(actor.db, 'rooms', roomCode, 'actionReceipts', actor.user.uid, 'actions', firstInput.actionId)),
+    error => error.code === 'permission-denied',
+  );
+  await assert.rejects(
+    setDoc(doc(actor.db, 'rooms', roomCode, 'actionReceipts', actor.user.uid, 'actions', firstInput.actionId), { result: {} }),
+    error => error.code === 'permission-denied',
+  );
   await assert.rejects(actor.submit(input(0, take)), reasonIs('failed-precondition', 'VERSION_CONFLICT'));
 
   const reserveResult = (await other.submit(input(1, { type: 'RESERVE_CARD', level: 1 }))).data;
@@ -93,10 +114,33 @@ try {
     error => error.code === 'permission-denied',
   );
 
+  const sameInput = input(2, take);
+  const [sameA, sameB] = await Promise.all([actor.submit(sameInput), actor.submit(sameInput)]);
+  assert.deepEqual(sameA.data, sameB.data);
+  assert.equal(sameA.data.version, 3);
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 3);
+  assert.equal((await room.collection('actionReceipts').doc(actor.user.uid)
+    .collection('actions').doc(sameInput.actionId).get()).exists, true);
+
+  const competingA = input(3, { type: 'TAKE_GEMS', colors: ['red', 'black', 'white'] });
+  const competingB = input(3, { type: 'RESERVE_CARD', level: 2 });
+  const competing = await Promise.allSettled([other.submit(competingA), other.submit(competingB)]);
+  assert.equal(competing.filter(outcome => outcome.status === 'fulfilled').length, 1);
+  assert.equal(competing.filter(outcome => outcome.status === 'rejected' &&
+    reasonIs('failed-precondition', 'VERSION_CONFLICT')(outcome.reason)).length, 1);
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 4);
+  const receiptA = await room.collection('actionReceipts').doc(other.user.uid)
+    .collection('actions').doc(competingA.actionId).get();
+  const receiptB = await room.collection('actionReceipts').doc(other.user.uid)
+    .collection('actions').doc(competingB.actionId).get();
+  assert.equal(Number(receiptA.exists) + Number(receiptB.exists), 1);
+  assert.deepEqual((await actor.submit(firstInput)).data, result);
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 4);
+
   await room.update({ status: 'waiting' });
-  await assert.rejects(actor.submit(input(2, take)), reasonIs('failed-precondition', 'GAME_NOT_STARTED'));
-  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 2);
-  console.log('submitAction 인증·멤버십·턴·규칙·상태 투영 검증 통과');
+  await assert.rejects(actor.submit(input(4, take)), reasonIs('failed-precondition', 'GAME_NOT_STARTED'));
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 4);
+  console.log('submitAction 인증·턴·규칙·멱등성·동시 요청 검증 통과');
 } finally {
   await Promise.all(apps.map(deleteApp));
 }
