@@ -2,6 +2,8 @@
 
 > **20일차 현재 방 모델:** `rooms/{roomCode}` 문서에 `roomCode`, `hostUid`, `status`, `capacity`, `playerOrder`, `players`, `createdAt`, `updatedAt`을 저장합니다. `players`는 UID를 키로 하는 맵이며 값은 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`입니다. 좌석 번호는 `playerOrder` 순서로 계산합니다. 아래의 `rooms/{roomId}/players/{uid}`와 `roomCodes/{roomCode}` 설명은 최초 Callable 기반 설계 기록이며 현재 방 생성·참가에서 사용하지 않습니다. 이후 게임 상태 저장 모델은 별도로 구현해야 합니다.
 
+21일차 시작 전이는 같은 방 문서의 `status`를 `playing`으로 변경하고 `startedAt`을 추가합니다. 본인 준비 상태는 `players.{uid}.ready`에 기록합니다. 게임 덱과 턴 상태는 아직 생성하지 않습니다.
+
 엔진 타입은 `packages/game-engine/src/types/index.ts` 참고.
 
 ## 정적 게임 데이터 (5일차)

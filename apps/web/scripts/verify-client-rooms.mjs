@@ -51,6 +51,23 @@ function join(client, roomCode, nickname = '손님') {
   );
 }
 
+function ready(client, roomCode, value) {
+  return updateDoc(
+    doc(client.db, 'rooms', roomCode),
+    new FieldPath('players', client.user.uid, 'ready'), value,
+    'updatedAt', serverTimestamp(),
+  );
+}
+
+function start(client, roomCode) {
+  return updateDoc(
+    doc(client.db, 'rooms', roomCode),
+    'status', 'playing',
+    'startedAt', serverTimestamp(),
+    'updatedAt', serverTimestamp(),
+  );
+}
+
 const denied = error => error.code === 'permission-denied';
 
 try {
@@ -87,13 +104,38 @@ try {
   assert.equal(lastSeat.filter(result => result.status === 'fulfilled').length, 1);
   assert.equal(lastSeat.filter(result => result.status === 'rejected' && denied(result.reason)).length, 1);
   assert.equal((await getDoc(roomRef)).data().playerOrder.length, 4);
+  const fourthSeat = lastSeat[0].status === 'fulfilled' ? fourth : fifth;
+  await Promise.all([ready(host, roomCode, true), ready(guest, roomCode, true), ready(third, roomCode, true)]);
+  await assert.rejects(start(host, roomCode), denied); // Fourth player is not ready.
+  await ready(fourthSeat, roomCode, true);
+  await start(host, roomCode);
+  assert.equal((await getDoc(roomRef)).data().status, 'playing');
 
   const closedCode = code();
   await create(host, closedCode);
   await admin.doc(`rooms/${closedCode}`).update({ status: 'playing' });
   await assert.rejects(join(outsider, closedCode), denied);
 
-  console.log('클라이언트 방 생성·코드 참가·참가자 읽기·비회원 거부·정원·동시 참가 규칙 검증 통과');
+  const readyCode = code();
+  await create(host, readyCode);
+  await assert.rejects(start(host, readyCode), denied); // One player is not enough.
+  await ready(host, readyCode, true);
+  assert.equal((await getDoc(doc(host.db, 'rooms', readyCode))).data().players[host.user.uid].ready, true);
+  await assert.rejects(ready(host, readyCode, true), denied); // No duplicate transition.
+  await assert.rejects(ready(outsider, readyCode, true), denied);
+  await join(guest, readyCode);
+  await assert.rejects(start(host, readyCode), denied); // Guest is not ready.
+  await assert.rejects(start(guest, readyCode), denied); // Only the host starts.
+  await assert.rejects(updateDoc(doc(guest.db, 'rooms', readyCode), new FieldPath('players', host.user.uid, 'ready'), false, 'updatedAt', serverTimestamp()), denied);
+  await ready(guest, readyCode, true);
+  await assert.rejects(start(guest, readyCode), denied);
+  await start(host, readyCode);
+  assert.equal((await getDoc(doc(guest.db, 'rooms', readyCode))).data().status, 'playing');
+  await assert.rejects(start(host, readyCode), denied);
+  await assert.rejects(ready(guest, readyCode, false), denied);
+  await assert.rejects(join(third, readyCode), denied);
+
+  console.log('방 생성·참가·참가자 읽기·정원·동시 참가·본인 준비·방장 시작 규칙 검증 통과');
 } finally {
   await Promise.all(apps.map(deleteApp));
 }

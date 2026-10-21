@@ -49,11 +49,48 @@ service cloud.firestore {
         after.updatedAt == request.time;
     }
 
+    function validReadyChange() {
+      let uid = request.auth.uid;
+      let before = resource.data;
+      let after = request.resource.data;
+      return before.status == 'waiting' &&
+        uid in before.players &&
+        after.diff(before).affectedKeys().hasOnly(['players', 'updatedAt']) &&
+        after.players.diff(before.players).affectedKeys() == [uid].toSet() &&
+        after.players[uid].diff(before.players[uid]).affectedKeys() == ['ready'].toSet() &&
+        after.players[uid].ready is bool &&
+        after.players[uid].ready != before.players[uid].ready &&
+        after.updatedAt == request.time;
+    }
+
+    function playerReadyAt(index) {
+      let data = resource.data;
+      return index >= data.playerOrder.size() ||
+        data.players[data.playerOrder[index]].ready == true;
+    }
+
+    function validGameStart() {
+      let before = resource.data;
+      let after = request.resource.data;
+      return before.status == 'waiting' &&
+        before.hostUid == request.auth.uid &&
+        before.playerOrder.size() >= 2 &&
+        before.playerOrder.size() <= before.capacity &&
+        playerReadyAt(0) && playerReadyAt(1) &&
+        playerReadyAt(2) && playerReadyAt(3) &&
+        after.diff(before).affectedKeys().hasOnly(['status', 'startedAt', 'updatedAt']) &&
+        after.diff(before).addedKeys() == ['startedAt'].toSet() &&
+        after.status == 'playing' &&
+        after.startedAt == request.time &&
+        after.updatedAt == request.time;
+    }
+
     match /rooms/{roomCode} {
       allow get: if signedIn() && request.auth.uid in resource.data.playerOrder;
       allow list, delete: if false;
       allow create: if signedIn() && validRoomCreate(roomCode);
-      allow update: if signedIn() && validRoomJoin();
+      allow update: if signedIn() &&
+        (validRoomJoin() || validReadyChange() || validGameStart());
     }
 
     match /{document=**} {

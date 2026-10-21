@@ -1,15 +1,17 @@
 # 멀티플레이 API 계약 (계획)
 
-> **20일차 현재 구현:** `createRoom`과 `joinRoom`은 Callable이 아니라 웹 Firestore SDK와 보안 규칙을 사용합니다. 초대 코드가 `rooms/{roomCode}` 문서 ID입니다. 방 생성은 로그인 사용자 본인의 초기 정보만 쓰고, 참가 시에는 읽기 없이 본인 정보만 추가합니다. 비참가자는 방을 조회할 수 없어 없는 코드·정원 초과·시작한 방을 `ROOM_UNAVAILABLE`로 안내합니다. 아래의 나머지 Callable API는 추후 설계안입니다.
+> **20일차 현재 구현:** `createRoom`과 `joinRoom`은 웹 Firestore SDK와 보안 규칙을 사용합니다. 초대 코드가 `rooms/{roomCode}` 문서 ID입니다. 방 생성은 로그인 사용자 본인의 초기 정보만 쓰고, 참가 시에는 읽기 없이 본인 정보만 추가합니다. 비참가자는 방을 조회할 수 없어 없는 코드·정원 초과·시작한 방을 `ROOM_UNAVAILABLE`로 안내합니다.
 
-모든 API는 익명 로그인을 포함한 Firebase 인증을 요구한다. 초대 코드는 서버에서 생성·검증하며, 클라이언트는 Firestore 게임 문서를 직접 수정하지 않는다. 세부 정책은 [요구사항](requirements.md)을 따른다.
+> **21일차 구현:** `setReady`와 `startGame`도 웹 Firestore SDK를 사용합니다. 참가자 본인의 준비 전환과 방장만 가능한 시작을 보안 규칙이 검증합니다. `startGame`은 방 상태를 `playing`으로 전환하며 초기 게임 상태 생성은 이후 일차 범위입니다.
+
+모든 API는 익명 로그인을 포함한 Firebase 인증을 요구한다. 방 생성·참가·준비·시작은 클라이언트 SDK와 제한된 Firestore 규칙으로 처리한다. 실제 게임 상태·비공개 데이터 변경은 아직 구현하지 않았다. 세부 정책은 [요구사항](requirements.md)을 따른다.
 
 | API | 입력 | 성공 출력 | 필수 검증·실패 조건 |
 |---|---|---|---|
-| `createRoom` | `nickname` | `roomId`, `roomCode`, 방장 자리 | 닉네임 2~16자, 인증, 코드 충돌 시 서버 재시도 |
+| `createRoom` | `nickname` | `roomId`, `roomCode`, 방장 자리 | 닉네임 2~16자, 인증, 코드 충돌 시 재요청 |
 | `joinRoom` | `roomCode`, `nickname` | `roomId`, 참가 자리 | 인증, 닉네임·코드 유효성, 방 존재·대기 상태·정원·중복 참가 |
-| `setReady` | `roomId`, `ready` | 갱신된 준비 상태 | 인증, 방 멤버십, 대기 상태 |
-| `startGame` | `roomId` | 게임 시작 상태와 버전 | 인증, 방장, 2~4명 모두 준비, 게임 미시작 |
+| `setReady` | `roomCode`, `ready` | 준비 전환 완료 | 인증, 방 멤버십, 대기 상태, 본인 필드만 변경 |
+| `startGame` | `roomCode` | `playing` 상태 전환 완료 | 인증, 방장, 2~4명 모두 준비, 게임 미시작 |
 | `submitAction` | `roomId`, `actionId`, `expectedVersion`, `action` | 적용된 게임 버전·행동 확인 | 인증, 멤버십, 현재 턴, 게임 단계, 액션 규칙, 버전, 멱등성 |
 | `leaveRoom` | `roomId` | 대기실 퇴장 또는 진행 중 기권 결과 | 인증, 방 멤버십, 진행 단계별 정책 |
 
@@ -19,4 +21,4 @@
 
 대표 오류: `UNAUTHENTICATED`, `INVALID_NICKNAME`, `INVALID_ROOM_CODE`, `ROOM_NOT_FOUND`, `ROOM_FULL`, `ROOM_NOT_WAITING`, `NOT_ROOM_MEMBER`, `NOT_HOST`, `NOT_READY`, `NOT_YOUR_TURN`, `INVALID_ACTION`, `VERSION_CONFLICT`, `ACTION_ID_REUSED`, `GAME_FINISHED`. 클라이언트는 오류를 사용자에게 설명하고 서버 상태를 다시 구독한다.
 
-`createRoom`과 `joinRoom`은 20일차에 구현했다. 두 함수는 Firebase Auth 인증을 요구하며 `roomId`, `roomCode`, `seatIndex`를 반환한다. 오류는 Callable `HttpsError`의 `details.reason`에 `UNAUTHENTICATED`, `INVALID_NICKNAME`, `INVALID_ROOM_CODE`, `ROOM_NOT_FOUND`, `ROOM_FULL`, `ROOM_NOT_WAITING`, `ALREADY_IN_ROOM` 중 해당 값을 담는다. 그 외 함수는 이후 일차의 설계 계약이다.
+`createRoom`과 `joinRoom`은 20일차, `setReady`와 `startGame`은 21일차에 구현했다. 방 서비스의 사전 검증 오류는 `RoomActionError.details.reason`에 담는다. 실제 쓰기 권한은 Firestore 규칙이 최종 판정하며, 경합으로 조건이 바뀐 경우 `permission-denied`가 발생할 수 있다. `submitAction`과 `leaveRoom`은 이후 일차의 설계 계약이다.

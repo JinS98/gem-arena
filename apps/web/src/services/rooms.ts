@@ -39,12 +39,27 @@ export interface WaitingRoom {
   playerOrder: string[];
   players: Record<string, RoomPlayer>;
   capacity: number;
+  startedAt?: unknown;
 }
 
 export interface RoomPlayer {
   uid: string;
   nickname: string;
   ready: boolean;
+}
+
+function roomReference(roomCode: string) {
+  const code = roomCode.trim().toUpperCase();
+  if (!codePattern.test(code)) throw new RoomActionError('INVALID_ROOM_CODE');
+  return doc(getFirebase().db, 'rooms', code);
+}
+
+async function currentRoom(roomCode: string, uid: string): Promise<WaitingRoom> {
+  const snapshot = await getDoc(roomReference(roomCode));
+  if (!snapshot.exists()) throw new RoomActionError('ROOM_NOT_FOUND');
+  const room = snapshot.data() as WaitingRoom;
+  if (!room.players?.[uid]) throw new RoomActionError('NOT_ROOM_MEMBER');
+  return room;
 }
 
 export async function createRoom(nickname: string): Promise<RoomAccess> {
@@ -98,6 +113,35 @@ export async function joinRoom(roomCode: string, nickname: string): Promise<Room
   return { roomId: code, roomCode: code, seatIndex: room.playerOrder.indexOf(uid) };
 }
 
+export async function setReady(roomCode: string, ready: boolean): Promise<void> {
+  const uid = (await ensureAnonymousSession()).uid;
+  const room = await currentRoom(roomCode, uid);
+  if (room.status !== 'waiting') throw new RoomActionError('ROOM_NOT_WAITING');
+  if (room.players[uid].ready === ready) return;
+  await updateDoc(
+    roomReference(roomCode),
+    new FieldPath('players', uid, 'ready'), ready,
+    'updatedAt', serverTimestamp(),
+  );
+}
+
+export async function startGame(roomCode: string): Promise<void> {
+  const uid = (await ensureAnonymousSession()).uid;
+  const room = await currentRoom(roomCode, uid);
+  if (room.status !== 'waiting') throw new RoomActionError('ROOM_NOT_WAITING');
+  if (room.hostUid !== uid) throw new RoomActionError('NOT_HOST');
+  if (room.playerOrder.length < 2) throw new RoomActionError('NEED_PLAYERS');
+  if (!room.playerOrder.every(playerId => room.players[playerId]?.ready)) {
+    throw new RoomActionError('NOT_ALL_READY');
+  }
+  await updateDoc(
+    roomReference(roomCode),
+    'status', 'playing',
+    'startedAt', serverTimestamp(),
+    'updatedAt', serverTimestamp(),
+  );
+}
+
 export function roomErrorMessage(error: unknown): string {
   const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
   if (code === 'permission-denied') return 'Firestore 규칙에서 방 요청을 거부했습니다. 최신 규칙을 게시했는지 확인해 주세요.';
@@ -113,6 +157,10 @@ export function roomErrorMessage(error: unknown): string {
     case 'ROOM_FULL': return '방 정원이 가득 찼습니다.';
     case 'ROOM_NOT_WAITING': return '이미 시작했거나 종료된 방입니다.';
     case 'ALREADY_IN_ROOM': return '이미 이 방에 참가했습니다. 대기실 주소로 다시 들어가 주세요.';
+    case 'NOT_ROOM_MEMBER': return '이 방의 참가자가 아닙니다.';
+    case 'NOT_HOST': return '방장만 게임을 시작할 수 있습니다.';
+    case 'NEED_PLAYERS': return '게임 시작에는 최소 2명이 필요합니다.';
+    case 'NOT_ALL_READY': return '모든 참가자가 준비해야 시작할 수 있습니다.';
   }
   return '방 요청을 처리하지 못했습니다. 연결 상태를 확인하고 다시 시도해 주세요.';
 }

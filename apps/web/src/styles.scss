@@ -88,6 +88,16 @@ button{cursor:pointer}
 .waiting-room__players{display:flex;flex-direction:column;gap:9px;margin:0;padding:0;list-style:none}
 .waiting-room__players li{display:flex;align-items:center;gap:12px;padding:11px;border:1px solid #ffffff20;border-radius:8px;background:#ffffff0a}
 .waiting-room__players small{margin-left:auto;color:#d8b778}
+.waiting-room__players small{margin-left:0}
+.waiting-room__readiness{margin-left:auto;padding:5px 9px;border:1px solid #ffffff2d;border-radius:999px;color:#b9c4d2;font-size:11px;white-space:nowrap}
+.waiting-room__readiness--ready{border-color:#83cba783;background:#2b755340;color:#c9f1d9}
+.waiting-room__controls{display:flex;flex-wrap:wrap;gap:9px;margin-top:20px}
+.waiting-room__controls p{flex-basis:100%;margin:0 0 3px;font-size:12px}
+.waiting-room__controls button{min-height:40px;padding:9px 14px;border:1px solid #d8b778;border-radius:8px;background:#1d3048;color:#f4ddad;font-weight:800;cursor:pointer}
+.waiting-room__controls .waiting-room__start{background:#d8b778;color:#162238}
+.waiting-room__controls button:disabled{opacity:.45;cursor:not-allowed}
+.waiting-room__controls button:focus-visible{outline:2px solid #fff3ca;outline-offset:3px}
+.waiting-room__action-error{color:#ffb4a9!important}
 .waiting-room__seat{display:grid;place-items:center;width:31px;height:31px;border-radius:50%;background:#cda567;color:#172237;font-weight:900}
 .waiting-room__error{margin-top:28px;color:#ffb4a9}
 @media(max-width:700px){.waiting-room__grid{grid-template-columns:1fr}.waiting-room{padding:48px 18px}.waiting-room__panel{padding:22px}}
