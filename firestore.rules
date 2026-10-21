@@ -1,22 +1,63 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function roomMember(roomId) {
-      return request.auth != null &&
-        exists(/databases/$(database)/documents/rooms/$(roomId)/players/$(request.auth.uid));
+    function signedIn() {
+      return request.auth != null;
     }
 
-    match /rooms/{roomId} {
-      allow get: if roomMember(roomId);
-      allow list, write: if false;
-
-      match /players/{uid} {
-        allow get, list: if roomMember(roomId);
-        allow write: if false;
-      }
+    function validPlayer(player, uid) {
+      return player.keys().hasOnly(['uid', 'nickname', 'ready', 'forfeited', 'joinedAt']) &&
+        player.keys().hasAll(['uid', 'nickname', 'ready', 'forfeited', 'joinedAt']) &&
+        player.uid == uid &&
+        player.nickname is string &&
+        player.nickname.size() >= 2 &&
+        player.nickname.size() <= 16 &&
+        player.ready == false &&
+        player.forfeited == false &&
+        player.joinedAt == request.time;
     }
 
-    // 초대 코드 인덱스와 게임 비공개 상태는 서버에서만 접근한다.
-    match /{document=**} { allow read, write: if false; }
+    function validRoomCreate(roomCode) {
+      let data = request.resource.data;
+      return roomCode.matches('^[A-HJ-NP-Z2-9]{8}$') &&
+        data.keys().hasOnly(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
+        data.keys().hasAll(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
+        data.roomCode == roomCode &&
+        data.hostUid == request.auth.uid &&
+        data.status == 'waiting' &&
+        data.capacity == 4 &&
+        data.playerOrder == [request.auth.uid] &&
+        data.players.keys().hasOnly([request.auth.uid]) &&
+        data.players.keys().hasAll([request.auth.uid]) &&
+        validPlayer(data.players[request.auth.uid], request.auth.uid) &&
+        data.createdAt == request.time &&
+        data.updatedAt == request.time;
+    }
+
+    function validRoomJoin() {
+      let uid = request.auth.uid;
+      let before = resource.data;
+      let after = request.resource.data;
+      return before.status == 'waiting' &&
+        before.playerOrder.size() < before.capacity &&
+        !(uid in before.players) &&
+        after.diff(before).affectedKeys().hasOnly(['playerOrder', 'players', 'updatedAt']) &&
+        after.playerOrder == before.playerOrder.concat([uid]) &&
+        after.players.diff(before.players).affectedKeys() == [uid].toSet() &&
+        after.players.diff(before.players).addedKeys() == [uid].toSet() &&
+        validPlayer(after.players[uid], uid) &&
+        after.updatedAt == request.time;
+    }
+
+    match /rooms/{roomCode} {
+      allow get: if signedIn() && request.auth.uid in resource.data.playerOrder;
+      allow list, delete: if false;
+      allow create: if signedIn() && validRoomCreate(roomCode);
+      allow update: if signedIn() && validRoomJoin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

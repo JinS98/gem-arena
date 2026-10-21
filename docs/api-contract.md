@@ -1,4 +1,6 @@
-# Callable API 계약 (계획)
+# 멀티플레이 API 계약 (계획)
+
+> **20일차 현재 구현:** `createRoom`과 `joinRoom`은 Callable이 아니라 웹 Firestore SDK와 보안 규칙을 사용합니다. 초대 코드가 `rooms/{roomCode}` 문서 ID입니다. 방 생성은 로그인 사용자 본인의 초기 정보만 쓰고, 참가 시에는 읽기 없이 본인 정보만 추가합니다. 비참가자는 방을 조회할 수 없어 없는 코드·정원 초과·시작한 방을 `ROOM_UNAVAILABLE`로 안내합니다. 아래의 나머지 Callable API는 추후 설계안입니다.
 
 모든 API는 익명 로그인을 포함한 Firebase 인증을 요구한다. 초대 코드는 서버에서 생성·검증하며, 클라이언트는 Firestore 게임 문서를 직접 수정하지 않는다. 세부 정책은 [요구사항](requirements.md)을 따른다.
 

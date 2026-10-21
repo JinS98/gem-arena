@@ -1,5 +1,30 @@
-import { httpsCallable } from 'firebase/functions';
+import { arrayUnion, doc, FieldPath, getDoc, serverTimestamp, setDoc, updateDoc } from 'firebase/firestore';
 import { getFirebase } from './firebase';
+import { ensureAnonymousSession } from './playerIdentity';
+import { nicknameError, normalizeNickname } from './nickname';
+
+const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const codePattern = /^[A-HJ-NP-Z2-9]{8}$/;
+const roomCapacity = 4;
+
+class RoomActionError extends Error {
+  details: { reason: string };
+
+  constructor(reason: string) {
+    super(reason);
+    this.details = { reason };
+  }
+}
+
+function validNickname(value: string): string {
+  if (nicknameError(value)) throw new RoomActionError('INVALID_NICKNAME');
+  return normalizeNickname(value);
+}
+
+function generateRoomCode(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(8));
+  return Array.from(bytes, byte => alphabet[byte & 31]).join('');
+}
 
 export interface RoomAccess {
   roomId: string;
@@ -12,30 +37,76 @@ export interface WaitingRoom {
   hostUid: string;
   status: 'waiting' | 'playing' | 'finished';
   playerOrder: string[];
+  players: Record<string, RoomPlayer>;
   capacity: number;
 }
 
 export interface RoomPlayer {
   uid: string;
   nickname: string;
-  seatIndex: number;
   ready: boolean;
 }
 
 export async function createRoom(nickname: string): Promise<RoomAccess> {
-  const callable = httpsCallable<{ nickname: string }, RoomAccess>(getFirebase().functions, 'createRoom');
-  return (await callable({ nickname })).data;
+  const name = validNickname(nickname);
+  const uid = (await ensureAnonymousSession()).uid;
+  const { db } = getFirebase();
+  const roomCode = generateRoomCode();
+  await setDoc(doc(db, 'rooms', roomCode), {
+    roomCode,
+    hostUid: uid,
+    status: 'waiting',
+    playerOrder: [uid],
+    players: { [uid]: { uid, nickname: name, ready: false, forfeited: false, joinedAt: serverTimestamp() } },
+    capacity: roomCapacity,
+    createdAt: serverTimestamp(),
+    updatedAt: serverTimestamp(),
+  });
+  return { roomId: roomCode, roomCode, seatIndex: 0 };
 }
 
 export async function joinRoom(roomCode: string, nickname: string): Promise<RoomAccess> {
-  const callable = httpsCallable<{ roomCode: string; nickname: string }, RoomAccess>(getFirebase().functions, 'joinRoom');
-  return (await callable({ roomCode, nickname })).data;
+  const name = validNickname(nickname);
+  const code = roomCode.trim().toUpperCase();
+  if (!codePattern.test(code)) throw new RoomActionError('INVALID_ROOM_CODE');
+  const uid = (await ensureAnonymousSession()).uid;
+  const roomRef = doc(getFirebase().db, 'rooms', code);
+  try {
+    // The rule checks the old and new document atomically, including the four-seat limit.
+    // A new player cannot read the room until this write has made them a member.
+    await updateDoc(
+      roomRef,
+      'playerOrder', arrayUnion(uid),
+      new FieldPath('players', uid), { uid, nickname: name, ready: false, forfeited: false, joinedAt: serverTimestamp() },
+      'updatedAt', serverTimestamp(),
+    );
+  } catch (error) {
+    if (error && typeof error === 'object' && 'code' in error && error.code === 'permission-denied') {
+      try {
+        const current = await getDoc(roomRef);
+        if (current.exists() && (current.data() as WaitingRoom).players?.[uid]) {
+          throw new RoomActionError('ALREADY_IN_ROOM');
+        }
+      } catch (readError) {
+        if (readError instanceof RoomActionError) throw readError;
+      }
+      throw new RoomActionError('ROOM_UNAVAILABLE');
+    }
+    throw error;
+  }
+  const room = (await getDoc(roomRef)).data() as WaitingRoom;
+  return { roomId: code, roomCode: code, seatIndex: room.playerOrder.indexOf(uid) };
 }
 
 export function roomErrorMessage(error: unknown): string {
+  const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
+  if (code === 'permission-denied') return 'Firestore 규칙에서 방 요청을 거부했습니다. 최신 규칙을 게시했는지 확인해 주세요.';
+  if (code === 'unavailable') return 'Firestore 연결을 확인하고 다시 시도해 주세요.';
   const details = error && typeof error === 'object' && 'details' in error ? error.details : null;
   const reason = details && typeof details === 'object' && 'reason' in details ? details.reason : null;
   switch (reason) {
+    case 'ROOM_CODE_COLLISION': return '초대 코드를 만들지 못했습니다. 다시 시도해 주세요.';
+    case 'ROOM_UNAVAILABLE': return '방을 찾지 못했거나, 정원이 찼거나, 이미 시작된 방입니다. 코드를 확인해 주세요.';
     case 'INVALID_NICKNAME': return '닉네임은 앞뒤 공백을 제외하고 2~16자로 입력해 주세요.';
     case 'INVALID_ROOM_CODE': return '초대 코드는 영문·숫자 8자리입니다.';
     case 'ROOM_NOT_FOUND': return '일치하는 방이 없습니다. 초대 코드를 확인해 주세요.';

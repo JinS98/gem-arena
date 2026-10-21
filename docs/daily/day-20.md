@@ -1,5 +1,7 @@
 # 20일차 — 방 생성·초대 코드·참가 검증
 
+> **Blaze 없이 사용하는 현재 구현 (2026-10-21):** 아래의 Callable Function 기반 작업 기록은 최초 구현을 설명합니다. 현재 `createRoom`과 `joinRoom`은 웹 Firestore SDK를 사용합니다. 초대 코드가 `rooms/{roomCode}` 문서 ID이며, 참가자는 참가 전 방을 읽지 않고 본인 정보만 추가합니다. `firestore.rules`는 참가자 읽기, 제한된 방 생성·참가 쓰기만 허용합니다. 실제 프로젝트에서는 익명 로그인·Firestore를 준비하고 `firebase deploy --only firestore:rules --project gem-arena`로 규칙을 게시한 다음 `npm run dev`를 실행합니다. 방 생성·참가에 Cloud Functions나 Blaze 요금제는 필요하지 않습니다. `npm run test:rooms`는 Auth·Firestore 에뮬레이터에서 이 경로의 정원·동시 참가·읽기 권한을 확인합니다. 준비·시작 기능은 이후 일차에 이 문서 모델을 기준으로 추가해야 합니다.
+
 **단계:** 멀티플레이  
 **예상 시간:** 3~4시간  
 **상태:** 완료
@@ -20,7 +22,7 @@
 
 ## 관련 파일/폴더
 
-`functions/src/rooms.ts`, `functions/src/index.ts`, `firestore.rules`, `apps/web/src/services/rooms.ts`, `apps/web/src/pages/LobbyPage.tsx`, `apps/web/src/pages/RoomPage.tsx`, `apps/web/src/styles.scss`, `apps/web/scripts/verify-rooms.mjs`
+`firestore.rules`, `apps/web/src/services/rooms.ts`, `apps/web/src/pages/LobbyPage.tsx`, `apps/web/src/pages/RoomPage.tsx`, `apps/web/src/styles.scss`, `apps/web/scripts/verify-client-rooms.mjs`
 
 ## 입력·출력·예외 조건
 
@@ -59,15 +61,15 @@
 
 1. 이미 설정한 **Authentication → 로그인 방법 → 익명**이 활성화되어 있는지 확인한다.
 2. **Firestore Database**가 아직 없다면 기본 데이터베이스를 만든다. Standard edition과 프로덕션 모드를 선택한다. 새로 위치를 정한다면 현재 Functions 설정과 같은 서울(`asia-northeast3`)을 사용할 수 있다. 기존 데이터베이스가 있으면 다시 만들 필요는 없다. [Firestore 시작 안내](https://firebase.google.com/docs/firestore/quickstart)
-3. 실제 프로젝트에 Cloud Functions를 배포할 때는 **Blaze 요금제**가 필요하다. [Functions 배포 안내](https://firebase.google.com/docs/functions/get-started)
-4. 실제 프로젝트에 적용할 때 Functions와 저장소의 Firestore 규칙을 함께 배포한다. 규칙 배포는 Console의 기존 규칙을 덮어쓴다. 20일차 작업에서는 실제 프로젝트에 배포하지 않았다. [규칙 배포 안내](https://firebase.google.com/docs/rules/manage-deploy)
+3. 저장소의 `firestore.rules`를 `firebase deploy --only firestore:rules --project gem-arena`로 게시한다. 규칙은 Console의 기존 규칙을 덮어쓴다. 현재 규칙은 `gem-arena` 프로젝트에 게시했다. [규칙 배포 안내](https://firebase.google.com/docs/rules/manage-deploy)
+4. `apps/web/.env`에 실제 웹 앱 설정을 넣고 `VITE_USE_FIREBASE_EMULATORS=false`로 지정한 뒤 `npm run dev`를 실행한다. 방 생성·참가에는 Cloud Functions 배포나 Blaze 요금제가 필요하지 않다.
 
 ## 작업 기록
 
-- 구현 내용: 서버 발급 초대 코드와 방/참가자 문서, 생성·참가 Callable, 참가자 전용 읽기 규칙, 로비 입력과 대기실 구독을 연결했다.
-- 실행한 테스트/결과: `npm run typecheck`, `npm run build`, `npm test`, `node apps/web/scripts/verify-rooms.mjs` 통과. 독립 Edge 프로필 2개에서 생성·참가 후 양쪽에 2명 표시 확인.
-- 이슈/의사결정: Firestore 문서를 클라이언트가 직접 생성하지 않도록 서버 트랜잭션만 쓰기를 허용한다. 대기실의 준비·시작 버튼은 21일차에 구현한다.
-- 다음 작업에 전달할 사항: 21일차에는 현재 `rooms/{roomId}`와 `players/{uid}`에 준비 상태 갱신, 방장 시작, 시작 조건 검증을 추가한다. 배포 전에는 실제 Firebase 프로젝트에서 Firestore 생성 및 Functions/Rules 배포가 필요하다.
+- 구현 내용: 최초 Callable 기반 구현을 Firestore 클라이언트 SDK의 방 생성·참가로 교체했다. 방 코드를 문서 ID로 사용하고, 참가자 전용 읽기와 제한된 생성·참가 규칙을 적용했다.
+- 실행한 테스트/결과: `npm run typecheck`, `npm run build`, `npm test`, `npm run test:rooms`, `npm run test:emulators` 통과. 규칙의 생성·참가·비회원 거부·정원·동시 참가를 검증했다.
+- 이슈/의사결정: 참가 전 방 읽기를 허용하지 않으므로 없는 코드·정원 초과·시작한 방은 통합 안내를 표시한다. 2026-10-21에 실제 `gem-arena` 프로젝트에 Firestore 규칙을 게시했다.
+- 다음 작업에 전달할 사항: 21일차의 준비 상태 갱신·방장 시작은 단일 `rooms/{roomCode}` 문서와 별도 보안 규칙에 맞춰 구현해야 한다. 실제 게임 상태 변경·비공개 데이터는 아직 연결되지 않았다.
 
 ## 참고
 

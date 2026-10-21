@@ -11,7 +11,7 @@
     "dev:emulators": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev --mode emulator",
     "emulators": "corepack pnpm --filter @gem-arena/functions build && firebase emulators:start --project demo-gem-arena --only auth,firestore,functions",
     "test:emulators": "corepack pnpm --filter @gem-arena/functions build && firebase emulators:exec --project demo-gem-arena --only auth,firestore,functions \"node apps/web/scripts/verify-emulators.mjs\"",
-    "test:rooms": "corepack pnpm --filter @gem-arena/functions build && firebase emulators:exec --project demo-gem-arena --only auth,firestore,functions \"node apps/web/scripts/verify-rooms.mjs\""
+    "test:rooms": "firebase emulators:exec --project demo-gem-arena --only auth,firestore \"node apps/web/scripts/verify-client-rooms.mjs\""
   },
   "devDependencies": {
     "firebase-tools": "^15.34.0"

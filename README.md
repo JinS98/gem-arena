@@ -56,7 +56,7 @@
 
 웹의 에뮬레이터 모드는 `apps/web/.env.emulator`의 데모 설정을 사용합니다. `http://localhost:5173/lobby`에서 익명 로그인과 닉네임 입력을 확인할 수 있습니다. 로그인 복원을 기다린 다음 필요할 때만 새 UID를 만들며, 닉네임은 Firebase Auth 프로필에 기본값으로 저장합니다. 같은 브라우저에서 새로고침하면 UID와 닉네임이 돌아옵니다. 브라우저 데이터를 지우거나 에뮬레이터를 재시작하면 기존 익명 계정을 복구할 수 없습니다. 실제 프로젝트에서는 Firebase Console에서 **Authentication → 로그인 방법 → 익명**을 활성화하고 `apps/web/.env`에 프로젝트 설정을 넣어야 합니다. 방마다 확정되는 닉네임은 20일차 `createRoom`/`joinRoom`에 전달하며, 입장 화면의 기본값은 방별 닉네임을 대신하지 않습니다.
 
-현재 Firestore 규칙은 방 참가자에게 해당 방과 참가자 목록 읽기만 허용합니다. 초대 코드 색인 읽기와 모든 클라이언트 쓰기는 거부하며, 방 생성·참가는 `createRoom`/`joinRoom` Callable Function이 처리합니다.
+현재 Firestore 규칙은 방 참가자에게만 방 문서 읽기를 허용합니다. 로그인 사용자의 방 생성과 초대 코드 참가만 엄격하게 검사합니다. `createRoom`/`joinRoom`은 웹 Firestore SDK를 사용하므로 Cloud Functions 배포가 필요하지 않습니다.
 
 ## 문서
 
@@ -68,7 +68,7 @@
 
 ## 원칙
 
-1. 게임 상태 변경 권한은 Cloud Functions 서버에만 둡니다.
+1. 방 생성·참가는 Firestore 규칙으로 검증합니다. 실제 게임 상태 변경은 별도 서버 검증 설계를 완료한 뒤 연결합니다.
 2. 공개 문서와 비공개 카드/덱을 분리합니다.
 3. UI 상태(Zustand)와 서버 확정 상태(Firestore)를 혼동하지 않습니다.
 4. 공개 배포 시 원작 명칭·이미지·카드 데이터의 권리를 확인하고 독자 자산을 사용합니다.
@@ -83,7 +83,9 @@
 
 1. Firebase Console → **Authentication → 로그인 방법**에서 **익명** 로그인이 활성화되어 있는지 확인합니다.
 2. **빌드 → Firestore Database → 데이터베이스 만들기**에서 기본 데이터베이스를 만듭니다. 처음 생성한다면 Standard edition, 프로덕션 모드를 선택하고 데이터 위치를 결정합니다. 현재 Functions 리전은 서울(`asia-northeast3`)입니다. 기존 데이터베이스가 있다면 다시 만들지 않습니다.
-3. Cloud Functions 배포에는 Firebase **Blaze 요금제**가 필요합니다. Firebase Console의 요금제에서 확인합니다.
-4. 로컬에서 `npm run build` 후 `firebase deploy --only functions,firestore:rules --project <PROJECT_ID>`로 Functions와 저장소의 `firestore.rules`를 함께 배포합니다. 실제 배포는 별도 요청 시 진행합니다. 배포한 규칙은 Console에서 직접 편집한 규칙을 덮어씁니다.
+3. 저장소의 `firestore.rules`를 게시합니다: `firebase deploy --only firestore:rules --project <PROJECT_ID>`. 게시하면 Console의 기존 규칙을 덮어씁니다.
+4. `apps/web/.env`에 웹 앱 설정을 넣고 `VITE_USE_FIREBASE_EMULATORS=false`로 설정한 뒤 `npm run dev`를 실행합니다. 서로 다른 브라우저 프로필에서 방을 만들고 초대 코드로 참가합니다. 방 생성·참가에는 Blaze 요금제나 Cloud Functions 배포가 필요하지 않습니다.
 
-참고: [Firestore 시작하기](https://firebase.google.com/docs/firestore/quickstart), [Functions 배포와 요금제](https://firebase.google.com/docs/functions/get-started), [규칙 배포](https://firebase.google.com/docs/rules/manage-deploy).
+방 문서 ID가 초대 코드입니다. 참가 전에는 방을 읽을 수 없으므로 코드 오류·정원 초과·진행 중인 방은 하나의 안내로 표시합니다. 준비·게임 시작·실제 멀티 턴 처리는 이후 일차 구현 범위입니다.
+
+참고: [Firestore 시작하기](https://firebase.google.com/docs/firestore/quickstart), [규칙 배포](https://firebase.google.com/docs/rules/manage-deploy).

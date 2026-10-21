@@ -1,15 +1,14 @@
 import { useEffect, useState } from 'react';
-import { collection, doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { Link, useParams } from 'react-router-dom';
 import { getFirebase } from '../services/firebase';
 import { ensureAnonymousSession } from '../services/playerIdentity';
-import type { RoomPlayer, WaitingRoom } from '../services/rooms';
+import type { WaitingRoom } from '../services/rooms';
 
 export function RoomPage() {
   const { roomId } = useParams();
   const [myUid, setMyUid] = useState('');
   const [room, setRoom] = useState<WaitingRoom | null>(null);
-  const [players, setPlayers] = useState<RoomPlayer[]>([]);
   const [error, setError] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -17,27 +16,26 @@ export function RoomPage() {
     if (!roomId) return;
     let cancelled = false;
     let unsubscribeRoom = () => {};
-    let unsubscribePlayers = () => {};
     ensureAnonymousSession().then(user => {
       if (cancelled) return;
       setMyUid(user.uid);
-      const { db } = getFirebase();
-      unsubscribeRoom = onSnapshot(doc(db, 'rooms', roomId), snapshot => {
+      unsubscribeRoom = onSnapshot(doc(getFirebase().db, 'rooms', roomId), snapshot => {
         if (!snapshot.exists()) {
           setError('방을 찾지 못했습니다.');
           return;
         }
-        setRoom(snapshot.data() as WaitingRoom);
-        unsubscribePlayers();
-        unsubscribePlayers = onSnapshot(collection(db, 'rooms', roomId, 'players'), playerSnapshot => {
-          setPlayers(playerSnapshot.docs.map(player => player.data() as RoomPlayer).sort((a, b) => a.seatIndex - b.seatIndex));
-        }, () => setError('참가자 목록을 읽지 못했습니다.'));
-      }, () => setError('이 방에 접근할 수 없습니다. 초대 코드로 참가해 주세요.'));
+        const nextRoom = snapshot.data() as WaitingRoom;
+        if (!nextRoom.players?.[user.uid]) {
+          setError('이 방에 참가하지 않았습니다. 초대 코드로 참가해 주세요.');
+          return;
+        }
+        setError('');
+        setRoom(nextRoom);
+      }, () => setError('방 정보를 읽지 못했습니다. Firestore 규칙을 확인해 주세요.'));
     }).catch(() => setError('로그인을 확인하지 못했습니다. 로비에서 다시 시도해 주세요.'));
     return () => {
       cancelled = true;
       unsubscribeRoom();
-      unsubscribePlayers();
     };
   }, [roomId]);
 
@@ -63,9 +61,9 @@ export function RoomPage() {
         <Link className="text-link" to="/lobby">다른 방으로 이동</Link>
       </div>
       <div className="waiting-room__panel">
-        <span className="eyebrow">PLAYERS · {players.length}/{room.capacity}</span>
+        <span className="eyebrow">PLAYERS · {room.playerOrder.length}/{room.capacity}</span>
         <h2>참가자</h2>
-        <ol className="waiting-room__players">{players.map(player => <li key={player.uid}><span className="waiting-room__seat">{player.seatIndex + 1}</span><strong>{player.nickname}</strong>{player.uid === room.hostUid && <small>방장</small>}{player.uid === myUid && <small>나</small>}</li>)}</ol>
+        <ol className="waiting-room__players">{room.playerOrder.map((uid, seatIndex) => ({ player: room.players[uid], seatIndex })).filter(({ player }) => Boolean(player)).map(({ player, seatIndex }) => <li key={player.uid}><span className="waiting-room__seat">{seatIndex + 1}</span><strong>{player.nickname}</strong>{player.uid === room.hostUid && <small>방장</small>}{player.uid === myUid && <small>나</small>}</li>)}</ol>
         <p>준비 상태와 게임 시작은 21일차에 연결됩니다.</p>
       </div>
     </div>}
