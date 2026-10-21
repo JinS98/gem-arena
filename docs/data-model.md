@@ -1,12 +1,14 @@
 # 데이터 모델
 
-> **20일차 현재 방 모델:** `rooms/{roomCode}` 문서에 `roomCode`, `hostUid`, `status`, `capacity`, `playerOrder`, `players`, `createdAt`, `updatedAt`을 저장합니다. `players`는 UID를 키로 하는 맵이며 값은 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`입니다. 좌석 번호는 `playerOrder` 순서로 계산합니다. 아래의 `rooms/{roomId}/players/{uid}`와 `roomCodes/{roomCode}` 설명은 최초 Callable 기반 설계 기록이며 현재 방 생성·참가에서 사용하지 않습니다. 이후 게임 상태 저장 모델은 별도로 구현해야 합니다.
+> **현재 방 모델:** `rooms/{roomCode}` 문서에 `roomCode`, `hostUid`, `status`, `capacity`, `playerOrder`, `players`, `createdAt`, `updatedAt`을 저장합니다. `players`는 UID를 키로 하는 맵이며 값은 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`입니다. 좌석 번호는 `playerOrder` 순서로 계산합니다. 22~25일차의 게임 상태 문서는 아래에 설명합니다.
 
-21일차 시작 전이는 같은 방 문서의 `status`를 `playing`으로 변경하고 `startedAt`을 추가합니다. 본인 준비 상태는 `players.{uid}.ready`에 기록합니다. 게임 덱과 턴 상태는 아직 생성하지 않습니다.
+21일차 시작 전이는 같은 방 문서의 `status`를 `playing`으로 변경하고 `startedAt`을 추가합니다. 본인 준비 상태는 `players.{uid}.ready`에 기록합니다. 로컬 에뮬레이터에서는 25일차 `roomStarted` 트리거가 이 전이 직후 게임 덱과 턴 상태를 생성합니다.
 
 22일차 로컬 구현은 `rooms/{roomCode}/privateState/server`에 전체 덱·모든 예약 정보를, `rooms/{roomCode}/game/publicState`에 덱 장수·공개 시장·점수 등을, `rooms/{roomCode}/privatePlayers/{uid}`에 해당 사용자의 예약 카드 ID만 넣습니다. 공개 문서는 방 참가자만, 개인 문서는 해당 UID의 참가자만 읽고, 서버 문서는 모든 클라이언트가 읽지 못합니다. 세 종류 모두 클라이언트 쓰기를 거부합니다. 신뢰 서버용 `initializeGameViews`가 시작한 방에만 문서를 원자적으로 생성하며, 실제 프로젝트에서 이를 호출할 백엔드는 아직 연결되지 않았습니다.
 
 23~24일차 로컬 `submitAction`은 `privateState/server`를 읽어 인증·턴·행동을 검증하고, 갱신된 서버 상태와 공개·개인 뷰를 한 Firestore 트랜잭션으로 기록합니다. 성공한 행동의 요청과 응답은 `actionReceipts/{uid}/actions/{actionId}`에 같은 트랜잭션으로 기록합니다. 이 문서는 서버 전용이며 클라이언트의 읽기·쓰기를 거부합니다.
+
+25일차 로컬 `roomStarted` 트리거는 방 문서가 `waiting`에서 `playing`으로 바뀔 때 초기 게임 문서를 만듭니다. 웹은 `publicState`와 본인 `privatePlayers/{uid}`를 실시간 구독하고 두 문서의 `version`이 같을 때만 새 상태를 표시합니다. 이전 일치 버전이 있으면 갱신 중에도 이를 유지합니다. 실제 프로젝트에는 트리거와 Callable을 아직 배포하지 않았습니다.
 
 엔진 타입은 `packages/game-engine/src/types/index.ts` 참고.
 
@@ -49,15 +51,13 @@
 `consecutivePasses`는 자산·점수 변화가 없는 연속 패스 수입니다. 합법적인 기본 행동이 생기면 패스를 거부하고, 기본 행동이나 패스로 인한 귀족 방문은 연속 패스를 끊습니다. 참가자 모두 연속 패스하면 현재 점수와 동점 규칙으로 종료합니다. 이 값은 초기 상태에서 0이며 기권자가 생기면 활성 인원 기준으로 조정해야 합니다. API의 인증·버전 충돌·`actionId` 멱등성은 서버 구현에서 처리합니다.
 
 ```text
-rooms/{roomId}                      방 상태·멤버십
-rooms/{roomId}/players/{uid}        공개 프로필·준비 상태
-roomCodes/{roomCode}                서버 전용 초대 코드 색인
-rooms/{roomId}/game/publicState     공개 시장·턴·점수
-rooms/{roomId}/privateState/server  서버 전용 덱·전체 게임 상태
-rooms/{roomId}/privatePlayers/{uid} 개인 비공개 예약 카드
-rooms/{roomId}/actions/{actionId}   멱등성 기록
+rooms/{roomCode}                                      방 상태·멤버십·플레이어 맵
+rooms/{roomCode}/game/publicState                     공개 시장·턴·점수
+rooms/{roomCode}/privateState/server                  서버 전용 덱·전체 게임 상태
+rooms/{roomCode}/privatePlayers/{uid}                 해당 플레이어의 비공개 예약 카드
+rooms/{roomCode}/actionReceipts/{uid}/actions/{actionId} 멱등성 처리 기록
 ```
 
-현재 클라이언트는 방 참가자인 경우 방과 참가자 문서만 읽을 수 있습니다. `privateState/server` 읽기 거부와 `privatePlayers/{uid}`의 본인 전용 읽기는 해당 기능을 구현할 때 규칙에 추가합니다. 서버 Admin SDK는 Security Rules를 우회하므로 인증·인가를 함수에서 검증합니다.
+현재 클라이언트는 참가자인 경우 방과 공개 게임 문서를 읽고, 자신의 `privatePlayers/{uid}`만 읽을 수 있습니다. `privateState/server`와 `actionReceipts`는 클라이언트의 읽기·쓰기를 모두 거부합니다. 서버 Admin SDK는 Security Rules를 우회하므로 인증·인가를 함수에서 검증합니다.
 
-20일차 구현에서 방 문서는 `roomCode`, `hostUid`, `status`, `playerOrder`, `capacity`, `createdAt`, `updatedAt`을 저장합니다. 참가자 문서는 `uid`, `nickname`, `seatIndex`, `ready`, `forfeited`, `joinedAt`을 저장합니다. `roomCodes/{roomCode}`는 `roomId`를 가리키며 클라이언트가 직접 읽을 수 없습니다. 방과 참가자 문서도 해당 방의 참가자에게만 읽기를 허용합니다. 준비·시작 전이는 21일차에 구현합니다.
+20~21일차 구현에서 방 문서는 `roomCode`, `hostUid`, `status`, `playerOrder`, `capacity`, `createdAt`, `updatedAt`과 UID별 `players` 맵을 저장합니다. 플레이어 맵에는 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`이 있습니다. 좌석은 `playerOrder` 순서로 계산합니다. 준비·시작 전이는 방 문서에서 검증합니다.

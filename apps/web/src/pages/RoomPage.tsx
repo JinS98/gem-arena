@@ -103,7 +103,7 @@ export function RoomPage() {
           {isHost && <button type="button" className="waiting-room__start" onClick={beginGame} disabled={actionBusy || !canStart}>게임 시작</button>}
           {!isHost && <p>방장이 게임을 시작하기를 기다리고 있습니다.</p>}
         </div>}
-        {room.status === 'playing' && <p role="status">게임이 시작되었습니다. 멀티 게임판과 실제 턴 진행은 다음 작업에서 연결됩니다.</p>}
+        {room.status === 'playing' && <div className="waiting-room__game-link" role="status"><p>게임이 시작되었습니다. 게임 상태가 준비되면 멀티 게임판에 카드와 보석이 표시됩니다.</p><Link className="primary-link" to={`/game/${room.roomCode}`}>멀티 게임판 열기</Link></div>}
         {actionError && <p className="waiting-room__action-error" role="alert">{actionError}</p>}
       </div>
     </div>}

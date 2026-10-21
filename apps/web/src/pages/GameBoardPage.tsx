@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
 import { countCardBonuses, eligibleNobleIds, getDevelopmentCard, getNoble } from '@gem-arena/engine';
 import type { CardLevel, GemColor, Inventory } from '@gem-arena/engine';
 import { captureRewardSource, flyBoardReward } from '../animations/boardReward';
@@ -25,7 +24,6 @@ type PendingNobleReward = { playerId: string; source: RewardSource | null; previ
 const emptyCounts = (): Inventory => ({ white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 });
 
 export function GameBoardPage() {
-  const { roomId } = useParams();
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(() => useDemoGemStore.getState().players.length as 2 | 3 | 4);
   const [reservedOpen, setReservedOpen] = useState(false);
   const [bonusAnimation, setBonusAnimation] = useState<BonusAnimation | null>(null);
@@ -158,10 +156,6 @@ export function GameBoardPage() {
       if (!rewardController.current.signal.aborted) setScoreAnimation((current) => current ? { ...current, phase: 'arrived' } : null);
     });
   };
-  if (roomId !== 'demo') {
-    return <section className="empty-page"><h1>아직 연결되지 않은 게임입니다</h1><p>현재는 로컬 게임판 미리보기를 확인할 수 있습니다.</p><Link className="primary-link" to="/game/demo">미리보기 열기</Link></section>;
-  }
-
   return (
     <div className="game-page">
       <div className="preview-notice"><span className="preview-notice__dot" />{scenario === 'fullGame' ? `${players.length}인 로컬 게임` : '로컬 게임 연습'}<span> · 실제 대전 연결 전</span></div>
