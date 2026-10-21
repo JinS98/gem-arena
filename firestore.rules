@@ -18,6 +18,7 @@ service cloud.firestore {
         player.nickname is string &&
         player.nickname.size() >= 2 &&
         player.nickname.size() <= 16 &&
+        player.nickname.matches('^[^\\s\\p{Z}\\x{FEFF}].*[^\\s\\p{Z}\\x{FEFF}]$') &&
         player.ready == false &&
         player.forfeited == false &&
         player.joinedAt == request.time;

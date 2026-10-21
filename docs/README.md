@@ -43,7 +43,7 @@
 - [ ] [26일차 — 재접속·새로고침·퇴장 정책](daily/day-26.md) (로컬 퇴장·기권·Firestore 재구독·브라우저 새로고침 검증 완료, 오프라인 화면/실서비스 미검증)
 
 ## 품질·배포
-- [ ] [27일차 — Security Rules·Emulator 권한 테스트](daily/day-27.md)
+- [ ] [27일차 — Security Rules·Emulator 권한 테스트](daily/day-27.md) (로컬 권한 매트릭스 통과·실서비스 규칙 미게시)
 - [ ] [28일차 — 동시 요청·중복 클릭·장애 시나리오](daily/day-28.md)
 - [ ] [29일차 — 반응형·접근성·애니메이션·에러 UX](daily/day-29.md)
 - [ ] [30일차 — E2E 2~4인 완주·성능/읽기 비용 점검](daily/day-30.md)

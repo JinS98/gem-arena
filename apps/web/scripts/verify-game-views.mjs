@@ -48,7 +48,19 @@ try {
   await assert.rejects(initializeGameViews(admin, roomCode), /시작한 방/);
   assert.equal((await room.collection('privateState').doc('server').get()).exists, false);
   await room.update({ status: 'playing' });
-  await initializeGameViews(admin, roomCode);
+  try {
+    await initializeGameViews(admin, roomCode);
+  } catch (error) {
+    // A running Functions emulator may win the same create-only initialization race.
+    if (error.code !== 6 && error.code !== 'already-exists') throw error;
+    const [existingServer, existingPublic, existingHost, existingGuest] = await Promise.all([
+      room.collection('privateState').doc('server').get(),
+      room.collection('game').doc('publicState').get(),
+      room.collection('privatePlayers').doc(host.user.uid).get(),
+      room.collection('privatePlayers').doc(guest.user.uid).get(),
+    ]);
+    assert.ok([existingServer, existingPublic, existingHost, existingGuest].every(snapshot => snapshot.exists));
+  }
   await assert.rejects(initializeGameViews(admin, roomCode)); // Create-only and atomic.
 
   const server = (await room.collection('privateState').doc('server').get()).data();
