@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   CARD_COLORS, canPayForCard, canTakeGems, countCardBonuses, excessGemCount,
   getDevelopmentCard, getNoble, remainingCardCost,
@@ -15,6 +15,7 @@ import { DeckCard } from '../components/DeckCard';
 import { GemBank } from '../components/GemBank';
 import { GemIcon, gemNames } from '../components/GemIcon';
 import { CardFace, MarketCard } from '../components/MarketCard';
+import { ForfeitChoiceDialog, MultiplayerVictoryDialog, type ForfeitDestination } from '../components/MultiplayerExitDialogs';
 import { NobleGallery } from '../components/NobleGallery';
 import { PlayerPanel } from '../components/PlayerPanel';
 import type { PreviewPlayer } from '../data/previewGame';
@@ -226,6 +227,7 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, e
 
 export function MultiplayerGamePage() {
   const { roomId } = useParams();
+  const navigate = useNavigate();
   const [myUid, setMyUid] = useState('');
   const [room, setRoom] = useState<WaitingRoom | null>(null);
   const [update, setUpdate] = useState<GameViewUpdate>({ status: 'loading', views: null, fromCache: false });
@@ -234,6 +236,8 @@ export function MultiplayerGamePage() {
   const [roomRetry, setRoomRetry] = useState(0);
   const [viewRetry, setViewRetry] = useState(0);
   const [actionError, setActionError] = useState('');
+  const [forfeitError, setForfeitError] = useState('');
+  const [forfeitOpen, setForfeitOpen] = useState(false);
   const [actionNotice, setActionNotice] = useState('');
   const [confirmedAction, setConfirmedAction] = useState<{
     version: number; reward: RewardCapture;
@@ -511,20 +515,21 @@ export function MultiplayerGamePage() {
     }
   }
 
-  async function forfeit() {
+  async function forfeit(destination: ForfeitDestination) {
     if (!roomId || requestInFlight.current || pendingRequest.current ||
         room?.status !== 'playing' || room.players[myUid]?.forfeited) return;
-    if (!window.confirm('기권하면 이 게임에 다시 참가할 수 없습니다. 기권하시겠습니까?')) return;
     requestInFlight.current = true;
     setBusy(true);
-    setActionError('');
+    setForfeitError('');
     try {
-      await leaveRoom(roomId);
+      const result = await leaveRoom(roomId);
       pendingRequest.current = null;
       setRetryRequest(null);
       setSelection(null);
+      setForfeitOpen(false);
+      if (result.gameFinished || destination === 'lobby') navigate('/lobby', { replace: true });
     } catch (error) {
-      setActionError(roomErrorMessage(error));
+      setForfeitError(roomErrorMessage(error));
     } finally {
       requestInFlight.current = false;
       setBusy(false);
@@ -547,6 +552,7 @@ export function MultiplayerGamePage() {
 
   const currentName = room.players[currentUid ?? '']?.nickname ?? '플레이어';
   const opponents = game.playerOrder.filter(uid => uid !== myUid);
+  const activePlayerCount = game.playerOrder.filter(uid => !game.players[uid]?.forfeited).length;
   const selectedCard = selection ? getDevelopmentCard(selection.cardId) : undefined;
   const myBonuses = countCardBonuses(me.purchasedCardIds);
   const canTake = canAct && game.phase === 'playing';
@@ -569,8 +575,7 @@ export function MultiplayerGamePage() {
           <span className="multiplayer-page__turn-copy"><small>{game.phase === 'finished' ? '게임 상태' : '현재 차례'}</small><strong>{game.phase === 'finished' ? '게임 종료' : myTurn && !me.forfeited ? '내 차례' : currentName}</strong></span>
         </div>
         <div className="multiplayer-page__heading-actions">
-          <Link className="multiplayer-page__room-link" to={`/rooms/${roomId}`}>대기실</Link>
-          {room.status === 'playing' && !me.forfeited && !room.players[myUid]?.forfeited && <button type="button" className="multiplayer-page__forfeit" disabled={busy || Boolean(retryRequest)} onClick={() => void forfeit()}>기권하기</button>}
+          {room.status === 'playing' && !me.forfeited && !room.players[myUid]?.forfeited && <button type="button" className="multiplayer-page__forfeit" disabled={busy || Boolean(retryRequest)} onClick={() => { setForfeitError(''); setForfeitOpen(true); }}>기권하기</button>}
         </div>
       </div>
     </div>
@@ -580,7 +585,7 @@ export function MultiplayerGamePage() {
     {syncing && <p className="multiplayer-page__notice" role="status">행동이 승인됐습니다. 게임판 갱신을 기다리는 중입니다.</p>}
     {actionError && <div className="multiplayer-page__error" role="alert">{actionError}{retryRequest && <button type="button" disabled={busy || game.version !== retryRequest.expectedVersion} onClick={() => void submit(retryRequest.action, retryRequest)}>같은 요청 다시 보내기</button>}</div>}
     {actionNotice && <p className="multiplayer-page__notice multiplayer-page__notice--confirmed" role="status">{actionNotice}</p>}
-    {game.phase === 'finished' && <p className="multiplayer-page__result" role="status">승자: {game.winnerIds.map(uid => room.players[uid]?.nickname ?? uid).join(' · ')}</p>}
+    {game.phase === 'finished' && <p className="multiplayer-page__result" role="status">승자: {game.winnerIds.map(uid => room.players[uid]?.nickname ?? uid).join(' · ')} <Link to="/lobby">로비로 나가기</Link></p>}
 
     <div className="multiplayer-table">
       <div className="multiplayer-table__left">
@@ -637,5 +642,10 @@ export function MultiplayerGamePage() {
     {selectedCard && selection && <MultiplayerCardDialog key={`${selection.source}-${selection.cardId}`}
       card={selectedCard} source={selection.source} player={me} bankGold={game.bank.gold}
       canAct={canAct && game.phase === 'playing'} busy={busy || syncing} error={actionError} onClose={() => setSelection(null)} onAction={submit} />}
+    {forfeitOpen && game.phase !== 'finished' && <ForfeitChoiceDialog finalOpponent={activePlayerCount <= 2} busy={busy} error={forfeitError}
+      onClose={() => setForfeitOpen(false)} onConfirm={destination => void forfeit(destination)} />}
+    {game.phase === 'finished' && game.winnerIds.includes(myUid) && <MultiplayerVictoryDialog
+      winnerNames={game.winnerIds.map(uid => room.players[uid]?.nickname ?? uid)} byForfeit={activePlayerCount === 1}
+      onLobby={() => navigate('/lobby', { replace: true })} />}
   </div>;
 }

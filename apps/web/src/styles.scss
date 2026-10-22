@@ -669,6 +669,18 @@ button{cursor:pointer}
 .multiplayer-self__cards .card-face__cost-chip{min-width:26px;height:19px;padding:1px 2px;font-size:11px}
 .multiplayer-self__cards .card-face__cost-chip .gem-icon{width:10px;height:10px}
 .multiplayer-card-backdrop{position:fixed;inset:0;z-index:65;display:grid;place-items:center;padding:18px;background:#050a17dc;backdrop-filter:blur(8px)}
+.multiplayer-forfeit-dialog{width:min(100%,510px);padding:26px;border:1px solid #d6b47795;border-radius:16px;background:linear-gradient(145deg,#243754,#111c30);box-shadow:0 25px 75px #000b}
+.multiplayer-forfeit-dialog h2{margin:8px 0 12px;font-size:24px}
+.multiplayer-forfeit-dialog>p{margin:0 0 16px;color:#d4dfec;font-size:13px;line-height:1.6}
+.multiplayer-forfeit-dialog .multiplayer-forfeit-dialog__notice,.multiplayer-forfeit-dialog .multiplayer-forfeit-dialog__error{padding:10px 12px;border-radius:7px;background:#d9b77720;color:#f5dda9}
+.multiplayer-forfeit-dialog .multiplayer-forfeit-dialog__error{background:#7c263b80;color:#ffe1e1}
+.multiplayer-forfeit-dialog__actions{display:grid;gap:8px}
+.multiplayer-forfeit-dialog__actions button{min-height:42px;border:1px solid #d9b77777;border-radius:7px;background:#253750;color:#f4e2c3;font-size:12px;font-weight:800;cursor:pointer}
+.multiplayer-forfeit-dialog__actions .multiplayer-forfeit-dialog__leave{background:#80394b;color:#fff0ef}
+.multiplayer-forfeit-dialog__actions .multiplayer-forfeit-dialog__cancel{border-color:#ffffff42;background:#ffffff10;color:#e1e8f1}
+.multiplayer-forfeit-dialog__actions button:disabled{opacity:.45;cursor:not-allowed}
+.multiplayer-forfeit-dialog__actions button:focus-visible{outline:3px solid #fff0bb;outline-offset:2px}
+.result-backdrop--multiplayer{z-index:80}
 .multiplayer-card-dialog{width:min(100%,670px);max-height:calc(100dvh - 36px);overflow:auto;padding:20px;border:1px solid #d6b47795;border-radius:16px;background:linear-gradient(145deg,#243754,#111c30);box-shadow:0 25px 75px #000b}
 .multiplayer-card-dialog__heading{display:flex;justify-content:space-between;gap:12px;align-items:start}
 .multiplayer-card-dialog__heading h2{margin:5px 0 16px;font-size:23px}

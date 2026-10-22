@@ -5,7 +5,7 @@ import { forfeitPlayer, toPrivatePlayerView, toPublicGameView, type ServerGameSt
 import { z } from 'zod';
 
 const requestSchema = z.object({ roomId: z.string().regex(/^[A-HJ-NP-Z2-9]{8}$/) }).strict();
-export type LeaveRoomResult = { status: 'left' | 'forfeited'; version?: number };
+export type LeaveRoomResult = { status: 'left' | 'forfeited'; version?: number; gameFinished?: boolean };
 
 export class LeaveRoomError extends Error {
   constructor(readonly reason: string, readonly status: 'permission-denied' | 'failed-precondition' | 'not-found' | 'invalid-argument') {
@@ -54,7 +54,7 @@ export async function leaveGameRoom(db: Firestore, uid: string | undefined, rawR
         !state.playerOrder.every((id, index) => id === room.playerOrder[index])) {
       throw new LeaveRoomError('GAME_STATE_MISMATCH', 'failed-precondition');
     }
-    if (room.players[uid].forfeited === true) return { status: 'forfeited', version: state.version };
+    if (room.players[uid].forfeited === true) return { status: 'forfeited', version: state.version, gameFinished: state.phase === 'finished' };
     if (state.phase === 'finished' || room.status === 'finished') {
       throw new LeaveRoomError('GAME_FINISHED', 'failed-precondition');
     }
@@ -75,8 +75,9 @@ export async function leaveGameRoom(db: Firestore, uid: string | undefined, rawR
     for (const playerId of nextState.playerOrder) {
       transaction.set(roomRef.collection('privatePlayers').doc(playerId), toPrivatePlayerView(nextState, playerId));
     }
-    transaction.set(receiptRef, { result: { status: 'forfeited', version: nextState.version } });
-    return { status: 'forfeited', version: nextState.version };
+    const result: LeaveRoomResult = { status: 'forfeited', version: nextState.version, gameFinished: nextState.phase === 'finished' };
+    transaction.set(receiptRef, { result });
+    return result;
   });
 }
 

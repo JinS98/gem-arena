@@ -27,13 +27,12 @@ service cloud.firestore {
     function validRoomCreate(roomCode) {
       let data = request.resource.data;
       return roomCode.matches('^[A-HJ-NP-Z2-9]{8}$') &&
-        data.keys().hasOnly(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'practiceStart', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
         data.keys().hasAll(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
         data.roomCode == roomCode &&
         data.hostUid == request.auth.uid &&
         data.status == 'waiting' &&
         data.capacity == 4 &&
-        (!('practiceStart' in data) || data.practiceStart == true) &&
         data.playerOrder == [request.auth.uid] &&
         data.players.keys().hasOnly([request.auth.uid]) &&
         data.players.keys().hasAll([request.auth.uid]) &&

@@ -73,7 +73,6 @@ export interface WaitingRoom {
   playerOrder: string[];
   players: Record<string, RoomPlayer>;
   capacity: number;
-  practiceStart?: boolean;
   startedAt?: unknown;
 }
 
@@ -84,14 +83,14 @@ export interface RoomPlayer {
   forfeited: boolean;
 }
 
-export async function leaveRoom(roomCode: string): Promise<'left' | 'forfeited'> {
+export async function leaveRoom(roomCode: string): Promise<{ status: 'left' | 'forfeited'; gameFinished?: boolean }> {
   const code = roomCode.trim().toUpperCase();
   if (!codePattern.test(code)) throw new RoomActionError('INVALID_ROOM_CODE');
   await ensureAnonymousSession();
-  const callable = httpsCallable<{ roomId: string }, { status: 'left' | 'forfeited' }>(
+  const callable = httpsCallable<{ roomId: string }, { status: 'left' | 'forfeited'; gameFinished?: boolean }>(
     getFirebase().functions, 'leaveRoom',
   );
-  return (await callable({ roomId: code })).data.status;
+  return (await callable({ roomId: code })).data;
 }
 
 function roomReference(roomCode: string) {
@@ -138,7 +137,6 @@ export async function createRoom(nickname: string): Promise<RoomAccess> {
     playerOrder: [uid],
     players: { [uid]: { uid, nickname: name, ready: false, forfeited: false, joinedAt: serverTimestamp() } },
     capacity: roomCapacity,
-    ...(import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true' ? { practiceStart: true } : {}),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

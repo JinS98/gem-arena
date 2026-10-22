@@ -118,6 +118,7 @@ try {
   const before = (await serverRef.get()).data();
   const result = (await current.leave({ roomId: playingCode })).data;
   assert.equal(result.status, 'forfeited');
+  assert.equal(result.gameFinished, false);
   assert.equal(result.version, 3);
   const after = (await serverRef.get()).data();
   assert.equal(after.players[current.user.uid].forfeited, true);
@@ -137,7 +138,8 @@ try {
     error.details?.reason === 'NOT_ROOM_MEMBER');
   await assert.rejects(outsider.leave({ roomId: playingCode }), error =>
     error.details?.reason === 'NOT_ROOM_MEMBER');
-  await others[0].leave({ roomId: playingCode });
+  const finalLeave = (await others[0].leave({ roomId: playingCode })).data;
+  assert.equal(finalLeave.gameFinished, true);
   assert.equal((await serverRef.get()).data().phase, 'finished');
   assert.deepEqual((await serverRef.get()).data().winnerIds, [others[1].user.uid]);
   assert.equal((await playing.get()).data().status, 'finished');
@@ -155,6 +157,7 @@ try {
   ]);
   assert.equal(leaveOutcome.status, 'fulfilled');
   assert.equal(leaveOutcome.value.data.status, 'forfeited');
+  assert.equal(leaveOutcome.value.data.gameFinished, true);
   const actionCommitted = actionOutcome.status === 'fulfilled';
   if (!actionCommitted) {
     assert.equal(actionOutcome.reason.details?.reason, 'NOT_ROOM_MEMBER');

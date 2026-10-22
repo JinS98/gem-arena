@@ -16,11 +16,12 @@
 - 시장 카드와 내 예약 카드에 마우스를 올리거나 키보드 초점을 맞추면, 구매 카드 보너스를 반영한 실제 색상별 비용으로 칩이 전환된다. 할인된 색상은 강조하고 모든 비용이 0이면 `무료`로 표시한다. 계산에는 게임 엔진의 `remainingCardCost`를 사용한다.
 - 움직임 줄이기 설정에서는 이동 및 전환 효과를 건너뛰고 결과를 표시한다.
 
-## 에뮬레이터 연습 시작 상태
+## 멀티 게임 시작·기권·종료
 
-- Firebase 에뮬레이터 모드에서 생성한 방에는 `practiceStart`를 설정한다. 서버도 Firestore 에뮬레이터에서 실행 중일 때만 연습 시작 상태를 적용한다.
-- 참가자마다 흰색 2개와 파랑·초록·빨강·검정·황금 1개씩, 총 7개를 지급한다. 은행의 공급량을 함께 조정하고 시장 1단계에 즉시 구매할 수 있는 카드를 한 장 이상 배치해 구매·보석 효과를 확인할 수 있게 했다. 일반 서비스의 시작 상태에는 적용하지 않는다.
-- 방 생성 규칙과 게임 뷰 검증에 연습 플래그 및 초기 보석 검사를 추가했다.
+- 방장이 모두 준비된 방에서 게임 시작을 누르면 방 상태를 구독하는 모든 참가자가 자동으로 멀티 게임판으로 이동한다. 게임 문서가 만들어지는 동안에는 준비 안내를 표시한다.
+- 기권 버튼은 관전 또는 로비 퇴장을 선택하는 모달을 연다. 활성 참가자가 3명 이상이면 기권 후 관전을 계속할 수 있다.
+- 활성 참가자가 두 명일 때 한 명이 기권하면 게임을 즉시 종료한다. 기권자는 로비로 이동하고 승리한 참가자에게 승리 모달과 로비 이동 버튼을 표시한다.
+- 에뮬레이터 연습용 초기 보석·시장 조정은 제거했다. 모든 멀티 게임은 인원별 정상 은행 수량과 참가자 보석 0개로 시작한다.
 
 ## 주요 구현 위치
 
@@ -30,10 +31,11 @@
 | 카드·덱·할인 비용 표시 | `apps/web/src/components/MarketCard.tsx`, `apps/web/src/components/DeckCard.tsx`, `apps/web/src/components/ReservedCardsModal.tsx` |
 | 로컬 카드 비용 연결·플레이어 보유량 | `apps/web/src/pages/GameBoardPage.tsx`, `apps/web/src/components/PlayerPanel.tsx` |
 | 이동 연출 | `apps/web/src/animations/boardReward.ts`, `apps/web/src/animations/marketDeal.ts` |
-| 에뮬레이터 연습 시작 상태 | `apps/web/src/services/rooms.ts`, `functions/src/initializeGameViews.ts`, `packages/game-engine/src/rules/initialState.ts`, `firestore.rules` |
+| 대기실 이동·기권·승리 처리 | `apps/web/src/pages/RoomPage.tsx`, `apps/web/src/pages/MultiplayerGamePage.tsx`, `apps/web/src/components/MultiplayerExitDialogs.tsx`, `functions/src/leaveRoom.ts` |
+| 정상 시작 상태 | `functions/src/initializeGameViews.ts`, `packages/game-engine/src/rules/initialState.ts` |
 
 ## 검증과 남은 확인
 
-- `npm test`: 엔진 87개와 웹 1개 테스트 통과. `npm run build`: 엔진·웹·Functions 빌드 통과.
-- 실행 중인 로컬 에뮬레이터에서 Security Rules 허용 15건·거부 48건, 공개 뷰·개인 예약 카드 접근 및 연습 시작 상태 검증을 통과했다.
+- `npm test`: 엔진 84개와 웹 1개 테스트 통과. `npm run build`: 엔진·웹·Functions 빌드 통과.
+- 실행 중인 로컬 에뮬레이터에서 공개 뷰·초기 보석 0개, Security Rules 허용 14건·거부 47건, 3인 관전 기권과 남은 두 명의 마지막 기권·승리 판정 검증을 통과했다.
 - 브라우저 자동화 도구가 초기화 오류로 종료되어 구매·보석 이동과 할인 비용 전환의 실제 화면 움직임은 확인하지 못했다. 다양한 화면 크기와 2~4인 실제 브라우저 완주 확인도 별도로 필요하다.
