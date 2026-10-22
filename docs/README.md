@@ -7,6 +7,7 @@
 ## 일차 외 개선 기록
 
 - [로컬 게임판 UI·턴 흐름 개선](local-board-improvements.md)
+- [게임판 화면·상호작용 개선](board-improvements.md)
 
 ## 기획·기반
 - [x] [1일차 — 요구사항·MVP 범위 확정 및 사용자 플로우](daily/day-01.md)

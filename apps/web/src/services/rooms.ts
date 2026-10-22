@@ -73,6 +73,7 @@ export interface WaitingRoom {
   playerOrder: string[];
   players: Record<string, RoomPlayer>;
   capacity: number;
+  practiceStart?: boolean;
   startedAt?: unknown;
 }
 
@@ -137,6 +138,7 @@ export async function createRoom(nickname: string): Promise<RoomAccess> {
     playerOrder: [uid],
     players: { [uid]: { uid, nickname: name, ready: false, forfeited: false, joinedAt: serverTimestamp() } },
     capacity: roomCapacity,
+    ...(import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true' ? { practiceStart: true } : {}),
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

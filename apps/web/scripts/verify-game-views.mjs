@@ -40,6 +40,7 @@ try {
     roomCode,
     hostUid: host.user.uid,
     status: 'waiting',
+    practiceStart: true,
     capacity: 4,
     playerOrder: [host.user.uid, guest.user.uid],
     players: { [host.user.uid]: { ready: true }, [guest.user.uid]: { ready: true } },
@@ -65,6 +66,11 @@ try {
 
   const server = (await room.collection('privateState').doc('server').get()).data();
   const published = (await room.collection('game').doc('publicState').get()).data();
+  assert.deepEqual(server.players[host.user.uid].gems,
+    { white: 2, blue: 1, green: 1, red: 1, black: 1, gold: 1 });
+  assert.deepEqual(server.players[guest.user.uid].gems,
+    { white: 2, blue: 1, green: 1, red: 1, black: 1, gold: 1 });
+  assert.equal(server.market[1].some(id => id?.endsWith('-01')), true);
   assert.equal(server.decks[1].length, published.deckCounts[1]);
   assert.equal('decks' in published, false);
   assert.equal('reservedCardIds' in published.players[guest.user.uid], false);

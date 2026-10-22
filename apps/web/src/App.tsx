@@ -1,4 +1,4 @@
-import { Link, NavLink, Route, Routes } from 'react-router-dom';
+import { Link, NavLink, Route, Routes, useLocation } from 'react-router-dom';
 import { GameBoardPage } from './pages/GameBoardPage';
 import { LobbyPage } from './pages/LobbyPage';
 import { MultiplayerGamePage } from './pages/MultiplayerGamePage';
@@ -10,5 +10,10 @@ function Home() {
 }
 
 export default function App() {
-  return <div className="app-shell"><header className="site-header"><div className="site-header__inner"><Link className="brand" to="/" aria-label="Gem Arena 홈"><span className="brand__mark" aria-hidden="true">◆</span><span>GEM <strong>ARENA</strong></span></Link><nav aria-label="주 메뉴"><NavLink to="/" end>홈</NavLink><NavLink to="/lobby">로비</NavLink><NavLink to="/rules">룰</NavLink><NavLink to="/game/demo">게임판 미리보기</NavLink></nav><span className="site-header__tag">LOCAL PREVIEW</span></div></header><main className="site-main"><Routes><Route path="/" element={<Home />} /><Route path="/lobby" element={<LobbyPage />} /><Route path="/rooms/:roomId" element={<RoomPage />} /><Route path="/rules" element={<RulesPage />} /><Route path="/game/demo" element={<GameBoardPage />} /><Route path="/game/:roomId" element={<MultiplayerGamePage />} /></Routes></main></div>;
+  const { pathname } = useLocation();
+  const isLiveGame = pathname.startsWith('/game/') && pathname !== '/game/demo';
+  return <div className="app-shell">
+    {!isLiveGame && <header className="site-header"><div className="site-header__inner"><Link className="brand" to="/" aria-label="Gem Arena 홈"><span className="brand__mark" aria-hidden="true">◆</span><span>GEM <strong>ARENA</strong></span></Link><nav aria-label="주 메뉴"><NavLink to="/" end>홈</NavLink><NavLink to="/lobby">로비</NavLink><NavLink to="/rules">룰</NavLink><NavLink to="/game/demo">게임판 미리보기</NavLink></nav>{pathname === '/game/demo' && <span className="site-header__tag">LOCAL PREVIEW</span>}</div></header>}
+    <main className={`site-main${isLiveGame ? ' site-main--live-game' : ''}`}><Routes><Route path="/" element={<Home />} /><Route path="/lobby" element={<LobbyPage />} /><Route path="/rooms/:roomId" element={<RoomPage />} /><Route path="/rules" element={<RulesPage />} /><Route path="/game/demo" element={<GameBoardPage />} /><Route path="/game/:roomId" element={<MultiplayerGamePage />} /></Routes></main>
+  </div>;
 }

@@ -41,6 +41,7 @@ export function GameBoardPage() {
     ? game.playerOrder[(game.turnIndex - 1 + game.playerOrder.length) % game.playerOrder.length]
     : currentPlayerId;
   const currentPlayer = players.find((player) => player.id === displayedPlayerId);
+  const currentBonuses = countCardBonuses(game.players[currentPlayerId]?.purchasedCardIds ?? []);
   const availableNobles = game.availableNobleIds.map((id) => getNoble(id)).filter((noble) => noble !== undefined);
   const nobleChoices = phase === 'choosingNoble' ? eligibleNobleIds(game, currentPlayerId) : [];
   useEffect(() => {
@@ -214,7 +215,7 @@ export function GameBoardPage() {
                     aria-label={`${level}단계 덱 맨 위 카드 예약`}>덱 예약</button></div>
                 <div className="market-row__cards">{market[level].map((id, slot) => {
                   const card = id ? getDevelopmentCard(id) : undefined;
-                  return card ? <MarketCard card={card} key={`${level}-${slot}`} onSelect={() => selectCard(card.id, 'market')}
+                  return card ? <MarketCard card={card} bonuses={currentBonuses} key={`${level}-${slot}`} onSelect={() => selectCard(card.id, 'market')}
                     disabled={phase !== 'selecting'} featured={scenario === 'nobleFinish' && phase === 'selecting' && card.id === 'L1-RED-07'} />
                     : <div className="market-card-empty" key={`${level}-${slot}`}>빈 칸</div>;
                 })}</div>
@@ -231,7 +232,7 @@ export function GameBoardPage() {
       </div>
       {(bonusAnimation?.phase === 'flying' || gemAnimation?.phase === 'flying' || scoreAnimation?.phase === 'flying') &&
         <div className="board-reward-shield" aria-hidden="true" />}
-      {reservedOpen && <ReservedCardsModal cardIds={reservedCardIds} playerName={currentPlayer?.name ?? '내'}
+      {reservedOpen && <ReservedCardsModal cardIds={reservedCardIds} playerName={currentPlayer?.name ?? '내'} bonuses={currentBonuses}
         onSelect={(id) => { setReservedOpen(false); selectCard(id, 'reserved'); }} onClose={() => setReservedOpen(false)} />}
       {selectedCard && selectedCardData && <CardActionModal key={`${selectedCard.source}-${selectedCard.id}`}
         card={selectedCardData} source={selectedCard.source} onClose={closeCard}

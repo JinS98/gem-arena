@@ -3,6 +3,9 @@ import type { CardLevel, Inventory, PlayerState, ServerGameState } from '../type
 
 const MAX_SEED = 0xffffffff;
 const GEMS_PER_COLOR: Record<number, number> = { 2: 4, 3: 5, 4: 7 };
+// Emulator practice rooms begin with seven tokens, leaving space for a three-token take.
+const PRACTICE_GEMS: Inventory = { white: 2, blue: 1, green: 1, red: 1, black: 1, gold: 1 };
+const GEM_TYPES = ['white', 'blue', 'green', 'red', 'black', 'gold'] as const;
 
 function makeInventory(regularGems = 0, gold = 0): Inventory {
   return {
@@ -33,7 +36,9 @@ function shuffle<T>(source: readonly T[], random: () => number): T[] {
 }
 
 /** Build private server state. Never send its decks to a client. */
-export function createInitialGameState(playerIds: readonly string[], seed: number): ServerGameState {
+export function createInitialGameState(
+  playerIds: readonly string[], seed: number, options: { practiceStart?: boolean } = {},
+): ServerGameState {
   if (playerIds.length < 2 || playerIds.length > 4 ||
       playerIds.some((id) => typeof id !== 'string' || id.trim() === '') ||
       new Set(playerIds).size !== playerIds.length) {
@@ -50,23 +55,36 @@ export function createInitialGameState(playerIds: readonly string[], seed: numbe
     const shuffledIds = shuffle(
       DEVELOPMENT_CARDS.filter((card) => card.level === level).map((card) => card.id), random,
     );
+    if (options.practiceStart && level === 1 && !shuffledIds.slice(0, 4).some((id) => id.endsWith('-01'))) {
+      const affordableIndex = shuffledIds.findIndex((id) => id.endsWith('-01'));
+      [shuffledIds[0], shuffledIds[affordableIndex]] = [shuffledIds[affordableIndex], shuffledIds[0]];
+    }
     market[level] = shuffledIds.slice(0, 4);
     decks[level] = shuffledIds.slice(4);
   }
 
   const players: Record<string, PlayerState> = Object.fromEntries(
     playerIds.map((uid, seatIndex) => [uid, {
-      uid, seatIndex, gems: makeInventory(), purchasedCardIds: [],
+      uid, seatIndex, gems: options.practiceStart ? { ...PRACTICE_GEMS } : makeInventory(), purchasedCardIds: [],
       reservedCardIds: [], nobleIds: [], score: 0, forfeited: false,
     }]),
   );
 
   const firstPlayerIndex = Math.floor(random() * playerIds.length);
+  const bank = makeInventory(
+    GEMS_PER_COLOR[playerIds.length] + (options.practiceStart ? 5 : 0),
+    5 + (options.practiceStart ? playerIds.length : 0),
+  );
+  if (options.practiceStart) {
+    for (const uid of playerIds) {
+      for (const gem of GEM_TYPES) bank[gem] -= players[uid].gems[gem];
+    }
+  }
   return {
     phase: 'playing', version: 0, turnNobleResolved: false, consecutivePasses: 0,
     firstPlayerIndex, turnIndex: firstPlayerIndex,
     playerOrder: [...playerIds], players,
-    bank: makeInventory(GEMS_PER_COLOR[playerIds.length], 5),
+    bank,
     market, decks,
     availableNobleIds: shuffle(NOBLES.map((noble) => noble.id), random).slice(0, playerIds.length + 1),
     finalRoundTriggeredBy: null, winnerIds: [],

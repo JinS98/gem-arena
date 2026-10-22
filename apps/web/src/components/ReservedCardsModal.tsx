@@ -1,9 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { getDevelopmentCard } from '@gem-arena/engine';
+import type { ColorCounts } from '@gem-arena/engine';
 import { MarketCard } from './MarketCard';
 
-export function ReservedCardsModal({ cardIds, playerName, onSelect, onClose }: {
-  cardIds: string[]; playerName: string; onSelect: (cardId: string) => void; onClose: () => void;
+export function ReservedCardsModal({ cardIds, playerName, bonuses, onSelect, onClose }: {
+  cardIds: string[]; playerName: string; bonuses: ColorCounts; onSelect: (cardId: string) => void; onClose: () => void;
 }) {
   const dialogRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -42,7 +43,7 @@ export function ReservedCardsModal({ cardIds, playerName, onSelect, onClose }: {
           : <><p className="reserved-modal__hint">카드를 누르면 비용을 확인하고 구매할 수 있습니다.</p>
             <div className="reserved-modal__cards">{cardIds.map((id) => {
               const card = getDevelopmentCard(id);
-              return card && <MarketCard key={id} card={card} onSelect={() => onSelect(id)} />;
+              return card && <MarketCard key={id} card={card} bonuses={bonuses} onSelect={() => onSelect(id)} />;
             })}</div></>}
       </section>
     </div>

@@ -10,6 +10,8 @@ import type {
 } from '@gem-arena/engine';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { captureRewardSource, flyBoardReward, type RewardSource } from '../animations/boardReward';
+import { flyMarketDeal } from '../animations/marketDeal';
+import { DeckCard } from '../components/DeckCard';
 import { GemBank } from '../components/GemBank';
 import { GemIcon, gemNames } from '../components/GemIcon';
 import { CardFace, MarketCard } from '../components/MarketCard';
@@ -26,12 +28,14 @@ const levels: CardLevel[] = [3, 2, 1];
 const gems: Gem[] = [...CARD_COLORS, 'gold'];
 const emptyInventory = (): Inventory => ({ white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 });
 type CardSelection = { cardId: string; source: 'market' | 'reserved' };
-type PlayerGemAnimation = { previous: Inventory; arrived: Inventory; phase: 'flying' | 'arrived' };
+type MarketRefill = { level: CardLevel; slot: number; purchasedId: string; version: number; phase: 'empty' | 'revealing' };
+type PlayerGemAnimation = { previous: Inventory; arrived: Inventory; phase: 'flying' | 'arrived'; direction?: 'incoming' | 'outgoing' };
 type PlayerBonusAnimation = { color: GemColor; previousCount: number; phase: 'flying' | 'arrived' };
 type RewardCapture = {
   player: PublicPlayerView;
   action: Exclude<GameAction, { type: 'TIMEOUT' }>;
   gems: Partial<Record<Gem, RewardSource>>;
+  returns: Partial<Record<Gem, RewardSource[]>>;
   bonus: RewardSource | null;
   nobles: Record<string, RewardSource>;
 };
@@ -44,12 +48,20 @@ function captureActionRewards(player: PublicPlayerView, action: RewardCapture['a
     const source = captureRewardSource(document.querySelector<HTMLElement>(`[data-bank-color="${color}"] .gem-icon`));
     if (source) sources[color] = source;
   }
+  const returns: RewardCapture['returns'] = {};
+  if (action.type === 'DISCARD_GEMS') {
+    for (const color of gems) {
+      const element = document.querySelector<HTMLElement>(`.multiplayer-self [data-held-color="${color}"] .gem-icon`);
+      returns[color] = Array.from({ length: action.gems[color] }, () => captureRewardSource(element))
+        .filter((source): source is RewardSource => source !== null);
+    }
+  }
   const nobles: RewardCapture['nobles'] = {};
   document.querySelectorAll<HTMLElement>('[data-noble-id]').forEach(element => {
     const source = captureRewardSource(element);
     if (source) nobles[element.dataset.nobleId ?? ''] = source;
   });
-  return { player, action, gems: sources,
+  return { player, action, gems: sources, returns,
     bonus: action.type === 'BUY_CARD'
       ? captureRewardSource(document.querySelector<HTMLElement>('.multiplayer-card-dialog .card-face__bonus')) : null,
     nobles };
@@ -111,17 +123,19 @@ function gameReadErrorMessage(error: Error): string {
   return '게임 상태를 읽지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.';
 }
 
-function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, onClose, onAction }: {
+function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, error, onClose, onAction }: {
   card: DevelopmentCard;
   source: CardSelection['source'];
   player: PublicPlayerView;
   bankGold: number;
   canAct: boolean;
   busy: boolean;
+  error: string;
   onClose: () => void;
   onAction: (action: Exclude<GameAction, { type: 'TIMEOUT' }>) => Promise<boolean>;
 }) {
   const [payment, setPayment] = useState(() => suggestedPayment(card, player));
+  const [purchasePhase, setPurchasePhase] = useState<'idle' | 'submitting' | 'confirmed'>('idle');
   const dialogRef = useRef<HTMLElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const bonuses = countCardBonuses(player.purchasedCardIds);
@@ -139,7 +153,7 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, o
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape' && !busy) onClose();
+      if (event.key === 'Escape' && !busy && purchasePhase === 'idle') onClose();
       if (event.key !== 'Tab') return;
       const buttons = dialogRef.current?.querySelectorAll<HTMLButtonElement>('button:not(:disabled)');
       if (!buttons?.length) return;
@@ -155,7 +169,7 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, o
     };
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [busy, onClose]);
+  }, [busy, onClose, purchasePhase]);
 
   function changePayment(color: GemColor, delta: -1 | 1) {
     setPayment(current => {
@@ -169,11 +183,23 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, o
     if (await onAction(action)) onClose();
   }
 
+  async function buy() {
+    if (!canBuy || busy || purchasePhase !== 'idle') return;
+    setPurchasePhase('submitting');
+    const confirmed = await onAction({ type: 'BUY_CARD', cardId: card.id, source, payment });
+    if (!confirmed) { setPurchasePhase('idle'); return; }
+    setPurchasePhase('confirmed');
+    if (!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      await new Promise(resolve => window.setTimeout(resolve, 560));
+    }
+    onClose();
+  }
+
   return <div className="multiplayer-card-backdrop" onMouseDown={event => {
-    if (event.target === event.currentTarget && !busy) onClose();
+    if (event.target === event.currentTarget && !busy && purchasePhase === 'idle') onClose();
   }}>
-    <section ref={dialogRef} className="multiplayer-card-dialog" role="dialog" aria-modal="true" aria-labelledby="multi-card-title" aria-describedby="multi-card-summary">
-      <div className="multiplayer-card-dialog__heading"><div><span className="eyebrow">LEVEL {card.level} · {source === 'market' ? 'MARKET' : 'MY RESERVATION'}</span><h2 id="multi-card-title">{gemNames[card.bonusColor]} 개발 카드</h2></div><button ref={closeButtonRef} type="button" onClick={() => { if (!busy) onClose(); }} aria-disabled={busy} aria-label="카드 창 닫기">×</button></div>
+    <section ref={dialogRef} className={`multiplayer-card-dialog multiplayer-card-dialog--${purchasePhase}`} role="dialog" aria-modal="true" aria-busy={purchasePhase === 'submitting'} aria-labelledby="multi-card-title" aria-describedby="multi-card-summary">
+      <div className="multiplayer-card-dialog__heading"><div><span className="eyebrow">LEVEL {card.level} · {source === 'market' ? 'MARKET' : 'MY RESERVATION'}</span><h2 id="multi-card-title">{gemNames[card.bonusColor]} 개발 카드</h2></div><button ref={closeButtonRef} type="button" onClick={() => { if (!busy && purchasePhase === 'idle') onClose(); }} disabled={busy || purchasePhase !== 'idle'} aria-label="카드 창 닫기">×</button></div>
       <div className="multiplayer-card-dialog__body">
         <div className="multiplayer-card-dialog__face"><CardFace card={card} /></div>
         <div className="multiplayer-card-dialog__details">
@@ -187,9 +213,11 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, o
             </div>)}
           </div>
           <p className="multiplayer-card-dialog__gold"><GemIcon color="gold" small /> 황금 대체 {payment.gold}개 · 보유 {player.gems.gold}개</p>
-          <div className="multiplayer-card-dialog__actions"><button type="button" onClick={() => void act({ type: 'BUY_CARD', cardId: card.id, source, payment })} disabled={!canBuy || busy}>이 보석으로 구매</button>{source === 'market' && <button type="button" onClick={() => void act({ type: 'RESERVE_CARD', cardId: card.id })} disabled={!canReserve || busy}>예약{bankGold > 0 ? ' · 황금 +1' : ''}</button>}</div>
-          {!canAct && <p>현재는 카드를 확인할 수 있습니다. 자신의 차례가 되면 행동할 수 있습니다.</p>}
-          {canAct && !canBuy && <p>선택한 결제 수량으로는 구매할 수 없습니다.</p>}
+          <div className="multiplayer-card-dialog__actions"><button type="button" onClick={() => void buy()} disabled={!canBuy || busy || purchasePhase !== 'idle'}>{purchasePhase === 'submitting' ? '구매 처리 중…' : purchasePhase === 'confirmed' ? '구매 완료' : '이 보석으로 구매'}</button>{source === 'market' && <button type="button" onClick={() => void act({ type: 'RESERVE_CARD', cardId: card.id })} disabled={!canReserve || busy || purchasePhase !== 'idle'}>예약{bankGold > 0 ? ' · 황금 +1' : ''}</button>}</div>
+          {purchasePhase !== 'idle' && <p className="multiplayer-card-dialog__status" role="status">{purchasePhase === 'submitting' ? '카드 구매를 확인하고 있습니다…' : '구매 완료! 시장을 갱신합니다.'}</p>}
+          {error && purchasePhase === 'idle' && <p className="multiplayer-card-dialog__error" role="alert">{error}</p>}
+          {purchasePhase === 'idle' && !canAct && <p>현재는 카드를 확인할 수 있습니다. 자신의 차례가 되면 행동할 수 있습니다.</p>}
+          {purchasePhase === 'idle' && canAct && !canBuy && <p>선택한 결제 수량으로는 구매할 수 없습니다.</p>}
         </div>
       </div>
     </section>
@@ -212,6 +240,8 @@ export function MultiplayerGamePage() {
   } | null>(null);
   const [gemAnimation, setGemAnimation] = useState<PlayerGemAnimation | null>(null);
   const [bonusAnimation, setBonusAnimation] = useState<PlayerBonusAnimation | null>(null);
+  const [takeFeedback, setTakeFeedback] = useState<'requesting' | 'syncing' | null>(null);
+  const [returnFeedback, setReturnFeedback] = useState<'requesting' | 'syncing' | null>(null);
   const [scoreAnimation, setScoreAnimation] = useState<{ previous: number; phase: 'flying' | 'arrived' } | null>(null);
   const rewardController = useRef<AbortController | null>(null);
   const [highlightVersion, setHighlightVersion] = useState<number | null>(null);
@@ -221,6 +251,7 @@ export function MultiplayerGamePage() {
   const requestInFlight = useRef(false);
   const pendingRequest = useRef<SubmitGameActionRequest | null>(null);
   const [selection, setSelection] = useState<CardSelection | null>(null);
+  const [marketRefill, setMarketRefill] = useState<MarketRefill | null>(null);
   const [gemMode, setGemMode] = useState<'different' | 'pair'>('different');
   const [handExpanded, setHandExpanded] = useState(() => {
     try { return window.localStorage.getItem('gem-arena-hand-view') !== 'compact'; }
@@ -287,7 +318,10 @@ export function MultiplayerGamePage() {
   useEffect(() => {
     if (!confirmedAction || !game || game.version < confirmedAction.version ||
         update.status !== 'ready' || update.fromCache) return;
-    const { player: before, action, gems: sources, bonus, nobles } = confirmedAction.reward;
+    if (confirmedAction.reward.action.type === 'BUY_CARD' && selection) return;
+    const { player: before, action, gems: sources, returns, bonus, nobles } = confirmedAction.reward;
+    if (action.type === 'TAKE_GEMS') setTakeFeedback(null);
+    if (action.type === 'DISCARD_GEMS') setReturnFeedback(null);
     const after = game.players[myUid];
     rewardController.current?.abort();
     const controller = new AbortController();
@@ -317,6 +351,33 @@ export function MultiplayerGamePage() {
           if (!controller.signal.aborted) setGemAnimation(current => current ? { ...current, phase: 'arrived' } : null);
         })();
       }
+      if (action.type === 'DISCARD_GEMS') {
+        const departures = gems.flatMap(color => Array.from({
+          length: Math.min(action.gems[color], Math.max(0, before.gems[color] - after.gems[color])),
+        }, (_, unit) => ({ color, source: returns[color]?.[unit] ?? null })));
+        if (departures.length) {
+          setGemAnimation({ previous: before.gems, arrived: emptyInventory(), phase: 'flying', direction: 'outgoing' });
+          void (async () => {
+            await Promise.all(departures.map(async ({ color, source }, index) => {
+              if (index > 0) await new Promise(resolve => window.setTimeout(resolve, index * 130));
+              if (controller.signal.aborted) return;
+              const target = document.querySelector<HTMLElement>(`.multiplayer-actions .gem-bank [data-bank-color="${color}"] .gem-icon`);
+              await flyBoardReward(source, target, 'gem', controller.signal);
+              if (controller.signal.aborted) return;
+              if (target?.animate && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+                target.animate([
+                  { transform: 'scale(1)', filter: 'brightness(1)' },
+                  { transform: 'scale(1.35)', filter: 'brightness(1.6)', offset: .45 },
+                  { transform: 'scale(1)', filter: 'brightness(1)' },
+                ], { duration: 340, easing: 'ease-out' });
+              }
+              setGemAnimation(current => current?.direction === 'outgoing' ? { ...current,
+                arrived: { ...current.arrived, [color]: current.arrived[color] + 1 } } : current);
+            }));
+            if (!controller.signal.aborted) setGemAnimation(current => current?.direction === 'outgoing' ? { ...current, phase: 'arrived' } : current);
+          })();
+        }
+      }
       if (action.type === 'BUY_CARD' && after.purchasedCardIds.includes(action.cardId) &&
           !before.purchasedCardIds.includes(action.cardId)) {
         const card = getDevelopmentCard(action.cardId);
@@ -342,7 +403,30 @@ export function MultiplayerGamePage() {
     setActionNotice(confirmedActionMessage(action.type));
     setHighlightVersion(game.version);
     setConfirmedAction(null);
-  }, [confirmedAction, game?.version, update.status, update.fromCache, myUid]);
+  }, [confirmedAction, game?.version, update.status, update.fromCache, myUid, selection]);
+  useEffect(() => {
+    if (!marketRefill || marketRefill.phase !== 'empty' || selection || !game ||
+        game.version < marketRefill.version || update.status !== 'ready' || update.fromCache) return;
+    const replacementId = game.market[marketRefill.level][marketRefill.slot];
+    if (!replacementId || replacementId === marketRefill.purchasedId) {
+      setMarketRefill(null);
+      return;
+    }
+    const controller = new AbortController();
+    const row = document.querySelector<HTMLElement>(`.multiplayer-table .market-row--level-${marketRefill.level}`);
+    const deck = row?.querySelector<HTMLElement>('.market-deck') ?? null;
+    const slot = row?.querySelector<HTMLElement>(`.market-row__cards > :nth-child(${marketRefill.slot + 1})`) ?? null;
+    void flyMarketDeal(deck, slot, controller.signal).then(() => {
+      if (!controller.signal.aborted) setMarketRefill(current => current === marketRefill ? { ...current, phase: 'revealing' } : current);
+    });
+    return () => controller.abort();
+  }, [marketRefill, selection, game?.version, update.status, update.fromCache]);
+  useEffect(() => {
+    if (marketRefill?.phase !== 'revealing') return;
+    const delay = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 0 : 440;
+    const timer = window.setTimeout(() => setMarketRefill(current => current === marketRefill ? null : current), delay);
+    return () => window.clearTimeout(timer);
+  }, [marketRefill]);
   useEffect(() => () => rewardController.current?.abort(), []);
   useEffect(() => {
     if (gemAnimation?.phase !== 'arrived') return;
@@ -386,6 +470,8 @@ export function MultiplayerGamePage() {
     if (!roomId || !game || requestInFlight.current ||
         (previous ? pendingRequest.current?.actionId !== previous.actionId ||
           game.version !== previous.expectedVersion : !canAct || pendingRequest.current)) return false;
+    if (action.type === 'TAKE_GEMS') setTakeFeedback('requesting');
+    if (action.type === 'DISCARD_GEMS') setReturnFeedback('requesting');
     const request = previous ?? { roomId, actionId: crypto.randomUUID(), expectedVersion: game.version, action };
     const reward = captureActionRewards(game.players[myUid], request.action);
     rewardController.current?.abort();
@@ -402,8 +488,17 @@ export function MultiplayerGamePage() {
       setRetryRequest(null);
       setAwaitingVersion(result.version > game.version ? result.version : null);
       setConfirmedAction({ version: result.version, reward });
+      if (request.action.type === 'TAKE_GEMS') setTakeFeedback('syncing');
+      if (request.action.type === 'DISCARD_GEMS') setReturnFeedback('syncing');
+      if (request.action.type === 'BUY_CARD' && request.action.source === 'market') {
+        const card = getDevelopmentCard(request.action.cardId);
+        const slot = card ? game.market[card.level].indexOf(card.id) : -1;
+        if (card && slot >= 0) setMarketRefill({ level: card.level, slot, purchasedId: card.id, version: result.version, phase: 'empty' });
+      }
       return true;
     } catch (error) {
+      if (request.action.type === 'TAKE_GEMS') setTakeFeedback(null);
+      if (request.action.type === 'DISCARD_GEMS') setReturnFeedback(null);
       setActionError(actionErrorMessage(error));
       const code = error && typeof error === 'object' && 'code' in error ? error.code : null;
       const uncertain = code === 'functions/unavailable' || code === 'functions/deadline-exceeded';
@@ -453,6 +548,7 @@ export function MultiplayerGamePage() {
   const currentName = room.players[currentUid ?? '']?.nickname ?? '플레이어';
   const opponents = game.playerOrder.filter(uid => uid !== myUid);
   const selectedCard = selection ? getDevelopmentCard(selection.cardId) : undefined;
+  const myBonuses = countCardBonuses(me.purchasedCardIds);
   const canTake = canAct && game.phase === 'playing';
   const takeColors = gemMode === 'pair' && selectedColors.length === 1
     ? [selectedColors[0], selectedColors[0]] : selectedColors;
@@ -465,7 +561,19 @@ export function MultiplayerGamePage() {
   });
 
   return <div className="multiplayer-page">
-    <div className="multiplayer-page__heading"><div><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId}</span><h1>게임판</h1></div><div className="multiplayer-page__heading-side"><Link className="text-link" to={`/rooms/${roomId}`}>대기실</Link>{room.status === 'playing' && !me.forfeited && !room.players[myUid]?.forfeited && <button type="button" className="text-link" disabled={busy || Boolean(retryRequest)} onClick={() => void forfeit()}>기권하기</button>}<span className="multiplayer-page__turn">{game.phase === 'finished' ? '게임 종료' : me.forfeited ? '기권' : myTurn ? '내 차례' : `${currentName} 차례`}</span></div></div>
+    <div className="multiplayer-page__heading">
+      <div className="multiplayer-page__title"><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId}</span><h1>게임판</h1></div>
+      <div className="multiplayer-page__heading-side">
+        <div className={`multiplayer-page__turn${myTurn && !me.forfeited && game.phase !== 'finished' ? ' multiplayer-page__turn--mine' : ''}`} role="status" aria-live="polite">
+          <span className="multiplayer-page__turn-indicator" aria-hidden="true" />
+          <span className="multiplayer-page__turn-copy"><small>{game.phase === 'finished' ? '게임 상태' : '현재 차례'}</small><strong>{game.phase === 'finished' ? '게임 종료' : myTurn && !me.forfeited ? '내 차례' : currentName}</strong></span>
+        </div>
+        <div className="multiplayer-page__heading-actions">
+          <Link className="multiplayer-page__room-link" to={`/rooms/${roomId}`}>대기실</Link>
+          {room.status === 'playing' && !me.forfeited && !room.players[myUid]?.forfeited && <button type="button" className="multiplayer-page__forfeit" disabled={busy || Boolean(retryRequest)} onClick={() => void forfeit()}>기권하기</button>}
+        </div>
+      </div>
+    </div>
     {me.forfeited && <p className="multiplayer-page__notice" role="status">기권했습니다. 결과는 계속 볼 수 있지만 행동하거나 다시 참가할 수 없습니다.</p>}
     {update.status === 'syncing' && <p className="multiplayer-page__notice" role="status">서버 문서의 버전을 맞추는 중입니다. 마지막 확정 상태를 표시합니다.</p>}
     {update.fromCache && <p className="multiplayer-page__notice" role="status">저장된 상태를 표시하는 중입니다. 서버 연결을 기다립니다.</p>}
@@ -491,21 +599,25 @@ export function MultiplayerGamePage() {
       <section className="market-section" aria-labelledby="multi-market-title">
         <div className="section-heading"><div><span className="eyebrow">MARKET</span><h2 id="multi-market-title">개발 카드 시장</h2></div></div>
         <div className="market-levels">{levels.map(level => <div className={`market-row market-row--level-${level}`} key={level}>
-          <div className="market-row__label"><span>LEVEL</span><strong>{level}</strong><small>덱 {game.deckCounts[level]}장</small><button type="button" className="market-row__reserve-deck" aria-label={`${level}단계 덱에서 카드 예약`} disabled={!canAct || game.phase !== 'playing' || game.deckCounts[level] === 0 || me.reservedCount >= 3} onClick={() => void submit({ type: 'RESERVE_CARD', level })}>덱 예약</button></div>
+          <div className="market-row__label"><DeckCard level={level} remaining={game.deckCounts[level]}
+            disabled={!canAct || game.phase !== 'playing' || game.deckCounts[level] === 0 || me.reservedCount >= 3}
+            onReserve={() => void submit({ type: 'RESERVE_CARD', level })} /></div>
           <div className="market-row__cards">{game.market[level].map((id, slot) => {
+            const refill = marketRefill?.level === level && marketRefill.slot === slot ? marketRefill : null;
+            if (refill?.phase === 'empty') return <div className="market-card-empty market-card-empty--refilling" key={`${level}-${slot}`} role="status">새 카드 보충 중…</div>;
             const card = id ? getDevelopmentCard(id) : undefined;
-            return card ? <MarketCard key={`${level}-${slot}`} card={card} onSelect={() => setSelection({ cardId: card.id, source: 'market' })} />
+            return card ? <MarketCard key={`${level}-${slot}`} card={card} bonuses={myBonuses} className={refill?.phase === 'revealing' ? 'market-card--dealt' : ''} disabled={Boolean(refill)} onSelect={() => setSelection({ cardId: card.id, source: 'market' })} />
               : <div className="market-card-empty" key={`${level}-${slot}`}>빈 칸</div>;
           })}</div>
         </div>)}</div>
       </section>
-      <aside className="multiplayer-actions" aria-label="보석 은행과 내 행동">
+      <aside className={`multiplayer-actions${takeFeedback ? ' multiplayer-actions--taking' : ''}`} aria-label="보석 은행과 내 행동">
         <div className="section-heading"><div><span className="eyebrow">SUPPLY</span><h2 id="bank-title">보석 은행</h2></div></div>
         <GemBank bank={game.bank} mode={gemMode} phase={canTake ? 'selecting' : 'completed'} selectedColors={selectedColors} onSelect={chooseColor} />
         <div className="multiplayer-actions__panel">
           <span className="eyebrow">MY ACTION</span>
-          {game.phase === 'playing' ? <><p>{myTurn ? '한 턴에 한 가지 기본 행동을 선택하세요.' : `${currentName}의 행동을 기다리고 있습니다.`}</p><div className="multiplayer-actions__modes"><button type="button" className={gemMode === 'different' ? 'is-active' : ''} aria-pressed={gemMode === 'different'} disabled={!canTake} onClick={() => { setGemMode('different'); setSelectedColors([]); }}>다른 색 최대 3개</button><button type="button" className={gemMode === 'pair' ? 'is-active' : ''} aria-pressed={gemMode === 'pair'} disabled={!canTake} onClick={() => { setGemMode('pair'); setSelectedColors([]); }}>같은 색 2개</button></div><button type="button" className="multiplayer-actions__primary" disabled={!canTake || !canTakeGems(game.bank, takeColors)} onClick={() => void submit({ type: 'TAKE_GEMS', colors: takeColors })}>선택한 보석 받기</button><button type="button" className="multiplayer-actions__secondary" disabled={!canTake} onClick={() => void submit({ type: 'PASS' })}>가능한 행동이 없으면 패스</button></>
-            : game.phase === 'discarding' && myTurn ? <><p>보석이 10개를 넘었습니다. {excess}개를 은행에 돌려주세요.</p><div className="multiplayer-actions__returns">{gems.filter(color => me.gems[color] > 0).map(color => <div key={color}><GemIcon color={color} small /><span>{gemNames[color]} {me.gems[color]}개</span><button type="button" disabled={!canAct || returned[color] === 0} onClick={() => setReturned(current => ({ ...current, [color]: current[color] - 1 }))}>−</button><strong>{returned[color]}</strong><button type="button" disabled={!canAct || returned[color] >= me.gems[color] || returnedCount >= excess} onClick={() => setReturned(current => ({ ...current, [color]: current[color] + 1 }))}>+</button></div>)}</div><button type="button" className="multiplayer-actions__primary" disabled={!canAct || returnedCount !== excess} onClick={() => void submit({ type: 'DISCARD_GEMS', gems: returned })}>보석 {returnedCount}/{excess}개 반환</button></>
+          {game.phase === 'playing' ? <><p>{myTurn ? '한 턴에 한 가지 기본 행동을 선택하세요.' : `${currentName}의 행동을 기다리고 있습니다.`}</p><div className="multiplayer-actions__modes"><button type="button" className={gemMode === 'different' ? 'is-active' : ''} aria-pressed={gemMode === 'different'} disabled={!canTake} onClick={() => { setGemMode('different'); setSelectedColors([]); }}>다른 색 최대 3개</button><button type="button" className={gemMode === 'pair' ? 'is-active' : ''} aria-pressed={gemMode === 'pair'} disabled={!canTake} onClick={() => { setGemMode('pair'); setSelectedColors([]); }}>같은 색 2개</button></div><button type="button" className={`multiplayer-actions__primary${takeFeedback ? ' multiplayer-actions__primary--pending' : ''}`} disabled={!canTake || !canTakeGems(game.bank, takeColors)} onClick={() => void submit({ type: 'TAKE_GEMS', colors: takeColors })}>{takeFeedback === 'requesting' ? '보석 받는 중…' : takeFeedback === 'syncing' ? '게임판 갱신 중…' : '선택한 보석 받기'}</button>{takeFeedback && <p className="multiplayer-actions__progress" role="status">{takeFeedback === 'requesting' ? '선택한 보석을 은행에서 확인하고 있습니다.' : '보석이 확정됐습니다. 게임판에 표시하고 있습니다.'}</p>}<button type="button" className="multiplayer-actions__secondary" disabled={!canTake} onClick={() => void submit({ type: 'PASS' })}>가능한 행동이 없으면 패스</button></>
+            : game.phase === 'discarding' && myTurn ? <><p>보석이 10개를 넘었습니다. {excess}개를 은행에 돌려주세요.</p><div className="multiplayer-actions__returns">{gems.filter(color => me.gems[color] > 0).map(color => <div className="multiplayer-actions__return-row" key={color}><GemIcon color={color} small /><span className="multiplayer-actions__return-label">{gemNames[color]} <small>보유 {me.gems[color]}개</small></span><div className="multiplayer-actions__return-controls"><button type="button" aria-label={`${gemNames[color]} 반환 수량 줄이기`} disabled={!canAct || returned[color] === 0} onClick={() => setReturned(current => ({ ...current, [color]: current[color] - 1 }))}>−</button><strong aria-label={`${gemNames[color]} ${returned[color]}개 반환`}>{returned[color]}</strong><button type="button" aria-label={`${gemNames[color]} 반환 수량 늘리기`} disabled={!canAct || returned[color] >= me.gems[color] || returnedCount >= excess} onClick={() => setReturned(current => ({ ...current, [color]: current[color] + 1 }))}>+</button></div></div>)}</div><button type="button" className={`multiplayer-actions__primary${returnFeedback ? ' multiplayer-actions__primary--pending' : ''}`} disabled={!canAct || returnedCount !== excess} onClick={() => void submit({ type: 'DISCARD_GEMS', gems: returned })}>{returnFeedback === 'requesting' ? '보석 반환 중…' : returnFeedback === 'syncing' ? '게임판 갱신 중…' : `보석 ${returnedCount}/${excess}개 반환`}</button>{returnFeedback && <p className="multiplayer-actions__progress" role="status">{returnFeedback === 'requesting' ? '반환할 보석을 확인하고 있습니다.' : '보석이 확정됐습니다. 은행으로 옮기고 있습니다.'}</p>}</>
               : game.phase === 'choosingNoble' && myTurn ? <p>조건을 만족한 귀족을 왼쪽에서 선택하세요.</p>
                 : <p>{game.phase === 'finished' ? '최종 결과가 확정되었습니다.' : '서버의 다음 상태를 기다리고 있습니다.'}</p>}
         </div>
@@ -516,7 +628,7 @@ export function MultiplayerGamePage() {
               gemAnimation={gemAnimation ?? undefined} bonusAnimation={bonusAnimation ?? undefined} scoreAnimation={scoreAnimation ?? undefined} />
             {handExpanded && <div className="multiplayer-self__reserved"><div><span className="eyebrow">PRIVATE CARDS</span><h3>내 예약 카드 <small>{views.privatePlayer.reservedCardIds.length}/3</small></h3></div>{views.privatePlayer.reservedCardIds.length === 0 ? <p>예약한 카드가 없습니다.</p> : <div className="multiplayer-self__cards">{views.privatePlayer.reservedCardIds.map(id => {
               const card = getDevelopmentCard(id);
-              return card && <MarketCard key={id} card={card} onSelect={() => setSelection({ cardId: id, source: 'reserved' })} />;
+              return card && <MarketCard key={id} card={card} bonuses={myBonuses} onSelect={() => setSelection({ cardId: id, source: 'reserved' })} />;
             })}</div>}</div>}
           </div>
         </section>
@@ -524,6 +636,6 @@ export function MultiplayerGamePage() {
     </div>
     {selectedCard && selection && <MultiplayerCardDialog key={`${selection.source}-${selection.cardId}`}
       card={selectedCard} source={selection.source} player={me} bankGold={game.bank.gold}
-      canAct={canAct && game.phase === 'playing'} busy={busy || syncing} onClose={() => setSelection(null)} onAction={submit} />}
+      canAct={canAct && game.phase === 'playing'} busy={busy || syncing} error={actionError} onClose={() => setSelection(null)} onAction={submit} />}
   </div>;
 }

@@ -22,7 +22,9 @@ export async function initializeGameViews(db: Firestore, roomCode: string): Prom
       throw new Error('2~4명의 참가자가 필요합니다');
     }
     const seed = randomBytes(4).readUInt32BE(0);
-    const state = createInitialGameState(playerOrder, seed);
+    const state = createInitialGameState(playerOrder, seed, {
+      practiceStart: Boolean(process.env.FIRESTORE_EMULATOR_HOST) && room.get('practiceStart') === true,
+    });
     transaction.create(roomRef.collection('privateState').doc('server'), state);
     transaction.create(roomRef.collection('game').doc('publicState'), toPublicGameView(state));
     for (const uid of playerOrder) {

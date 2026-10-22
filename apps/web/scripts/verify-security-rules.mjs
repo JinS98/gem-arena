@@ -73,6 +73,12 @@ try {
   const forgedCode = code();
   const capacityCode = code();
   const nicknameCode = code();
+  const practiceCode = code();
+  const invalidPracticeCode = code();
+  await allowed('emulator practice room flag', () => setDoc(doc(host.db, 'rooms', practiceCode),
+    { ...roomData(practiceCode), practiceStart: true }));
+  await denied('invalid practice room flag', () => setDoc(doc(host.db, 'rooms', invalidPracticeCode),
+    { ...roomData(invalidPracticeCode), practiceStart: false }));
   await denied('비로그인 방 생성', () => setDoc(doc(anonymous.db, 'rooms', anonymousCode), roomData(anonymousCode)));
   await denied('위조 방장 방 생성', () => setDoc(doc(outsider.db, 'rooms', forgedCode), roomData(forgedCode)));
   await denied('잘못된 코드 방 생성', () => setDoc(doc(host.db, 'rooms', 'INVALID1'), roomData('INVALID1')));
