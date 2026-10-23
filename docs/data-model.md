@@ -1,6 +1,8 @@
 # 데이터 모델
 
-> **현재 방 모델:** `rooms/{roomCode}` 문서에 `roomCode`, `hostUid`, `status`, `capacity`, `playerOrder`, `players`, `createdAt`, `updatedAt`을 저장합니다. `players`는 UID를 키로 하는 맵이며 값은 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`입니다. 좌석 번호는 `playerOrder` 순서로 계산합니다. 22~25일차의 게임 상태 문서는 아래에 설명합니다.
+> **현재 방 모델:** `rooms/{roomCode}` 문서에 `roomCode`, `title`, `hostUid`, `status`, `capacity`, `playerOrder`, `players`, `createdAt`, `updatedAt`을 저장합니다. `players`는 UID를 키로 하는 맵이며 값은 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`입니다. 좌석 번호는 `playerOrder` 순서로 계산합니다. 22~25일차의 게임 상태 문서는 아래에 설명합니다.
+
+로비는 참가자 정보가 들어 있는 `rooms` 컬렉션을 직접 나열하지 않는다. `roomListingUpdated` Functions 트리거가 대기 중인 방을 `roomListings/{roomCode}`에 `title`, `hostNickname`, `playerCount`, `capacity`, `createdAt`과 코드만 복사한다. 로그인 사용자는 이 목록을 읽을 수 있지만 수정할 수 없다. 방이 시작되거나 종료되면 목록 문서를 지운다. 기존 방 문서에 제목이 없으면 목록에는 방장 닉네임을 사용한 기본 제목을 표시한다.
 
 21일차 시작 전이는 같은 방 문서의 `status`를 `playing`으로 변경하고 `startedAt`을 추가합니다. 본인 준비 상태는 `players.{uid}.ready`에 기록합니다. 로컬 에뮬레이터에서는 25일차 `roomStarted` 트리거가 이 전이 직후 게임 덱과 턴 상태를 생성합니다.
 
@@ -54,6 +56,7 @@
 
 ```text
 rooms/{roomCode}                                      방 상태·멤버십·플레이어 맵
+roomListings/{roomCode}                               로비에 표시할 대기 방의 공개 정보
 rooms/{roomCode}/game/publicState                     공개 시장·턴·점수
 rooms/{roomCode}/privateState/server                  서버 전용 덱·전체 게임 상태
 rooms/{roomCode}/privatePlayers/{uid}                 해당 플레이어의 비공개 예약 카드

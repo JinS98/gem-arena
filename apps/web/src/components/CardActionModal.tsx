@@ -3,8 +3,9 @@ import { CARD_COLORS, canPayForCard, countCardBonuses, remainingCardCost } from 
 import type { DevelopmentCard, GemColor, Inventory } from '@gem-arena/engine';
 import { captureRewardSource } from '../animations/boardReward';
 import type { RewardSource } from '../animations/boardReward';
-import { useDemoGemStore } from '../stores/demoGemStore';
-import { GemIcon, gemNames } from './GemIcon';
+import { useLocalGameStore } from '../stores/localGameStore';
+import { GemIcon } from './GemIcon';
+import { useGemNames } from './GameTheme';
 import { CardFace } from './MarketCard';
 
 const emptyPayment = (): Inventory => ({ white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 });
@@ -24,7 +25,8 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
     nobleReward?: { source: RewardSource | null; previousScore: number }) => void;
   onPurchaseArrive: () => void;
 }) {
-  const { gems, bank, purchasedCardIds, reservedCardIds, phase, purchaseCard } = useDemoGemStore();
+  const gemNames = useGemNames();
+  const { gems, bank, purchasedCardIds, reservedCardIds, phase, purchaseCard } = useLocalGameStore();
   const bonuses = countCardBonuses(purchasedCardIds);
   const remaining = remainingCardCost(card.cost, bonuses);
   const [payment, setPayment] = useState(() => suggestedPayment(card, purchasedCardIds, gems));
@@ -91,7 +93,7 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
 
   const confirmBuy = async () => {
     if (!canBuy || isPurchasingRef.current) return;
-    const before = useDemoGemStore.getState();
+    const before = useLocalGameStore.getState();
     const playerId = before.currentPlayerId;
     const previousNobles = before.game.players[playerId].nobleIds;
     const nobleSources = new Map([...document.querySelectorAll<HTMLElement>('[data-noble-id]')]
@@ -107,10 +109,10 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
         element.closest<HTMLElement>('[data-player-id]')?.dataset.playerId === playerId);
 
     if (!purchaseCard(card.id, source, payment)) {
-      setError(useDemoGemStore.getState().notice);
+      setError(useLocalGameStore.getState().notice);
       return;
     }
-    const claimedNobleId = useDemoGemStore.getState().game.players[playerId].nobleIds
+    const claimedNobleId = useLocalGameStore.getState().game.players[playerId].nobleIds
       .find((id) => !previousNobles.includes(id));
     onPurchaseStart(playerId, card.bonusColor, bonuses[card.bonusColor], claimedNobleId ? {
       source: nobleSources.get(claimedNobleId) ?? null,
@@ -181,7 +183,7 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
   const confirmReserve = () => {
     if (isPurchasingRef.current) return;
     if (onReserve(card.id)) onClose();
-    else setError(useDemoGemStore.getState().notice);
+    else setError(useLocalGameStore.getState().notice);
   };
 
   return (
@@ -197,7 +199,7 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
               <strong>{phase !== 'selecting' ? '이번 턴은 종료됨' : canAfford ? '구매 가능' : '보석 부족 · 구매 불가'}</strong>
               <span>{phase !== 'selecting' ? '이번 턴의 행동이 이미 끝났습니다.' : canAfford
                 ? '표시된 사용량으로 지금 구매할 수 있습니다.'
-                : `선택한 결제에는 황금 보석 ${goldShortage}개가 부족합니다. 색 보석을 모으면 황금 사용량이 줄어듭니다.`}</span>
+                : `선택한 결제에는 ${gemNames.gold} ${goldShortage}개가 부족합니다. 다른 자원을 모으면 특별 자원 사용량이 줄어듭니다.`}</span>
             </div>
             <div className="card-modal__section-title"><strong>구매 비용</strong><span>카드 {originalCost}개 − 영구 할인 {originalCost - payableCost}개 = 필요 {payableCost}개</span></div>
             <div className="card-modal__cost-head"><span>보석 · 카드 비용 − 할인</span><span>필요</span><span>보유</span><span>사용</span></div>
@@ -215,8 +217,8 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
                 </div>
               ))}
             </div>
-            <div className={`card-modal__gold gem-box gem-box--gold${goldShortage > 0 ? ' card-modal__gold--short' : ''}`}><GemIcon color="gold" small /><span>황금 보석으로 대체</span><span>보유 {gems.gold}개</span><strong>사용 {payment.gold}개</strong></div>
-            <p className="card-modal__hint">색 보석의 사용 수량을 줄이면 그만큼 황금 보석을 사용합니다.</p>
+            <div className={`card-modal__gold gem-box gem-box--gold${goldShortage > 0 ? ' card-modal__gold--short' : ''}`}><GemIcon color="gold" small /><span>특별 자원 · {gemNames.gold}</span><span>보유 {gems.gold}개</span><strong>사용 {payment.gold}개</strong></div>
+            <p className="card-modal__hint">기본 자원의 사용 수량을 줄인 만큼 특별 자원을 사용합니다.</p>
             <div className="card-modal__payment-summary">
               <strong>{canAfford ? '이번 구매에 사용' : '구매에 필요한 결제'}</strong>
               <div>{spentGems.filter((color) => payment[color] > 0).map((color) =>
@@ -226,7 +228,7 @@ export function CardActionModal({ card, source, onClose, onReserve, onPurchaseSt
             {error && <p className="card-modal__error" role="alert">{error}</p>}
             <div className="card-modal__actions">
               <button type="button" className="card-modal__buy" onClick={confirmBuy} disabled={!canBuy || isPurchasing}>{canBuy ? '이 보석으로 구매' : phase === 'selecting' ? '보석 부족' : '이번 턴 구매 불가'}</button>
-              {source === 'market' && <button type="button" className="card-modal__reserve" onClick={confirmReserve} disabled={!canReserve || isPurchasing}>예약{bank.gold > 0 ? ' · 황금 +1' : ''}</button>}
+              {source === 'market' && <button type="button" className="card-modal__reserve" onClick={confirmReserve} disabled={!canReserve || isPurchasing}>예약{bank.gold > 0 ? ` · ${gemNames.gold} +1` : ''}</button>}
             </div>
             {source === 'market' && <p className="card-modal__footnote">예약 {reservedCardIds.length} / 3장 · 예약하면 이 카드가 내 예약 목록으로 이동합니다.</p>}
           </div>

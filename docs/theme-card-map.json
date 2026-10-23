@@ -1,0 +1,258 @@
+{
+  "lol": {
+    "1": {
+      "white": [
+        "Demacian recruit with a practice sword",
+        "Demacian silver shield",
+        "petricite charm on a mason's bench",
+        "Demacian training courtyard",
+        "Lux with a small light spell",
+        "Poppy carrying her hammer",
+        "Quinn and her eagle Valor",
+        "Sona with a luminous ivory etwahl"
+      ],
+      "blue": [
+        "mana crystal in a Piltover laboratory",
+        "Piltover inventor's brass toolkit",
+        "Piltover academy workshop",
+        "Zaun courier crossing a blue-lit canal bridge",
+        "Nami with a modest tide",
+        "Ezreal exploring an old vault",
+        "Seraphine performing beneath cyan stage lights",
+        "Janna guiding an azure harbor breeze"
+      ],
+      "green": [
+        "Ionian grove shrine under emerald leaves",
+        "Ionian acolyte tending green spirit blossoms",
+        "living seed in a forest clearing",
+        "Taliyah shaping moss-covered stone",
+        "Teemo scouting a woodland path",
+        "Lillia in a luminous green glade",
+        "Ivern tending a sapling",
+        "Nidalee tracking through jungle grass"
+      ],
+      "red": [
+        "Noxian recruit at a training post",
+        "ember-forged dagger on an anvil",
+        "Noxian field banner",
+        "Annie with a small fire spell",
+        "Rumble working on his mech",
+        "Miss Fortune on a Bilgewater pier",
+        "Draven practicing an axe throw",
+        "Samira drawing her blade"
+      ],
+      "black": [
+        "Bilgewater night dock",
+        "Shadow Isles lantern burning violet in black mist",
+        "small Void creature emerging from stone",
+        "Zaun chemtech vial radiating dark violet fumes",
+        "Twitch stalking a purple-lit sewer",
+        "Shaco with a trickster mask",
+        "Pyke stalking a harbor alley",
+        "Kha'Zix perched on a rock"
+      ]
+    },
+    "2": {
+      "white": [
+        "Garen charging with his broadsword",
+        "Fiora in a fencing duel",
+        "Vayne hunting beneath silver moonlight",
+        "Leona bearing her solar shield",
+        "Taric channeling pale celestial gem magic",
+        "Senna firing a white-gold relic cannon"
+      ],
+      "blue": [
+        "Ahri casting fox-fire",
+        "Orianna directing her clockwork ball",
+        "Jayce wielding his transforming hammer",
+        "Caitlyn aiming a blue-lit hextech rifle",
+        "Ekko leaping through fractured time",
+        "Ryze protecting a rune scroll"
+      ],
+      "green": [
+        "Yasuo drawing a wind blade",
+        "Irelia commanding jade-green floating blades",
+        "Karma invoking Ionian spirit magic",
+        "Rakan dashing through emerald spirit magic",
+        "Xayah launching forest-green feather blades",
+        "Rengar tracking prey in dense jungle"
+      ],
+      "red": [
+        "Darius raising his Noxian axe",
+        "Katarina spinning with daggers",
+        "Brand erupting with fire",
+        "Riven reforging her blade amid crimson embers",
+        "Sett entering a fighting ring",
+        "Sivir throwing her crossblade through red desert dust"
+      ],
+      "black": [
+        "Zed emerging from living shadow",
+        "Evelynn in a dark alley",
+        "Thresh swinging a violet spectral lantern",
+        "Sylas breaking chains amid purple shadow magic",
+        "Viktor activating a dark violet hextech device",
+        "Warwick leaping through a purple-black Zaun night"
+      ]
+    },
+    "3": {
+      "white": [
+        "Kayle descending in radiant judgment",
+        "Galio towering above Demacia",
+        "Pantheon standing before Mount Targon",
+        "celestial gate atop Mount Targon"
+      ],
+      "blue": [
+        "Aurelion Sol weaving stars",
+        "Zoe opening a sapphire celestial portal",
+        "Bard crossing a cobalt cosmic threshold",
+        "ancient world rune radiating arcane power"
+      ],
+      "green": [
+        "Maokai awakening in an emerald forest",
+        "Zyra commanding a primeval green thicket",
+        "Neeko reshaping an ancient emerald rainforest",
+        "vast Spirit Blossom realm in lush emerald light"
+      ],
+      "red": [
+        "Swain commanding a Noxian legion",
+        "Renekton charging through a crimson desert storm",
+        "Aatrox wielding a vast crimson blade",
+        "Infernal Drake soaring over a volcano"
+      ],
+      "black": [
+        "Mordekaiser enthroned in a violet-black death realm",
+        "Malzahar opening a vast purple Void gate",
+        "Bel'Veth opening a Void rift",
+        "Viego crossing a kingdom in purple-black mist"
+      ]
+    }
+  },
+  "demon-slayer": {
+    "1": {
+      "white": [
+        "silver mist gathering over a mountain training path",
+        "pale fog curling around a sheathed Nichirin blade",
+        "white mist drifting through cedar trunks at dawn",
+        "mist-patterned sword guard on a stone table",
+        "fog-veiled torii at a quiet mountain pass",
+        "silver-white breath trails in an empty dojo",
+        "lantern glow dissolving into pearl-gray mist",
+        "mist beading on a dark sword sheath"
+      ],
+      "blue": [
+        "empty waterfall training grounds with stepping stones",
+        "ripples around a practice blade",
+        "river stepping drill at dawn",
+        "blue wave patterned sword guard",
+        "water basin in a swordsmith workshop",
+        "rain-soaked mountain footpath",
+        "water reflection of a Nichirin sword",
+        "flowing stream beside a training dojo"
+      ],
+      "green": [
+        "emerald wind stirring leaves along a training trail",
+        "green wind ribbons around a Nichirin sword guard",
+        "bamboo bending in a sharp spring gust",
+        "wind chime spinning in a green mountain breeze",
+        "fallen leaves spiraling across a slayer courtyard",
+        "green air current whipping an empty haori on a clothesline",
+        "wind-carved mountain shrine under green clouds",
+        "practice blade cutting an emerald leaf vortex"
+      ],
+      "red": [
+        "firelit swordsmith forge",
+        "red lacquer Nichirin sword sheath",
+        "red forge sparks reflected in polished metalwork",
+        "ember-lit mountain camp",
+        "flame-patterned training banner",
+        "sunset sword practice silhouette",
+        "glowing charcoal brazier",
+        "red maple leaves around a blade"
+      ],
+      "black": [
+        "moonlit demon warning bell",
+        "darkened forest boundary",
+        "shadowed demon silhouette beyond a gate",
+        "black Nichirin sword scabbard",
+        "night patrol lantern",
+        "abandoned mountain cabin at night",
+        "poison vial in a medical kit",
+        "ink-dark crow feathers on a letter"
+      ]
+    },
+    "2": {
+      "white": [
+        "Kanao Tsuyuri in pale mist with a white butterfly hairpin",
+        "mist-wrapped training mask resting on a cedar branch",
+        "Murata advancing carefully through a silver fog",
+        "Aoi Kanzaki at the Butterfly Mansion in white morning mist",
+        "layered Mist Breathing feints in a moonlit grove",
+        "white-gray mist technique obscuring a bridge"
+      ],
+      "blue": [
+        "Sabito practicing Water Breathing",
+        "Makomo guiding a breathing exercise",
+        "Sakonji Urokodaki demonstrating a water drill",
+        "Water Breathing rippling sword forms above a canal",
+        "Tanjiro Kamado performing Water Breathing Water Wheel",
+        "a blue water surface slash across a moonlit lake"
+      ],
+      "green": [
+        "Masachika Kumeno crossing blades in green wind",
+        "Genya Shinazugawa standing in a fierce forest gale",
+        "Inosuke Hashibira crossing a leafy forest in green wind",
+        "Kotetsu with his training doll amid green mountain wind",
+        "Hotaru Haganezuka carrying a sword in a forest gale",
+        "green cyclone around a Nichirin blade at night"
+      ],
+      "red": [
+        "Nezuko Kamado using Blood Demon Art flame",
+        "flame-patterned Nichirin sword guard on red silk",
+        "Shinjuro Rengoku drawing a fiery blade",
+        "Susamaru hurling a scarlet temari ball",
+        "Yahaba directing red arrow force",
+        "scarlet flame technique lighting a night forest"
+      ],
+      "black": [
+        "Rui weaving spider threads",
+        "Enmu on the Infinity Train",
+        "Hand Demon lurking near Final Selection",
+        "Swamp Demon emerging from dark water",
+        "Spider Mother demon among forest threads",
+        "Spider Father demon in a moonlit forest"
+      ]
+    },
+    "3": {
+      "white": [
+        "Muichiro Tokito emerging from Mist Breathing",
+        "Gyomei Himejima with stone-gray prayer beads in pale mist",
+        "Obanai Iguro and his white serpent beneath a silver moon",
+        "Shinobu Kocho amid white butterfly wings and soft mist"
+      ],
+      "blue": [
+        "Giyu Tomioka performing Water Breathing Dead Calm",
+        "water dragon shaped from a powerful sword current",
+        "towering blue wave breaking through a moonlit gorge",
+        "Water Breathing waterfall basin in a storm"
+      ],
+      "green": [
+        "Sanemi Shinazugawa unleashing Wind Breathing",
+        "Zohakuten commanding green wooden dragons in a storm",
+        "Gyokko emerging from a green-glazed vase",
+        "Kagaya Ubuyashiki in a wind-swept emerald garden"
+      ],
+      "red": [
+        "Kyojuro Rengoku with Flame Breathing",
+        "Akaza launching crimson destructive shockwaves",
+        "Daki fighting with long patterned obi",
+        "Gyutaro wielding blood sickles"
+      ],
+      "black": [
+        "Muzan Kibutsuji in a terrifying night scene",
+        "Kokushibo with violet moon-shaped sword arcs",
+        "Doma surrounded by dark violet icy lotus Blood Demon Art",
+        "Nakime folding the Infinity Castle into purple shadows"
+      ]
+    }
+  }
+}

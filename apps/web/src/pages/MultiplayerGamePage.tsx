@@ -13,13 +13,15 @@ import { captureRewardSource, flyBoardReward, type RewardSource } from '../anima
 import { flyMarketDeal } from '../animations/marketDeal';
 import { DeckCard } from '../components/DeckCard';
 import { GemBank } from '../components/GemBank';
-import { GemIcon, gemNames } from '../components/GemIcon';
+import { GemIcon } from '../components/GemIcon';
+import { GameThemeProvider, normalizeGameTheme, themeGemNames, themeLabels, useGemNames } from '../components/GameTheme';
 import { CardFace, MarketCard } from '../components/MarketCard';
 import { ForfeitChoiceDialog, MultiplayerVictoryDialog, type ForfeitDestination } from '../components/MultiplayerExitDialogs';
 import { NobleGallery } from '../components/NobleGallery';
 import { PlayerPanel } from '../components/PlayerPanel';
-import type { PreviewPlayer } from '../data/previewGame';
+import type { PlayerDisplay } from '../data/playerDisplay';
 import { submitGameAction, type SubmitGameActionRequest } from '../services/gameActions';
+import { useMultiplayerTurnCountdown } from '../hooks/useMultiplayerTurnCountdown';
 import { getFirebase } from '../services/firebase';
 import { subscribeMyGameViews, type GameViewUpdate, type MyGameViews } from '../services/gameViews';
 import { ensureAnonymousSession } from '../services/playerIdentity';
@@ -68,7 +70,7 @@ function captureActionRewards(player: PublicPlayerView, action: RewardCapture['a
     nobles };
 }
 
-function displayedPlayer(uid: string, player: PublicPlayerView, room: WaitingRoom, myUid: string): PreviewPlayer {
+function displayedPlayer(uid: string, player: PublicPlayerView, room: WaitingRoom, myUid: string): PlayerDisplay {
   const name = room.players[uid]?.nickname ?? `플레이어 ${player.seatIndex + 1}`;
   return {
     id: uid, name, initials: name.slice(0, 1), isLocal: uid === myUid,
@@ -91,6 +93,7 @@ function actionErrorMessage(error: unknown): string {
   switch (value.details?.reason) {
     case 'VERSION_CONFLICT': return '다른 행동이 먼저 확정되었습니다. 최신 게임 상태를 확인해 주세요.';
     case 'NOT_YOUR_TURN': return '현재는 다른 플레이어의 차례입니다.';
+    case 'TURN_EXPIRED': return '3분이 지나 턴이 자동으로 종료됐습니다. 다음 차례를 불러오는 중입니다.';
     case 'INVALID_ACTION': return '현재 상태에서 이 행동을 할 수 없습니다. 보석·카드 조건을 확인해 주세요.';
     case 'GAME_NOT_STARTED': return '게임 상태가 아직 준비되지 않았습니다.';
     case 'NOT_ROOM_MEMBER': return '이 방의 참가자가 아닙니다.';
@@ -100,27 +103,23 @@ function actionErrorMessage(error: unknown): string {
   if (value.code === 'functions/unavailable' || value.code === 'functions/deadline-exceeded') {
     return '서버 응답을 확인하지 못했습니다. 같은 요청으로 다시 시도할 수 있습니다.';
   }
-  return '행동을 처리하지 못했습니다. 연결 상태와 게임판을 확인해 주세요.';
+  return '행동을 처리하지 못했습니다. 연결 상태를 확인해 주세요.';
 }
 
 function confirmedActionMessage(type: Exclude<GameAction, { type: 'TIMEOUT' }>['type']): string {
   switch (type) {
-    case 'TAKE_GEMS': return '보석 획득이 게임판에 반영되었습니다.';
-    case 'BUY_CARD': return '카드 구매가 게임판에 반영되었습니다.';
-    case 'RESERVE_CARD': return '카드 예약이 게임판에 반영되었습니다.';
-    case 'DISCARD_GEMS': return '보석 반환이 게임판에 반영되었습니다.';
-    case 'CHOOSE_NOBLE': return '귀족 방문이 게임판에 반영되었습니다.';
-    case 'PASS': return '패스가 게임판에 반영되었습니다.';
+    case 'TAKE_GEMS': return '보석 획득이 반영되었습니다.';
+    case 'BUY_CARD': return '카드 구매가 반영되었습니다.';
+    case 'RESERVE_CARD': return '카드 예약이 반영되었습니다.';
+    case 'DISCARD_GEMS': return '보석 반환이 반영되었습니다.';
+    case 'CHOOSE_NOBLE': return '귀족 방문이 반영되었습니다.';
+    case 'PASS': return '패스가 반영되었습니다.';
   }
 }
 
 function gameReadErrorMessage(error: Error): string {
   const code = 'code' in error ? error.code : null;
-  if (code === 'permission-denied') {
-    return import.meta.env.VITE_USE_FIREBASE_EMULATORS === 'true'
-      ? '게임 문서 읽기가 로컬 Firestore 규칙에서 거부되었습니다. 에뮬레이터가 이 저장소의 firestore.rules로 실행 중인지 확인해 주세요.'
-      : '실제 Firebase에는 멀티 게임판의 조회 규칙과 게임 서버가 아직 배포되지 않았습니다. 현재는 로컬 에뮬레이터에서 멀티 게임을 확인할 수 있습니다.';
-  }
+  if (code === 'permission-denied') return '온라인 대전 데이터를 읽을 권한이 없습니다. 방 참가 상태를 확인해 주세요.';
   return '게임 상태를 읽지 못했습니다. 연결 상태를 확인한 뒤 다시 시도해 주세요.';
 }
 
@@ -135,6 +134,7 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, e
   onClose: () => void;
   onAction: (action: Exclude<GameAction, { type: 'TIMEOUT' }>) => Promise<boolean>;
 }) {
+  const gemNames = useGemNames();
   const [payment, setPayment] = useState(() => suggestedPayment(card, player));
   const [purchasePhase, setPurchasePhase] = useState<'idle' | 'submitting' | 'confirmed'>('idle');
   const dialogRef = useRef<HTMLElement>(null);
@@ -213,8 +213,8 @@ function MultiplayerCardDialog({ card, source, player, bankGold, canAct, busy, e
               <div className="multiplayer-card-dialog__stepper"><button type="button" onClick={() => changePayment(color, -1)} disabled={busy || payment[color] === 0} aria-label={`${gemNames[color]} 사용량 줄이기`}>−</button><strong>{payment[color]}</strong><button type="button" onClick={() => changePayment(color, 1)} disabled={busy || payment[color] >= Math.min(remaining[color], player.gems[color])} aria-label={`${gemNames[color]} 사용량 늘리기`}>+</button></div>
             </div>)}
           </div>
-          <p className="multiplayer-card-dialog__gold"><GemIcon color="gold" small /> 황금 대체 {payment.gold}개 · 보유 {player.gems.gold}개</p>
-          <div className="multiplayer-card-dialog__actions"><button type="button" onClick={() => void buy()} disabled={!canBuy || busy || purchasePhase !== 'idle'}>{purchasePhase === 'submitting' ? '구매 처리 중…' : purchasePhase === 'confirmed' ? '구매 완료' : '이 보석으로 구매'}</button>{source === 'market' && <button type="button" onClick={() => void act({ type: 'RESERVE_CARD', cardId: card.id })} disabled={!canReserve || busy || purchasePhase !== 'idle'}>예약{bankGold > 0 ? ' · 황금 +1' : ''}</button>}</div>
+          <p className="multiplayer-card-dialog__gold"><GemIcon color="gold" small /> {gemNames.gold} 대체 {payment.gold}개 · 보유 {player.gems.gold}개</p>
+          <div className="multiplayer-card-dialog__actions"><button type="button" onClick={() => void buy()} disabled={!canBuy || busy || purchasePhase !== 'idle'}>{purchasePhase === 'submitting' ? '구매 처리 중…' : purchasePhase === 'confirmed' ? '구매 완료' : '이 자원으로 구매'}</button>{source === 'market' && <button type="button" onClick={() => void act({ type: 'RESERVE_CARD', cardId: card.id })} disabled={!canReserve || busy || purchasePhase !== 'idle'}>예약{bankGold > 0 ? ` · ${gemNames.gold} +1` : ''}</button>}</div>
           {purchasePhase !== 'idle' && <p className="multiplayer-card-dialog__status" role="status">{purchasePhase === 'submitting' ? '카드 구매를 확인하고 있습니다…' : '구매 완료! 시장을 갱신합니다.'}</p>}
           {error && purchasePhase === 'idle' && <p className="multiplayer-card-dialog__error" role="alert">{error}</p>}
           {purchasePhase === 'idle' && !canAct && <p>현재는 카드를 확인할 수 있습니다. 자신의 차례가 되면 행동할 수 있습니다.</p>}
@@ -230,6 +230,8 @@ export function MultiplayerGamePage() {
   const navigate = useNavigate();
   const [myUid, setMyUid] = useState('');
   const [room, setRoom] = useState<WaitingRoom | null>(null);
+  const theme = normalizeGameTheme(room?.theme);
+  const gemNames = themeGemNames[theme];
   const [update, setUpdate] = useState<GameViewUpdate>({ status: 'loading', views: null, fromCache: false });
   const [roomError, setRoomError] = useState('');
   const [viewError, setViewError] = useState('');
@@ -307,12 +309,13 @@ export function MultiplayerGamePage() {
 
   const views: MyGameViews | null = update.views;
   const game: PublicGameView | null = views?.publicGame ?? null;
+  const countdown = useMultiplayerTurnCountdown(roomId, game?.phase === 'finished' ? null : game?.turnDeadlineAt);
   const me = game?.players[myUid];
   const currentUid = game?.playerOrder[game.turnIndex];
   const myTurn = Boolean(game && currentUid === myUid && game.phase !== 'finished' && !me?.forfeited);
   const syncing = awaitingVersion !== null && (game?.version ?? -1) < awaitingVersion;
   const canAct = Boolean(myTurn && room?.status === 'playing' && !room.players[myUid]?.forfeited && update.status === 'ready' &&
-    !update.fromCache && !busy && !syncing && !retryRequest);
+    !update.fromCache && !busy && !syncing && !retryRequest && !countdown.isExpired);
 
   useEffect(() => {
     if (awaitingVersion !== null && game && game.version >= awaitingVersion && update.status === 'ready') {
@@ -544,11 +547,11 @@ export function MultiplayerGamePage() {
   }
 
   if (!roomId) return <section className="empty-page"><h1>방 코드가 없습니다</h1><Link className="text-link" to="/lobby">로비로 돌아가기</Link></section>;
-  if (roomError) return <section className="empty-page"><h1>게임판을 열 수 없습니다</h1><p role="alert">{roomError}</p><button type="button" className="primary-link" onClick={() => setRoomRetry(value => value + 1)}>방 다시 불러오기</button><Link className="text-link" to="/lobby">로비로 돌아가기</Link></section>;
-  if (!room) return <section className="empty-page"><h1>게임판 불러오는 중</h1><p role="status">방과 참가자 정보를 확인하고 있습니다…</p></section>;
+  if (roomError) return <section className="empty-page"><h1>온라인 대전을 열 수 없습니다</h1><p role="alert">{roomError}</p><button type="button" className="primary-link" onClick={() => setRoomRetry(value => value + 1)}>방 다시 불러오기</button><Link className="text-link" to="/lobby">로비로 돌아가기</Link></section>;
+  if (!room) return <section className="empty-page"><h1>온라인 대전 불러오는 중</h1><p role="status">방과 참가자 정보를 확인하고 있습니다…</p></section>;
   if (room.status === 'waiting') return <section className="empty-page"><h1>게임 시작 대기 중</h1><p>참가자 모두 준비한 뒤 방장이 게임을 시작할 수 있습니다.</p><Link className="primary-link" to={`/rooms/${roomId}`}>대기실로 돌아가기</Link></section>;
-  if (viewError) return <section className="empty-page"><h1>멀티 게임판 연결 전</h1><p role="alert">{viewError}</p><button type="button" className="primary-link" onClick={() => setViewRetry(value => value + 1)}>게임판 다시 연결하기</button><Link className="text-link" to={`/rooms/${roomId}`}>대기실로 돌아가기</Link><Link className="text-link" to="/game/demo">로컬 게임판 미리보기</Link></section>;
-  if (!views || !game || !me) return <section className="empty-page"><span className="eyebrow">MULTIPLAYER · {roomId}</span><h1>게임판 준비 중</h1><p role="status">방은 시작됐지만 서버가 공개 시장과 개인 예약 카드를 아직 준비하지 않았습니다. 준비되면 이 화면에 자동으로 표시됩니다.</p><Link className="text-link" to={`/rooms/${roomId}`}>대기실 보기</Link></section>;
+  if (viewError) return <section className="empty-page"><h1>온라인 대전 연결 오류</h1><p role="alert">{viewError}</p><button type="button" className="primary-link" onClick={() => setViewRetry(value => value + 1)}>다시 연결하기</button><Link className="text-link" to={`/rooms/${roomId}`}>대기실로 돌아가기</Link><Link className="text-link" to="/game/local">한 PC 대전</Link></section>;
+  if (!views || !game || !me) return <section className="empty-page"><span className="eyebrow">MULTIPLAYER · {roomId}</span><h1>온라인 대전 준비 중</h1><p role="status">방은 시작됐지만 서버가 공개 시장과 개인 예약 카드를 아직 준비하지 않았습니다. 준비되면 이 화면에 자동으로 표시됩니다.</p><Link className="text-link" to={`/rooms/${roomId}`}>대기실 보기</Link></section>;
 
   const currentName = room.players[currentUid ?? '']?.nickname ?? '플레이어';
   const opponents = game.playerOrder.filter(uid => uid !== myUid);
@@ -566,13 +569,14 @@ export function MultiplayerGamePage() {
     return noble && CARD_COLORS.every(color => bonuses[color] >= noble.requirements[color]);
   });
 
-  return <div className="multiplayer-page">
+  return <GameThemeProvider theme={theme}><div className={`multiplayer-page game-theme--${theme}`}>
     <div className="multiplayer-page__heading">
-      <div className="multiplayer-page__title"><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId}</span><h1>게임판</h1></div>
+      <div className="multiplayer-page__title"><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId} · {themeLabels[theme]}</span><h1>온라인 대전</h1></div>
       <div className="multiplayer-page__heading-side">
-        <div className={`multiplayer-page__turn${myTurn && !me.forfeited && game.phase !== 'finished' ? ' multiplayer-page__turn--mine' : ''}`} role="status" aria-live="polite">
+        <div className={`multiplayer-page__turn${myTurn && !me.forfeited && game.phase !== 'finished' ? ' multiplayer-page__turn--mine' : ''}${countdown.isWarning && game.phase !== 'finished' ? ' multiplayer-page__turn--warning' : ''}`} role="status" aria-live="polite">
           <span className="multiplayer-page__turn-indicator" aria-hidden="true" />
           <span className="multiplayer-page__turn-copy"><small>{game.phase === 'finished' ? '게임 상태' : '현재 차례'}</small><strong>{game.phase === 'finished' ? '게임 종료' : myTurn && !me.forfeited ? '내 차례' : currentName}</strong></span>
+          {game.phase !== 'finished' && <span className="multiplayer-page__clock" role="timer" aria-label={`남은 시간 ${countdown.time}`}><small>{countdown.isExpired ? '턴 전환 중' : '남은 시간'}</small><strong>{countdown.time}</strong></span>}
         </div>
         <div className="multiplayer-page__heading-actions">
           {room.status === 'playing' && !me.forfeited && !room.players[myUid]?.forfeited && <button type="button" className="multiplayer-page__forfeit" disabled={busy || Boolean(retryRequest)} onClick={() => { setForfeitError(''); setForfeitOpen(true); }}>기권하기</button>}
@@ -582,7 +586,7 @@ export function MultiplayerGamePage() {
     {me.forfeited && <p className="multiplayer-page__notice" role="status">기권했습니다. 결과는 계속 볼 수 있지만 행동하거나 다시 참가할 수 없습니다.</p>}
     {update.status === 'syncing' && <p className="multiplayer-page__notice" role="status">서버 문서의 버전을 맞추는 중입니다. 마지막 확정 상태를 표시합니다.</p>}
     {update.fromCache && <p className="multiplayer-page__notice" role="status">저장된 상태를 표시하는 중입니다. 서버 연결을 기다립니다.</p>}
-    {syncing && <p className="multiplayer-page__notice" role="status">행동이 승인됐습니다. 게임판 갱신을 기다리는 중입니다.</p>}
+    {syncing && <p className="multiplayer-page__notice" role="status">행동이 승인됐습니다. 새 상태를 불러오는 중입니다.</p>}
     {actionError && <div className="multiplayer-page__error" role="alert">{actionError}{retryRequest && <button type="button" disabled={busy || game.version !== retryRequest.expectedVersion} onClick={() => void submit(retryRequest.action, retryRequest)}>같은 요청 다시 보내기</button>}</div>}
     {actionNotice && <p className="multiplayer-page__notice multiplayer-page__notice--confirmed" role="status">{actionNotice}</p>}
     {game.phase === 'finished' && <p className="multiplayer-page__result" role="status">승자: {game.winnerIds.map(uid => room.players[uid]?.nickname ?? uid).join(' · ')} <Link to="/lobby">로비로 나가기</Link></p>}
@@ -616,13 +620,13 @@ export function MultiplayerGamePage() {
           })}</div>
         </div>)}</div>
       </section>
-      <aside className={`multiplayer-actions${takeFeedback ? ' multiplayer-actions--taking' : ''}`} aria-label="보석 은행과 내 행동">
-        <div className="section-heading"><div><span className="eyebrow">SUPPLY</span><h2 id="bank-title">보석 은행</h2></div></div>
+      <aside className={`multiplayer-actions${takeFeedback ? ' multiplayer-actions--taking' : ''}`} aria-label="자원 보관소와 내 행동">
+        <div className="section-heading"><div><span className="eyebrow">SUPPLY</span><h2 id="bank-title">{theme === 'default' ? '보석 은행' : '자원 보관소'}</h2></div></div>
         <GemBank bank={game.bank} mode={gemMode} phase={canTake ? 'selecting' : 'completed'} selectedColors={selectedColors} onSelect={chooseColor} />
         <div className="multiplayer-actions__panel">
           <span className="eyebrow">MY ACTION</span>
-          {game.phase === 'playing' ? <><p>{myTurn ? '한 턴에 한 가지 기본 행동을 선택하세요.' : `${currentName}의 행동을 기다리고 있습니다.`}</p><div className="multiplayer-actions__modes"><button type="button" className={gemMode === 'different' ? 'is-active' : ''} aria-pressed={gemMode === 'different'} disabled={!canTake} onClick={() => { setGemMode('different'); setSelectedColors([]); }}>다른 색 최대 3개</button><button type="button" className={gemMode === 'pair' ? 'is-active' : ''} aria-pressed={gemMode === 'pair'} disabled={!canTake} onClick={() => { setGemMode('pair'); setSelectedColors([]); }}>같은 색 2개</button></div><button type="button" className={`multiplayer-actions__primary${takeFeedback ? ' multiplayer-actions__primary--pending' : ''}`} disabled={!canTake || !canTakeGems(game.bank, takeColors)} onClick={() => void submit({ type: 'TAKE_GEMS', colors: takeColors })}>{takeFeedback === 'requesting' ? '보석 받는 중…' : takeFeedback === 'syncing' ? '게임판 갱신 중…' : '선택한 보석 받기'}</button>{takeFeedback && <p className="multiplayer-actions__progress" role="status">{takeFeedback === 'requesting' ? '선택한 보석을 은행에서 확인하고 있습니다.' : '보석이 확정됐습니다. 게임판에 표시하고 있습니다.'}</p>}<button type="button" className="multiplayer-actions__secondary" disabled={!canTake} onClick={() => void submit({ type: 'PASS' })}>가능한 행동이 없으면 패스</button></>
-            : game.phase === 'discarding' && myTurn ? <><p>보석이 10개를 넘었습니다. {excess}개를 은행에 돌려주세요.</p><div className="multiplayer-actions__returns">{gems.filter(color => me.gems[color] > 0).map(color => <div className="multiplayer-actions__return-row" key={color}><GemIcon color={color} small /><span className="multiplayer-actions__return-label">{gemNames[color]} <small>보유 {me.gems[color]}개</small></span><div className="multiplayer-actions__return-controls"><button type="button" aria-label={`${gemNames[color]} 반환 수량 줄이기`} disabled={!canAct || returned[color] === 0} onClick={() => setReturned(current => ({ ...current, [color]: current[color] - 1 }))}>−</button><strong aria-label={`${gemNames[color]} ${returned[color]}개 반환`}>{returned[color]}</strong><button type="button" aria-label={`${gemNames[color]} 반환 수량 늘리기`} disabled={!canAct || returned[color] >= me.gems[color] || returnedCount >= excess} onClick={() => setReturned(current => ({ ...current, [color]: current[color] + 1 }))}>+</button></div></div>)}</div><button type="button" className={`multiplayer-actions__primary${returnFeedback ? ' multiplayer-actions__primary--pending' : ''}`} disabled={!canAct || returnedCount !== excess} onClick={() => void submit({ type: 'DISCARD_GEMS', gems: returned })}>{returnFeedback === 'requesting' ? '보석 반환 중…' : returnFeedback === 'syncing' ? '게임판 갱신 중…' : `보석 ${returnedCount}/${excess}개 반환`}</button>{returnFeedback && <p className="multiplayer-actions__progress" role="status">{returnFeedback === 'requesting' ? '반환할 보석을 확인하고 있습니다.' : '보석이 확정됐습니다. 은행으로 옮기고 있습니다.'}</p>}</>
+          {game.phase === 'playing' ? <><p>{myTurn ? '한 턴에 한 가지 기본 행동을 선택하세요.' : `${currentName}의 행동을 기다리고 있습니다.`}</p><div className="multiplayer-actions__modes"><button type="button" className={gemMode === 'different' ? 'is-active' : ''} aria-pressed={gemMode === 'different'} disabled={!canTake} onClick={() => { setGemMode('different'); setSelectedColors([]); }}>다른 색 최대 3개</button><button type="button" className={gemMode === 'pair' ? 'is-active' : ''} aria-pressed={gemMode === 'pair'} disabled={!canTake} onClick={() => { setGemMode('pair'); setSelectedColors([]); }}>같은 색 2개</button></div><button type="button" className={`multiplayer-actions__primary${takeFeedback ? ' multiplayer-actions__primary--pending' : ''}`} disabled={!canTake || !canTakeGems(game.bank, takeColors)} onClick={() => void submit({ type: 'TAKE_GEMS', colors: takeColors })}>{takeFeedback === 'requesting' ? '보석 받는 중…' : takeFeedback === 'syncing' ? '대전 갱신 중…' : '선택한 보석 받기'}</button>{takeFeedback && <p className="multiplayer-actions__progress" role="status">{takeFeedback === 'requesting' ? '선택한 보석을 은행에서 확인하고 있습니다.' : '보석이 확정됐습니다. 대전 화면에 표시하고 있습니다.'}</p>}<button type="button" className="multiplayer-actions__secondary" disabled={!canTake} onClick={() => void submit({ type: 'PASS' })}>가능한 행동이 없으면 패스</button></>
+            : game.phase === 'discarding' && myTurn ? <><p>보석이 10개를 넘었습니다. {excess}개를 은행에 돌려주세요.</p><div className="multiplayer-actions__returns">{gems.filter(color => me.gems[color] > 0).map(color => <div className="multiplayer-actions__return-row" key={color}><GemIcon color={color} small /><span className="multiplayer-actions__return-label">{gemNames[color]} <small>보유 {me.gems[color]}개</small></span><div className="multiplayer-actions__return-controls"><button type="button" aria-label={`${gemNames[color]} 반환 수량 줄이기`} disabled={!canAct || returned[color] === 0} onClick={() => setReturned(current => ({ ...current, [color]: current[color] - 1 }))}>−</button><strong aria-label={`${gemNames[color]} ${returned[color]}개 반환`}>{returned[color]}</strong><button type="button" aria-label={`${gemNames[color]} 반환 수량 늘리기`} disabled={!canAct || returned[color] >= me.gems[color] || returnedCount >= excess} onClick={() => setReturned(current => ({ ...current, [color]: current[color] + 1 }))}>+</button></div></div>)}</div><button type="button" className={`multiplayer-actions__primary${returnFeedback ? ' multiplayer-actions__primary--pending' : ''}`} disabled={!canAct || returnedCount !== excess} onClick={() => void submit({ type: 'DISCARD_GEMS', gems: returned })}>{returnFeedback === 'requesting' ? '보석 반환 중…' : returnFeedback === 'syncing' ? '대전 갱신 중…' : `보석 ${returnedCount}/${excess}개 반환`}</button>{returnFeedback && <p className="multiplayer-actions__progress" role="status">{returnFeedback === 'requesting' ? '반환할 보석을 확인하고 있습니다.' : '보석이 확정됐습니다. 은행으로 옮기고 있습니다.'}</p>}</>
               : game.phase === 'choosingNoble' && myTurn ? <p>조건을 만족한 귀족을 왼쪽에서 선택하세요.</p>
                 : <p>{game.phase === 'finished' ? '최종 결과가 확정되었습니다.' : '서버의 다음 상태를 기다리고 있습니다.'}</p>}
         </div>
@@ -647,5 +651,5 @@ export function MultiplayerGamePage() {
     {game.phase === 'finished' && game.winnerIds.includes(myUid) && <MultiplayerVictoryDialog
       winnerNames={game.winnerIds.map(uid => room.players[uid]?.nickname ?? uid)} byForfeit={activePlayerCount === 1}
       onLobby={() => navigate('/lobby', { replace: true })} />}
-  </div>;
+  </div></GameThemeProvider>;
 }

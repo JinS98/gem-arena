@@ -93,7 +93,7 @@ async function openPage(browser, contexts, pages, index) {
   await page.call('Emulation.setDeviceMetricsOverride', index === 1
     ? { width: 390, height: 844, deviceScaleFactor: 1, mobile: true }
     : { width: 1440, height: 900, deviceScaleFactor: 1, mobile: false });
-  await waitFor(() => page.evaluate("document.body?.innerText.includes('익명 로그인 완료')"),
+  await waitFor(() => page.evaluate("Boolean(document.querySelector('#player-nickname'))"),
     `참가자 ${index + 1} 익명 로그인`);
   await page.evaluate(`(() => {
     const input = document.querySelector('#player-nickname');
@@ -102,6 +102,9 @@ async function openPage(browser, contexts, pages, index) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   })()`);
+  await page.evaluate("document.querySelector('.lobby-identity__form button[type=submit]').click()");
+  await waitFor(() => page.evaluate("document.body?.innerText.includes('입장 준비 완료')"),
+    `참가자 ${index + 1} 닉네임 저장`);
   return page;
 }
 
@@ -140,14 +143,27 @@ async function submit(token, roomCode, state, action) {
 
 async function completeInBrowsers(playerCount, browser, contexts, pages) {
   const started = performance.now();
+  const selectedTheme = process.env.GEM_ARENA_TEST_THEME ?? 'default';
+  if (!['default', 'lol', 'demon-slayer'].includes(selectedTheme)) throw new Error('지원하지 않는 검증 테마입니다');
   const tabs = [];
   for (let index = 0; index < playerCount; index++) {
     tabs.push(await openPage(browser, contexts, pages, index));
   }
-  await tabs[0].evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('새 방 만들기')).click()");
+  await tabs[0].evaluate(`(() => {
+    const input = document.querySelector('#room-title');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, '멀티 대전 검증');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('방 만들기')).click();
+  })()`);
   await waitFor(() => tabs[0].evaluate("location.pathname.startsWith('/rooms/')"), '방 생성');
   const roomCode = (await tabs[0].evaluate('location.pathname')).split('/').at(-1);
   const room = admin.doc(`rooms/${roomCode}`);
+  if (selectedTheme !== 'default') {
+    await waitFor(() => tabs[0].evaluate(`Boolean(document.querySelector('.theme-picker__option--${selectedTheme}:not(:disabled)'))`), '테마 선택 버튼');
+    await tabs[0].evaluate(`document.querySelector('.theme-picker__option--${selectedTheme}').click()`);
+    await waitFor(async () => (await room.get()).get('theme') === selectedTheme, '방 테마 저장');
+  }
   for (const tab of tabs.slice(1)) {
     await tab.evaluate(`(() => {
       const input = document.querySelector('#room-code');
@@ -171,6 +187,18 @@ async function completeInBrowsers(playerCount, browser, contexts, pages) {
   for (const [index, tab] of tabs.entries()) {
     await waitFor(() => tab.evaluate(`location.pathname === '/game/${roomCode}'`), `참가자 ${index + 1} 게임판 자동 이동`);
     await waitFor(() => tab.evaluate("document.querySelector('.multiplayer-table') !== null"), `참가자 ${index + 1} 게임판 표시`);
+    if (selectedTheme !== 'default') {
+      const whiteName = selectedTheme === 'lol' ? '천상의 파편' : '안개';
+      const greenName = selectedTheme === 'lol' ? '자연의 정수' : '바람';
+      await waitFor(() => tab.evaluate(`(() => {
+        const white = document.querySelector('[data-bank-color="white"]');
+        const green = document.querySelector('[data-bank-color="green"]');
+        const portrait = document.querySelector('.market-card .card-face__portrait');
+        return white?.textContent?.includes('${whiteName}') && green?.textContent?.includes('${greenName}') &&
+          getComputedStyle(white.querySelector('.gem-icon')).backgroundImage.includes('${selectedTheme}-white') &&
+          portrait?.src.includes('/themes/${selectedTheme}/') && portrait.complete && portrait.naturalWidth === 600;
+      })()`), `참가자 ${index + 1} 테마 자원과 카드 이미지`);
+    }
   }
   const tokens = await Promise.all(tabs.map(authToken));
   assert.ok(tokens.every(Boolean));
@@ -206,16 +234,16 @@ async function completeInBrowsers(playerCount, browser, contexts, pages) {
     await waitFor(async () => (await room.collection('privateState').doc('server').get()).get('version') === expected.version,
       `브라우저 게임 버전 ${expected.version}`);
     if (actions === 0) {
-      await waitFor(() => tabs[actorIndex].evaluate("document.body?.innerText.includes('카드 예약이 게임판에 반영되었습니다.')"),
+      await waitFor(() => tabs[actorIndex].evaluate("document.body?.innerText.includes('카드 예약이 반영되었습니다.')"),
         '예약 행동 피드백');
       checked.reserveFeedback++;
     }
     if (action.type === 'TAKE_GEMS' && checked.gemFeedback === 0) {
-      await waitFor(() => tabs[actorIndex].evaluate("document.body?.innerText.includes('보석 획득이 게임판에 반영되었습니다.')"), '보석 획득 피드백');
+      await waitFor(() => tabs[actorIndex].evaluate("document.body?.innerText.includes('보석 획득이 반영되었습니다.')"), '보석 획득 피드백');
       checked.gemFeedback++;
     }
     if (action.type === 'BUY_CARD' && action.source === 'market' && checked.purchaseFeedback === 0) {
-      await waitFor(() => tabs[actorIndex].evaluate("document.body?.innerText.includes('카드 구매가 게임판에 반영되었습니다.')"), '카드 구매 피드백');
+      await waitFor(() => tabs[actorIndex].evaluate("document.body?.innerText.includes('카드 구매가 반영되었습니다.')"), '카드 구매 피드백');
       checked.purchaseFeedback++;
     }
     if (actions === 0 || expected.version % 10 === 0 || expected.phase === 'finished') {
@@ -266,7 +294,7 @@ async function completeInBrowsers(playerCount, browser, contexts, pages) {
       assert.ok(await tab.evaluate("Array.from(document.querySelectorAll('.result-modal button')).some(button => button.textContent.includes('로비로 나가기'))"));
     }
   }
-  return { players: playerCount, roomCode, actions, winners: state.winnerIds.map(id => ids.indexOf(id) + 1),
+  return { players: playerCount, theme: selectedTheme, roomCode, actions, winners: state.winnerIds.map(id => ids.indexOf(id) + 1),
     durationSec: Math.round((performance.now() - started) / 1000), checks: checked };
 }
 

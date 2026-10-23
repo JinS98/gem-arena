@@ -10,6 +10,7 @@ const requireFunctions = createRequire(new URL('../../../functions/package.json'
 const { initializeApp: initializeAdminApp } = requireFunctions('firebase-admin/app');
 const { getFirestore: getAdminFirestore } = requireFunctions('firebase-admin/firestore');
 const { initializeGameViews } = requireFunctions('./lib/initializeGameViews.js');
+const { sweepExpiredGameTurns } = requireFunctions('./lib/expireTurn.js');
 process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8080';
 setLogLevel('silent');
 
@@ -28,7 +29,8 @@ async function client(name, authenticate = true) {
   connectFirestoreEmulator(db, '127.0.0.1', 8080);
   const functions = getFunctions(app, 'asia-northeast3');
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-  return { user, db, submit: httpsCallable(functions, 'submitAction') };
+  return { user, db, submit: httpsCallable(functions, 'submitAction'),
+    expire: httpsCallable(functions, 'expireTurn') };
 }
 
 const input = (version, action) => ({
@@ -53,6 +55,8 @@ try {
     },
   });
   await initializeGameViews(admin, roomCode);
+  const initialDeadline = (await room.get()).get('turnDeadlineAt');
+  assert.ok(initialDeadline > Date.now());
   const initial = (await room.collection('privateState').doc('server').get()).data();
   const actor = initial.playerOrder[initial.turnIndex] === host.user.uid ? host : guest;
   const other = actor === host ? guest : host;
@@ -76,6 +80,8 @@ try {
   const published = (await getDoc(doc(actor.db, 'rooms', roomCode, 'game', 'publicState'))).data();
   assert.equal(server.version, 1);
   assert.equal(published.version, 1);
+  assert.equal(published.turnDeadlineAt, (await room.get()).get('turnDeadlineAt'));
+  assert.ok(published.turnDeadlineAt > initialDeadline);
   assert.equal(published.players[actor.user.uid].gems.white, 1);
   assert.equal(published.players[actor.user.uid].gems.blue, 1);
   assert.equal(published.players[actor.user.uid].gems.green, 1);
@@ -146,9 +152,25 @@ try {
   assert.equal((await room.collection('privateState').doc('server').get()).data().version, 5);
   assert.equal((await room.collection('game').doc('publicState').get()).data().version, 5);
 
+  await room.update({ turnDeadlineAt: Date.now() - 1000 });
+  await assert.rejects(other.submit(input(5, take)), reasonIs('failed-precondition', 'TURN_EXPIRED'));
+  const [expiryA, expiryB] = await Promise.all([
+    host.expire({ roomId: roomCode }), guest.expire({ roomId: roomCode }),
+  ]);
+  assert.equal(Number(expiryA.data.advanced) + Number(expiryB.data.advanced), 1);
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 6);
+  assert.ok((await room.get()).get('turnDeadlineAt') > Date.now());
+  assert.equal((await room.collection('game').doc('publicState').get()).get('turnDeadlineAt'),
+    (await room.get()).get('turnDeadlineAt'));
+  assert.equal((await other.expire({ roomId: roomCode })).data.advanced, false);
+  await room.update({ turnDeadlineAt: Date.now() - 1000 });
+  assert.equal(await sweepExpiredGameTurns(admin), 1);
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 7);
+  assert.equal(await sweepExpiredGameTurns(admin), 0);
+
   await room.update({ status: 'waiting' });
-  await assert.rejects(actor.submit(input(5, take)), reasonIs('failed-precondition', 'GAME_NOT_STARTED'));
-  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 5);
+  await assert.rejects(actor.submit(input(7, take)), reasonIs('failed-precondition', 'GAME_NOT_STARTED'));
+  assert.equal((await room.collection('privateState').doc('server').get()).data().version, 7);
   console.log('submitAction 인증·턴·규칙·멱등성·동시 요청 검증 통과');
 } finally {
   await Promise.all(apps.map(deleteApp));

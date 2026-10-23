@@ -169,7 +169,10 @@ async function complete(playerCount, admin) {
       }, `${playerCount}인 버전 ${expected.version}`);
       syncTimes.push(performance.now() - sentAt);
       for (const [index, entry] of latest.entries()) {
-        assert.deepEqual(entry.public, toPublicGameView(expected));
+        const { turnDeadlineAt, ...publicView } = entry.public;
+        assert.deepEqual(publicView, toPublicGameView(expected));
+        if (expected.phase === 'finished') assert.equal(turnDeadlineAt, null);
+        else assert.ok(Number.isSafeInteger(turnDeadlineAt) && turnDeadlineAt > Date.now());
         assert.deepEqual(entry.private, toPrivatePlayerView(expected, ids[index]));
       }
       if (!checkedPrivacy && action.type === 'RESERVE_CARD') {

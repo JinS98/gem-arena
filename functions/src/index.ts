@@ -1,10 +1,15 @@
-import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onDocumentUpdated, onDocumentWritten } from 'firebase-functions/v2/firestore';
 import { initializeGameViews } from './initializeGameViews.js';
+import { syncRoomListing } from './syncRoomListing.js';
 export { submitAction } from './submitAction.js';
 export { leaveRoom } from './leaveRoom.js';
+export { expireTurn, sweepExpiredTurns } from './expireTurn.js';
+
+export const roomListingUpdated = onDocumentWritten({
+  document: 'rooms/{roomCode}', region: 'asia-northeast3',
+}, event => syncRoomListing(getFirestore(getApps()[0] ?? initializeApp()), event.params.roomCode));
 
 /** Start the trusted game state after the room host's validated waiting → playing write. */
 export const roomStarted = onDocumentUpdated({
@@ -27,12 +32,4 @@ export const roomStarted = onDocumentUpdated({
     }
     throw error;
   }
-});
-
-// 로컬 연결 확인용 읽기 전용 함수.
-export const emulatorHealth = onCall({ region: 'asia-northeast3' }, request => {
-  if (!request.auth) {
-    throw new HttpsError('unauthenticated', '로그인이 필요합니다.');
-  }
-  return { ok: true };
 });

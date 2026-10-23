@@ -4,6 +4,7 @@ import { getFirebase } from './firebase';
 import { ensureAnonymousSession } from './playerIdentity';
 import { httpsCallable } from 'firebase/functions';
 import { nicknameError, normalizeNickname } from './nickname';
+import { GAME_THEMES, type GameTheme } from '../components/GameTheme';
 
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const codePattern = /^[A-HJ-NP-Z2-9]{8}$/;
@@ -68,12 +69,32 @@ export interface RoomAccess {
 
 export interface WaitingRoom {
   roomCode: string;
+  title?: string;
+  theme?: GameTheme;
   hostUid: string;
   status: 'waiting' | 'playing' | 'finished';
   playerOrder: string[];
   players: Record<string, RoomPlayer>;
   capacity: number;
   startedAt?: unknown;
+}
+
+export interface RoomListing {
+  roomCode: string;
+  title: string;
+  theme?: GameTheme;
+  hostNickname: string;
+  playerCount: number;
+  capacity: number;
+}
+
+export function roomTitleError(value: string): string | null {
+  const title = value.trim();
+  const length = Array.from(title).length;
+  if (length < 2 || length > 32 || /[\r\n\u0000-\u001f\u007f]/u.test(title)) {
+    return '방 제목은 줄바꿈 없이 2~32자로 입력해 주세요.';
+  }
+  return null;
 }
 
 export interface RoomPlayer {
@@ -124,14 +145,17 @@ async function existingMemberAccess(roomRef: DocumentReference, code: string, ui
   }
 }
 
-export async function createRoom(nickname: string): Promise<RoomAccess> {
+export async function createRoom(nickname: string, title: string): Promise<RoomAccess> {
   const name = validNickname(nickname);
+  if (roomTitleError(title)) throw new RoomActionError('INVALID_ROOM_TITLE');
   await ensureFirestoreEmulator();
   const uid = (await ensureAnonymousSession()).uid;
   const { db } = getFirebase();
   const roomCode = generateRoomCode();
   await setDoc(doc(db, 'rooms', roomCode), {
     roomCode,
+    title: title.trim(),
+    theme: 'default',
     hostUid: uid,
     status: 'waiting',
     playerOrder: [uid],
@@ -188,6 +212,16 @@ export async function setReady(roomCode: string, ready: boolean): Promise<void> 
   );
 }
 
+export async function setRoomTheme(roomCode: string, theme: GameTheme): Promise<void> {
+  if (!GAME_THEMES.includes(theme)) throw new RoomActionError('INVALID_THEME');
+  const uid = (await ensureAnonymousSession()).uid;
+  const room = await currentRoom(roomCode, uid);
+  if (room.status !== 'waiting') throw new RoomActionError('ROOM_NOT_WAITING');
+  if (room.hostUid !== uid) throw new RoomActionError('NOT_HOST');
+  if ((room.theme ?? 'default') === theme) return;
+  await updateDoc(roomReference(roomCode), 'theme', theme, 'updatedAt', serverTimestamp());
+}
+
 export async function startGame(roomCode: string): Promise<void> {
   const uid = (await ensureAnonymousSession()).uid;
   const room = await currentRoom(roomCode, uid);
@@ -217,6 +251,7 @@ export function roomErrorMessage(error: unknown): string {
     case 'ROOM_CODE_COLLISION': return '초대 코드를 만들지 못했습니다. 다시 시도해 주세요.';
     case 'ROOM_UNAVAILABLE': return '방을 찾지 못했거나, 정원이 찼거나, 이미 시작된 방입니다. 코드를 확인해 주세요.';
     case 'INVALID_NICKNAME': return '닉네임은 앞뒤 공백을 제외하고 2~16자로 입력해 주세요.';
+    case 'INVALID_ROOM_TITLE': return '방 제목은 줄바꿈 없이 2~32자로 입력해 주세요.';
     case 'INVALID_ROOM_CODE': return '초대 코드는 영문·숫자 8자리입니다.';
     case 'ROOM_NOT_FOUND': return '일치하는 방이 없습니다. 초대 코드를 확인해 주세요.';
     case 'ROOM_FULL': return '방 정원이 가득 찼습니다.';

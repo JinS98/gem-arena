@@ -9,6 +9,8 @@ const requireFunctions = createRequire(new URL('../../../functions/package.json'
 const { initializeApp: initializeAdminApp } = requireFunctions('firebase-admin/app');
 const { getFirestore: getAdminFirestore } = requireFunctions('firebase-admin/firestore');
 process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8080';
+const [firestoreHost, firestorePort] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
+const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099';
 setLogLevel('silent');
 
 const config = { apiKey: 'demo-api-key', authDomain: 'demo-gem-arena.firebaseapp.com', projectId: 'demo-gem-arena', appId: 'demo-gem-arena' };
@@ -20,10 +22,10 @@ async function client(name, signedIn = true) {
   const app = initializeApp(config, name);
   apps.push(app);
   const auth = getAuth(app);
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectAuthEmulator(auth, `http://${authEmulatorHost}`, { disableWarnings: true });
   const user = signedIn ? (await signInAnonymously(auth)).user : null;
   const db = getFirestore(app);
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectFirestoreEmulator(db, firestoreHost, Number(firestorePort));
   return { user, db };
 }
 
@@ -31,6 +33,7 @@ function create(client, roomCode, nickname = '방장') {
   const uid = client.user.uid;
   return setDoc(doc(client.db, 'rooms', roomCode), {
     roomCode,
+    title: '보석 상인의 방',
     hostUid: uid,
     status: 'waiting',
     playerOrder: [uid],
@@ -85,6 +88,7 @@ try {
   await assert.rejects(setDoc(doc(unauthenticated.db, 'rooms', code()), { status: 'waiting' }), denied);
 
   await create(host, roomCode);
+  assert.equal((await getDoc(roomRef)).data().title, '보석 상인의 방');
   assert.equal((await getDoc(roomRef)).data().hostUid, host.user.uid);
   await assert.rejects(getDoc(doc(outsider.db, 'rooms', roomCode)), denied);
   await assert.rejects(setDoc(roomRef, { status: 'playing' }, { merge: true }), denied);

@@ -3,7 +3,9 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getFirebase } from '../services/firebase';
 import { ensureAnonymousSession } from '../services/playerIdentity';
-import { leaveRoom, roomErrorMessage, setReady, startGame, type WaitingRoom } from '../services/rooms';
+import { leaveRoom, roomErrorMessage, setReady, setRoomTheme, startGame, type WaitingRoom } from '../services/rooms';
+import { normalizeGameTheme, themeLabels, type GameTheme } from '../components/GameTheme';
+import { ThemePicker } from '../components/ThemePicker';
 
 export function RoomPage() {
   const { roomId } = useParams();
@@ -90,6 +92,21 @@ export function RoomPage() {
     }
   }
 
+  async function changeTheme(theme: GameTheme) {
+    if (!room || actionInFlight.current) return;
+    actionInFlight.current = true;
+    setActionBusy(true);
+    setActionError('');
+    try {
+      await setRoomTheme(room.roomCode, theme);
+    } catch (error) {
+      setActionError(roomErrorMessage(error));
+    } finally {
+      actionInFlight.current = false;
+      setActionBusy(false);
+    }
+  }
+
   async function depart() {
     if (!room || actionInFlight.current || room.status !== 'waiting') return;
     actionInFlight.current = true;
@@ -112,13 +129,14 @@ export function RoomPage() {
     room.playerOrder.length >= 2 && readyCount === room.playerOrder.length);
 
   return <section className="waiting-room">
-    <div className="waiting-room__heading"><span className="eyebrow">PRIVATE ROOM</span><h1>대기실</h1><p>초대 코드를 친구에게 알려주면 같은 방에 참가할 수 있습니다.</p></div>
+    <div className="waiting-room__heading"><span className="eyebrow">WAITING ROOM</span><h1>{room?.title || '대기실'}</h1><p>초대 코드를 친구에게 알려주면 같은 방에 참가할 수 있습니다.</p></div>
     {error && <div className="waiting-room__error" role="alert"><p>{error}</p><div className="waiting-room__error-actions"><button type="button" onClick={() => setRoomRetry(value => value + 1)}>방 다시 불러오기</button><Link to="/lobby">로비로 돌아가기</Link></div></div>}
     {!error && !room && <p role="status">방 정보를 불러오고 있습니다…</p>}
     {!error && room && <div className="waiting-room__grid">
       <div className="waiting-room__panel">
         <span className="eyebrow">INVITATION CODE</span>
         <div className="waiting-room__code"><strong>{room.roomCode}</strong><button type="button" onClick={copyCode}>{copied ? '복사 완료' : '코드 복사'}</button></div>
+        <div className="waiting-room__theme"><p>선택한 테마: <strong>{themeLabels[normalizeGameTheme(room.theme)]}</strong></p><ThemePicker theme={normalizeGameTheme(room.theme)} onChange={changeTheme} disabled={!isHost || actionBusy} /><small>{isHost ? '게임 시작 전까지 방장이 변경할 수 있습니다.' : '방장이 테마를 선택합니다.'}</small></div>
         <p>상태: {room.status === 'waiting' ? '참가자 대기 중' : room.status === 'playing' ? '게임 진행 중' : '게임 종료'}</p>
         <Link className="text-link" to="/lobby">다른 방으로 이동</Link>
       </div>
@@ -133,7 +151,7 @@ export function RoomPage() {
           {!isHost && <p>방장이 게임을 시작하기를 기다리고 있습니다.</p>}
           <button type="button" onClick={() => void depart()} disabled={actionBusy}>대기실 나가기</button>
         </div>}
-        {(room.status === 'playing' || room.status === 'finished') && <div className="waiting-room__game-link" role="status"><p>{room.status === 'playing' ? '게임이 시작되었습니다. 멀티 게임판으로 이동합니다.' : '게임이 종료되었습니다. 결과를 확인할 수 있습니다.'}</p><Link className="primary-link" to={`/game/${room.roomCode}`}>멀티 게임판 열기</Link></div>}
+        {(room.status === 'playing' || room.status === 'finished') && <div className="waiting-room__game-link" role="status"><p>{room.status === 'playing' ? '게임이 시작되었습니다. 온라인 대전으로 이동합니다.' : '게임이 종료되었습니다. 결과를 확인할 수 있습니다.'}</p><Link className="primary-link" to={`/game/${room.roomCode}`}>온라인 대전 열기</Link></div>}
         {actionError && <p className="waiting-room__action-error" role="alert">{actionError}</p>}
       </div>
     </div>}

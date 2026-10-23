@@ -12,6 +12,8 @@ export interface PublicPlayerView {
 }
 
 export interface PublicGameView {
+  /** Server-owned wall-clock deadline; absent on games created before turn timing. */
+  turnDeadlineAt?: number | null;
   phase: ServerGameState['phase'];
   version: number;
   firstPlayerIndex: number;

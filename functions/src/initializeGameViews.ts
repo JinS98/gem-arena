@@ -5,6 +5,7 @@ import {
   toPrivatePlayerView,
   toPublicGameView,
 } from '@gem-arena/engine';
+import { TURN_DURATION_MS } from './turnTiming.js';
 
 const roomCodePattern = /^[A-HJ-NP-Z2-9]{8}$/;
 
@@ -23,8 +24,12 @@ export async function initializeGameViews(db: Firestore, roomCode: string): Prom
     }
     const seed = randomBytes(4).readUInt32BE(0);
     const state = createInitialGameState(playerOrder, seed);
+    const turnDeadlineAt = Date.now() + TURN_DURATION_MS;
     transaction.create(roomRef.collection('privateState').doc('server'), state);
-    transaction.create(roomRef.collection('game').doc('publicState'), toPublicGameView(state));
+    transaction.create(roomRef.collection('game').doc('publicState'), {
+      ...toPublicGameView(state), turnDeadlineAt,
+    });
+    transaction.update(roomRef, { turnDeadlineAt });
     for (const uid of playerOrder) {
       transaction.create(
         roomRef.collection('privatePlayers').doc(uid),

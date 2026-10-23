@@ -4,10 +4,13 @@
 
 [멀티 게임판 예상 시안과 기존 일정 내 작업 배치](development-plan.md#멀티-게임판-시각-방향)
 
+[운영 배포 및 `gem-arena.kr` 연결](deployment.md)
+
 ## 일차 외 개선 기록
 
 - [로컬 게임판 UI·턴 흐름 개선](local-board-improvements.md)
 - [게임판 화면·상호작용 개선](board-improvements.md)
+- [테마별 카드 ID·승점·이미지 소재 배정](theme-card-map.md)
 
 ## 기획·기반
 - [x] [1일차 — 요구사항·MVP 범위 확정 및 사용자 플로우](daily/day-01.md)
@@ -48,5 +51,5 @@
 - [ ] [28일차 — 동시 요청·중복 클릭·장애 시나리오](daily/day-28.md) (로컬 동시성·브라우저 검증 완료·실서비스 미검증)
 - [ ] [29일차 — 반응형·접근성·애니메이션·에러 UX](daily/day-29.md) (로컬 2~4인 PC·모바일·키보드 검증 완료·실기기 미검증)
 - [x] [30일차 — E2E 2~4인 완주·성능/읽기 비용 점검](daily/day-30.md) (로컬 독립 브라우저·에뮬레이터 완주, 실기기·운영 비용 미검증)
-- [ ] [31일차 — Hosting/Functions 배포·README·회고](daily/day-31.md)
+- [x] [31일차 — Hosting/Functions 배포·README·회고](daily/day-31.md) (기본 주소 배포 완료, 사용자 도메인 DNS·실서비스 다중 사용자 검증 대기)
 

@@ -1,14 +1,16 @@
 import { CARD_COLORS, remainingCardCost } from '@gem-arena/engine';
 import type { ColorCounts, DevelopmentCard } from '@gem-arena/engine';
 import { developmentCardArtwork } from './cardArtwork';
-import { GemIcon, gemNames } from './GemIcon';
+import { GemIcon } from './GemIcon';
+import { useGameTheme, useGemNames } from './GameTheme';
 
 export function CardFace({ card, discountedCost, discountCount = 0 }: {
   card: DevelopmentCard; discountedCost?: ColorCounts; discountCount?: number;
 }) {
+  const theme = useGameTheme();
   return (
     <div className={`card-face card-face--${card.bonusColor} card-face--level-${card.level}`}>
-      <img className="card-face__portrait" src={developmentCardArtwork(card)} alt="" loading="lazy" />
+      <img className="card-face__portrait" src={developmentCardArtwork(card, theme)} alt="" loading="lazy" />
       <span className="card-face__points" aria-hidden="true">{card.points}</span>
       <span className={`card-face__bonus gem-box gem-box--${card.bonusColor}`} aria-hidden="true"><GemIcon color={card.bonusColor} /></span>
       <div className={`card-face__cost${discountedCost ? ' card-face__cost--printed' : ''}`} aria-hidden="true">
@@ -34,9 +36,10 @@ export function CardFace({ card, discountedCost, discountCount = 0 }: {
   );
 }
 
-export function MarketCard({ card, onSelect, disabled = false, featured = false, className = '', bonuses }: {
-  card: DevelopmentCard; onSelect: () => void; disabled?: boolean; featured?: boolean; className?: string; bonuses?: ColorCounts;
+export function MarketCard({ card, onSelect, disabled = false, className = '', bonuses }: {
+  card: DevelopmentCard; onSelect: () => void; disabled?: boolean; className?: string; bonuses?: ColorCounts;
 }) {
+  const gemNames = useGemNames();
   const remaining = bonuses ? remainingCardCost(card.cost, bonuses) : null;
   const discountCount = remaining ? CARD_COLORS.reduce((sum, color) => sum + card.cost[color] - remaining[color], 0) : 0;
   const discountedCost = discountCount > 0 ? remaining ?? undefined : undefined;
@@ -46,7 +49,7 @@ export function MarketCard({ card, onSelect, disabled = false, featured = false,
     ? CARD_COLORS.filter(color => discountedCost[color] > 0).map(color => `${gemNames[color]} ${discountedCost[color]}개`).join(', ') || '무료'
     : '';
   return (
-    <button type="button" className={`market-card${featured ? ' market-card--featured' : ''}${discountedCost ? ' market-card--discounted' : ''}${className ? ` ${className}` : ''}`} onClick={onSelect} disabled={disabled}
+    <button type="button" className={`market-card${discountedCost ? ' market-card--discounted' : ''}${className ? ` ${className}` : ''}`} onClick={onSelect} disabled={disabled}
       aria-label={`${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 인쇄 비용 ${costDescription}${discountedCost ? `, 내 할인 적용 비용 ${remainingDescription}` : ''}, 구매 또는 예약 보기`}>
       <CardFace card={card} discountedCost={discountedCost} discountCount={discountCount} />
     </button>

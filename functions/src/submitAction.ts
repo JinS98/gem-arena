@@ -10,6 +10,7 @@ import {
   type ServerGameState,
 } from '@gem-arena/engine';
 import { z } from 'zod';
+import { nextTurnDeadline } from './turnTiming.js';
 
 const roomId = z.string().regex(/^[A-HJ-NP-Z2-9]{8}$/);
 const gemColor = z.enum(['white', 'blue', 'green', 'red', 'black']);
@@ -98,6 +99,10 @@ export async function submitGameAction(
     if (state.playerOrder[state.turnIndex] !== uid) {
       throw new GameActionError('NOT_YOUR_TURN', 'permission-denied');
     }
+    const now = Date.now();
+    if (typeof room.turnDeadlineAt === 'number' && now >= room.turnDeadlineAt) {
+      throw new GameActionError('TURN_EXPIRED', 'failed-precondition');
+    }
 
     let nextState: ServerGameState;
     try {
@@ -108,11 +113,10 @@ export async function submitGameAction(
     }
 
     const result = { version: nextState.version, phase: nextState.phase, turnIndex: nextState.turnIndex };
+    const turnDeadlineAt = nextTurnDeadline(state, nextState, room.turnDeadlineAt, now);
     transaction.set(serverRef, nextState);
-    if (nextState.phase === 'finished') {
-      transaction.update(roomRef, { status: 'finished' });
-    }
-    transaction.set(publicRef, toPublicGameView(nextState));
+    transaction.update(roomRef, { turnDeadlineAt, ...(nextState.phase === 'finished' ? { status: 'finished' } : {}) });
+    transaction.set(publicRef, { ...toPublicGameView(nextState), turnDeadlineAt });
     for (const playerId of nextState.playerOrder) {
       transaction.set(
         roomRef.collection('privatePlayers').doc(playerId),

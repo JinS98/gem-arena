@@ -60,7 +60,7 @@ const db = getFirestore(initializeApp({ projectId: 'demo-gem-arena' }));
 try {
   await command('Page.enable');
   await command('Page.navigate', { url: `${web}/lobby` });
-  await waitFor(() => evaluate("document.body?.innerText.includes('익명 로그인 완료')"), '익명 로그인');
+  await waitFor(() => evaluate("Boolean(document.querySelector('#player-nickname'))"), '익명 로그인');
   await evaluate(`(() => {
     const input = document.querySelector('#player-nickname');
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
@@ -68,7 +68,16 @@ try {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     return true;
   })()`);
-  await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('새 방 만들기')).click()");
+  await evaluate("document.querySelector('.lobby-identity__form button[type=submit]').click()");
+  await waitFor(() => evaluate("document.body?.innerText.includes('입장 준비 완료')"), '닉네임 저장');
+  await evaluate(`(() => {
+    const input = document.querySelector('#room-title');
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
+    setter.call(input, '연결 복구 확인');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    return true;
+  })()`);
+  await evaluate("Array.from(document.querySelectorAll('button')).find(button => button.textContent.includes('방 만들기')).click()");
   await waitFor(() => evaluate("location.pathname.startsWith('/rooms/')"), '방 생성');
   const path = await evaluate('location.pathname');
   const roomCode = path.split('/').at(-1);
@@ -82,8 +91,8 @@ try {
   '대기실 새로고침 복원');
   assert.equal((await roomRef.get()).data().playerOrder[0], uid);
   await command('Page.navigate', { url: `${web}/lobby` });
-  await waitFor(() => evaluate("document.body?.innerText.includes('익명 로그인 완료')"), '로비 복귀');
-  assert.equal(await evaluate("document.querySelector('#player-nickname').value"), '');
+  await waitFor(() => evaluate("document.body?.innerText.includes('입장 준비 완료')"), '로비 복귀');
+  assert.equal(await evaluate("document.querySelector('#player-nickname')"), null);
   await evaluate(`(() => {
     const input = document.querySelector('#room-code');
     const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;

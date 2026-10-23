@@ -3,6 +3,7 @@ import { getFirestore, FieldValue, type Firestore } from 'firebase-admin/firesto
 import { HttpsError, onCall } from 'firebase-functions/v2/https';
 import { forfeitPlayer, toPrivatePlayerView, toPublicGameView, type ServerGameState } from '@gem-arena/engine';
 import { z } from 'zod';
+import { nextTurnDeadline } from './turnTiming.js';
 
 const requestSchema = z.object({ roomId: z.string().regex(/^[A-HJ-NP-Z2-9]{8}$/) }).strict();
 export type LeaveRoomResult = { status: 'left' | 'forfeited'; version?: number; gameFinished?: boolean };
@@ -65,13 +66,15 @@ export async function leaveGameRoom(db: Firestore, uid: string | undefined, rawR
       if (!(error instanceof RangeError)) throw error;
       throw new LeaveRoomError('INVALID_GAME_STATE', 'failed-precondition');
     }
+    const turnDeadlineAt = nextTurnDeadline(state, nextState, room.turnDeadlineAt, Date.now());
     transaction.update(roomRef, {
       players: { ...room.players, [uid]: { ...room.players[uid], forfeited: true } },
       ...(nextState.phase === 'finished' ? { status: 'finished' } : {}),
+      turnDeadlineAt,
       updatedAt: FieldValue.serverTimestamp(),
     });
     transaction.set(serverRef, nextState);
-    transaction.set(publicRef, toPublicGameView(nextState));
+    transaction.set(publicRef, { ...toPublicGameView(nextState), turnDeadlineAt });
     for (const playerId of nextState.playerOrder) {
       transaction.set(roomRef.collection('privatePlayers').doc(playerId), toPrivatePlayerView(nextState, playerId));
     }

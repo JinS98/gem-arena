@@ -27,9 +27,15 @@ service cloud.firestore {
     function validRoomCreate(roomCode) {
       let data = request.resource.data;
       return roomCode.matches('^[A-HJ-NP-Z2-9]{8}$') &&
-        data.keys().hasOnly(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
-        data.keys().hasAll(['roomCode', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['roomCode', 'title', 'theme', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
+        data.keys().hasAll(['roomCode', 'title', 'hostUid', 'status', 'capacity', 'playerOrder', 'players', 'createdAt', 'updatedAt']) &&
         data.roomCode == roomCode &&
+        data.title is string &&
+        data.title.size() >= 2 &&
+        data.title.size() <= 32 &&
+        data.title.matches('^[^\\s\\p{Z}\\x{FEFF}].*[^\\s\\p{Z}\\x{FEFF}]$') &&
+        !data.title.matches('.*[\\r\\n].*') &&
+        (!('theme' in data) || data.theme in ['default', 'lol', 'demon-slayer']) &&
         data.hostUid == request.auth.uid &&
         data.status == 'waiting' &&
         data.capacity == 4 &&
@@ -70,6 +76,17 @@ service cloud.firestore {
         after.updatedAt == request.time;
     }
 
+    function validThemeChange() {
+      let before = resource.data;
+      let after = request.resource.data;
+      return before.status == 'waiting' &&
+        before.hostUid == request.auth.uid &&
+        after.diff(before).affectedKeys().hasOnly(['theme', 'updatedAt']) &&
+        after.diff(before).affectedKeys().hasAll(['theme', 'updatedAt']) &&
+        after.theme in ['default', 'lol', 'demon-slayer'] &&
+        after.updatedAt == request.time;
+    }
+
     function playerReadyAt(index) {
       let data = resource.data;
       return index >= data.playerOrder.size() ||
@@ -97,7 +114,7 @@ service cloud.firestore {
       allow list, delete: if false;
       allow create: if signedIn() && validRoomCreate(roomCode);
       allow update: if signedIn() &&
-        (validRoomJoin() || validReadyChange() || validGameStart());
+        (validRoomJoin() || validReadyChange() || validThemeChange() || validGameStart());
 
       match /game/publicState {
         allow get: if roomMember(roomCode);
@@ -120,6 +137,11 @@ service cloud.firestore {
       match /leaveReceipts/{uid} {
         allow read, write: if false;
       }
+    }
+
+    match /roomListings/{roomCode} {
+      allow get, list: if signedIn();
+      allow write: if false;
     }
 
     match /{document=**} {

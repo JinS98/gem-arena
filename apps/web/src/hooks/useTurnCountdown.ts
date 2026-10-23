@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useDemoGemStore } from '../stores/demoGemStore';
+import { useLocalGameStore } from '../stores/localGameStore';
 
 const WARNING_MS = 30 * 1000;
 let alarmContext: AudioContext | null = null;
@@ -33,10 +33,10 @@ function playWarning() {
 }
 
 export function useTurnCountdown() {
-  const deadline = useDemoGemStore((state) => state.turnDeadlineAt);
-  const warningPlayed = useDemoGemStore((state) => state.turnWarningPlayed);
-  const markWarning = useDemoGemStore((state) => state.markTurnWarning);
-  const expireTurn = useDemoGemStore((state) => state.expireTurn);
+  const deadline = useLocalGameStore((state) => state.turnDeadlineAt);
+  const warningPlayed = useLocalGameStore((state) => state.turnWarningPlayed);
+  const markWarning = useLocalGameStore((state) => state.markTurnWarning);
+  const expireTurn = useLocalGameStore((state) => state.expireTurn);
   const [remainingMs, setRemainingMs] = useState(() => deadline === null ? 0 : Math.max(0, deadline - Date.now()));
 
   useEffect(() => {

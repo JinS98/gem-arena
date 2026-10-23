@@ -24,3 +24,11 @@ export async function submitGameAction(request: SubmitGameActionRequest): Promis
   );
   return (await callable(request)).data;
 }
+
+export async function expireGameTurn(roomId: string): Promise<void> {
+  await ensureAnonymousSession();
+  const callable = httpsCallable<{ roomId: string }, { advanced: boolean }>(
+    getFirebase().functions, 'expireTurn',
+  );
+  await callable({ roomId });
+}

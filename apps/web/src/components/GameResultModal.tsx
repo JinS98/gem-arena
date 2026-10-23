@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react';
 import type { ServerGameState } from '@gem-arena/engine';
-import type { PreviewPlayer } from '../data/previewGame';
+import type { PlayerDisplay } from '../data/playerDisplay';
 
-export function GameResultModal({ game, players, onRestart, restartLabel = '새 연습 시작' }: {
-  game: ServerGameState; players: PreviewPlayer[]; onRestart: () => void; restartLabel?: string;
+export function GameResultModal({ game, players, onRestart, restartLabel = '새 게임' }: {
+  game: ServerGameState; players: PlayerDisplay[]; onRestart: () => void; restartLabel?: string;
 }) {
   const restartRef = useRef<HTMLButtonElement>(null);
   useEffect(() => { restartRef.current?.focus(); }, []);

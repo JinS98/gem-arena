@@ -33,13 +33,15 @@ try {
 
   const functions = getFunctions(app, 'asia-northeast3');
   connectFunctionsEmulator(functions, '127.0.0.1', 5001);
-  const health = await httpsCallable(functions, 'emulatorHealth')({});
-  assert.deepEqual(health.data, { ok: true });
+  await assert.rejects(
+    httpsCallable(functions, 'expireTurn')({ roomId: 'invalid' }),
+    error => error.code === 'functions/invalid-argument',
+  );
 
   const guestFunctions = getFunctions(guestApp, 'asia-northeast3');
   connectFunctionsEmulator(guestFunctions, '127.0.0.1', 5001);
   await assert.rejects(
-    httpsCallable(guestFunctions, 'emulatorHealth')({}),
+    httpsCallable(guestFunctions, 'expireTurn')({ roomId: 'ABCDEFGH' }),
     error => error.code === 'functions/unauthenticated',
   );
 

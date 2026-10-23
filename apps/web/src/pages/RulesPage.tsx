@@ -21,7 +21,7 @@ export function RulesPage() {
         <span className="eyebrow">GEM ARENA · HOW TO PLAY</span>
         <h1>게임 규칙</h1>
         <p>보석을 모아 개발 카드를 구매하고, 영구 할인을 쌓아 귀족을 맞이하세요. 한 턴에 기본 행동 하나를 선택합니다.</p>
-        <Link className="rules-page__back" to="/game/demo">게임판으로 돌아가기 <span aria-hidden="true">↗</span></Link>
+        <Link className="rules-page__back" to="/game/local">한 PC 대전으로 돌아가기 <span aria-hidden="true">↗</span></Link>
       </header>
 
       <nav className="rules-page__toc" aria-label="규칙 목차">

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
 import { canTakeGems, excessGemCount, gemCount, hasLegalBasicAction } from '@gem-arena/engine';
 import type { Gem, GemColor } from '@gem-arena/engine';
-import { useDemoGemStore } from '../stores/demoGemStore';
-import { GemIcon, gemNames } from './GemIcon';
+import { useLocalGameStore } from '../stores/localGameStore';
+import { GemIcon } from './GemIcon';
+import { useGameTheme, useGemNames } from './GameTheme';
 
 const colors: Gem[] = ['white', 'blue', 'green', 'red', 'black', 'gold'];
 const regularColors: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
@@ -10,9 +11,10 @@ const regularColors: GemColor[] = ['white', 'blue', 'green', 'red', 'black'];
 export function GemActionPanel({ onTakeGems, suspendReturnDialog = false }: {
   onTakeGems?: () => void; suspendReturnDialog?: boolean;
 }) {
-  const { bank, gems, game, currentPlayerId, scenario, mode, phase, selectedColors, returned, notice,
-    setMode, changeReturn, takeSelected, confirmReturn, loadDiscardExample,
-    loadNobleExample, loadFinalRoundExample, passTurn, restart, reset } = useDemoGemStore();
+  const gemNames = useGemNames();
+  const resourceName = useGameTheme() === 'default' ? '보석' : '자원';
+  const { bank, gems, game, currentPlayerId, mode, phase, selectedColors, returned, notice,
+    setMode, changeReturn, takeSelected, confirmReturn, passTurn, restart } = useLocalGameStore();
   const takeColors = mode === 'pair' && selectedColors.length === 1
     ? [selectedColors[0], selectedColors[0]] : selectedColors;
   const canConfirmTake = phase === 'selecting' && canTakeGems(bank, takeColors);
@@ -54,28 +56,28 @@ export function GemActionPanel({ onTakeGems, suspendReturnDialog = false }: {
   return (
     <section className="side-card gem-action" aria-labelledby="gem-action-title">
       <div className="gem-action__heading">
-        <span className="eyebrow">{scenario === 'fullGame' ? 'LOCAL MATCH' : 'LOCAL PRACTICE'}</span>
-        <h2 id="gem-action-title">{scenario === 'fullGame' ? '현재 플레이어 행동' : '턴 연습'}</h2>
+        <span className="eyebrow">LOCAL MATCH</span>
+        <h2 id="gem-action-title">현재 플레이어 행동</h2>
       </div>
       {phase === 'selecting' && <>
-        <div className="gem-action__modes" role="group" aria-label="보석 획득 방식">
+        <div className="gem-action__modes" role="group" aria-label={`${resourceName} 획득 방식`}>
           <button type="button" className={mode === 'different' ? 'is-active' : ''} aria-pressed={mode === 'different'} onClick={() => setMode('different')}>서로 다른 색</button>
           <button type="button" className={mode === 'pair' ? 'is-active' : ''} aria-pressed={mode === 'pair'} onClick={() => setMode('pair')}>같은 색 2개</button>
         </div>
         <div className="gem-action__selection"><span>선택 {selectedGemCount} / {targetGemCount}</span><strong>{selectedColors.length === 0
-          ? '은행의 보석을 누르세요'
+          ? `은행의 ${resourceName}을 누르세요`
           : mode === 'pair'
             ? `${gemNames[selectedColors[0]]} 2개`
             : selectedColors.map((color) => gemNames[color]).join(' · ')}</strong></div>
-        <button className="gem-action__submit" type="button" onClick={onTakeGems ?? takeSelected} disabled={!canConfirmTake}>보석 받기</button>
-        {scenario === 'fullGame' && <button className="gem-action__pass" type="button" onClick={passTurn} disabled={!canPass}>행동이 없어서 패스</button>}
+        <button className="gem-action__submit" type="button" onClick={onTakeGems ?? takeSelected} disabled={!canConfirmTake}>{resourceName} 받기</button>
+        <button className="gem-action__pass" type="button" onClick={passTurn} disabled={!canPass}>행동이 없어서 패스</button>
       </>}
 
       {phase === 'discarding' && !suspendReturnDialog && <div className="gem-return-backdrop">
         <div ref={returnDialogRef} className="gem-return-dialog" role="dialog" aria-modal="true" aria-labelledby="gem-return-title" aria-describedby="gem-return-hint">
           <span className="eyebrow">GEM LIMIT · 10</span>
-          <h3 id="gem-return-title">초과 보석 반환</h3>
-          <p id="gem-return-hint" className="gem-action__hint">보유 보석 {gemCount(gems)}개 중 {excess}개를 은행에 반환하세요.</p>
+          <h3 id="gem-return-title">초과 {resourceName} 반환</h3>
+          <p id="gem-return-hint" className="gem-action__hint">보유 {resourceName} {gemCount(gems)}개 중 {excess}개를 은행에 반환하세요.</p>
           <div className="gem-action__return-list">
             {colors.filter((color) => gems[color] > 0).map((color) => (
               <div className={`gem-action__return-row gem-box gem-box--${color}`} key={color}>
@@ -87,7 +89,7 @@ export function GemActionPanel({ onTakeGems, suspendReturnDialog = false }: {
             ))}
           </div>
           <div className="gem-action__selection"><span>반환 선택</span><strong>{selectedReturnCount} / {excess}개</strong></div>
-          <button className="gem-action__submit" type="button" onClick={confirmReturn} disabled={selectedReturnCount !== excess}>선택한 보석 반환</button>
+          <button className="gem-action__submit" type="button" onClick={confirmReturn} disabled={selectedReturnCount !== excess}>선택한 {resourceName} 반환</button>
         </div>
       </div>}
 
@@ -95,15 +97,7 @@ export function GemActionPanel({ onTakeGems, suspendReturnDialog = false }: {
       {phase === 'completed' && <div className="gem-action__complete"><span aria-hidden="true">✓</span><strong>턴 완료</strong><p>다음 플레이어 차례로 자동 전환합니다.</p></div>}
 
       <p className="gem-action__notice" role="status" aria-live="polite">{notice || `현재 보유 ${gemCount(gems)} / 10개`}</p>
-      {scenario === 'fullGame' ? <div className="gem-action__examples">
-        <button type="button" onClick={restart}>같은 인원으로 새 게임</button>
-        <button type="button" onClick={reset}>샘플로 돌아가기</button>
-      </div> : <div className="gem-action__examples">
-        <button type="button" onClick={loadDiscardExample}>9개 보유 상황</button>
-        <button type="button" onClick={loadNobleExample}>귀족·종료 상황</button>
-        <button type="button" onClick={loadFinalRoundExample}>최종 턴 상황</button>
-        <button type="button" onClick={reset}>처음부터</button>
-      </div>}
+      <div className="gem-action__examples"><button type="button" onClick={restart}>같은 인원으로 새 게임</button></div>
     </section>
   );
 }

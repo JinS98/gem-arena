@@ -1,64 +1,16 @@
 import { create } from 'zustand';
-import { canTakeGems, CARD_COLORS, createInitialGameState, DEVELOPMENT_CARDS, excessGemCount, hasLegalBasicAction, reduceGameAction } from '@gem-arena/engine';
+import { canTakeGems, createInitialGameState, excessGemCount, hasLegalBasicAction, reduceGameAction } from '@gem-arena/engine';
 import type { CardLevel, Gem, GemColor, Inventory, ServerGameState } from '@gem-arena/engine';
-import { previewGame } from '../data/previewGame';
-import type { PreviewPlayer } from '../data/previewGame';
+import type { PlayerDisplay } from '../data/playerDisplay';
+import type { GameTheme } from '../components/GameTheme';
 
 export type GemMode = 'different' | 'pair';
-export type GemPracticePhase = 'awaitingStart' | 'selecting' | 'discarding' | 'choosingNoble' | 'completed' | 'finished';
+export type LocalGamePhase = 'awaitingStart' | 'selecting' | 'discarding' | 'choosingNoble' | 'completed' | 'finished';
 export const TURN_DURATION_MS = 3 * 60 * 1000;
 
-const localGems = previewGame.players.find((player) => player.isLocal)!.gems;
 const emptyInventory = (): Inventory => ({ white: 0, blue: 0, green: 0, red: 0, black: 0, gold: 0 });
 const returnedCount = (gems: Inventory) => Object.values(gems).reduce((sum, count) => sum + count, 0);
-const initialPurchased = ['L1-WHITE-06', 'L2-BLUE-06', 'L1-BLUE-01', 'L2-GREEN-01', 'L1-RED-05', 'L1-BLACK-05'];
-const initialReserved = ['L1-BLACK-01'];
-const levels: CardLevel[] = [1, 2, 3];
 
-function initialGame(): ServerGameState {
-  const market = { 1: previewGame.market[1].map((card) => card.id),
-    2: previewGame.market[2].map((card) => card.id),
-    3: previewGame.market[3].map((card) => card.id) };
-  const used = new Set([...levels.flatMap((level) => market[level]), ...initialPurchased, ...initialReserved]);
-  const players: ServerGameState['players'] = {};
-  for (const [seatIndex, preview] of previewGame.players.entries()) {
-    const purchasedCardIds = preview.isLocal ? [...initialPurchased] : [];
-    const reservedCardIds = preview.isLocal ? [...initialReserved] : [];
-    if (!preview.isLocal) {
-      for (const color of CARD_COLORS) {
-        for (let count = 0; count < preview.bonuses[color]; count++) {
-          const card = DEVELOPMENT_CARDS.find((candidate) => candidate.bonusColor === color && !used.has(candidate.id));
-          if (!card) throw new Error('로컬 샘플 카드를 구성할 수 없습니다');
-          purchasedCardIds.push(card.id);
-          used.add(card.id);
-        }
-      }
-      for (let count = 0; count < preview.reservedCount; count++) {
-        const card = DEVELOPMENT_CARDS.find((candidate) => !used.has(candidate.id));
-        if (!card) throw new Error('로컬 예약 카드를 구성할 수 없습니다');
-        reservedCardIds.push(card.id);
-        used.add(card.id);
-      }
-    }
-    players[preview.id] = { uid: preview.id, seatIndex, gems: { ...preview.gems },
-      purchasedCardIds, reservedCardIds, nobleIds: [], score: preview.score, forfeited: false };
-  }
-  const decks = { 1: [] as string[], 2: [] as string[], 3: [] as string[] };
-  for (const level of levels) {
-    decks[level] = DEVELOPMENT_CARDS.filter((card) => card.level === level && !used.has(card.id))
-      .map((card) => card.id);
-  }
-  return {
-    phase: 'playing', version: 0, firstPlayerIndex: 0, turnIndex: 0,
-    turnNobleResolved: false, consecutivePasses: 0,
-    playerOrder: previewGame.players.map((player) => player.id), players,
-    bank: { ...previewGame.bank }, market, decks,
-    availableNobleIds: previewGame.nobles.map((noble) => noble.id),
-    finalRoundTriggeredBy: null, winnerIds: [],
-  };
-}
-
-/** This full engine state is only generated sample data for /game/demo. */
 function fromEngineState(state: ServerGameState) {
   const currentPlayerId = state.playerOrder[state.turnIndex];
   const player = state.players[currentPlayerId];
@@ -67,30 +19,7 @@ function fromEngineState(state: ServerGameState) {
     reservedCardIds: player.reservedCardIds, score: player.score, currentPlayerId };
 }
 
-function nobleFinishGame(): ServerGameState {
-  const base = initialGame();
-  const decks = { 1: [...base.decks[1]], 2: [...base.decks[2]], 3: [...base.decks[3]] };
-  const extraIds: string[] = [];
-  const neededBonuses = { white: 2, green: 2, red: 1, black: 2 } as const;
-  for (const color of ['white', 'green', 'red', 'black'] as const) {
-    for (let count = 0; count < neededBonuses[color]; count++) {
-      const card = DEVELOPMENT_CARDS.find((candidate) => candidate.bonusColor === color &&
-        decks[candidate.level].includes(candidate.id));
-      if (!card) throw new Error('귀족 샘플 카드를 구성할 수 없습니다');
-      extraIds.push(card.id);
-      decks[card.level] = decks[card.level].filter((id) => id !== card.id);
-    }
-  }
-  const id = previewGame.currentPlayerId;
-  return { ...base, decks, firstPlayerIndex: 1,
-    availableNobleIds: [previewGame.nobles[0].id, previewGame.nobles[1].id, previewGame.nobles[3].id],
-    players: { ...base.players, [id]: { ...base.players[id],
-      purchasedCardIds: [...base.players[id].purchasedCardIds, ...extraIds], score: 11 } } };
-}
-
-type DemoScenario = 'standard' | 'nobleFinish' | 'discard' | 'finalRound' | 'fullGame';
-
-function localPlayers(count: 2 | 3 | 4): PreviewPlayer[] {
+function localPlayers(count: 2 | 3 | 4): PlayerDisplay[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `local-player-${index + 1}`, name: `플레이어 ${index + 1}`, initials: String(index + 1),
     score: 0, gems: emptyInventory(),
@@ -102,16 +31,17 @@ function localPlayers(count: 2 | 3 | 4): PreviewPlayer[] {
 function newLocalGame(count: 2 | 3 | 4) {
   const players = localPlayers(count);
   const seed = crypto.getRandomValues(new Uint32Array(1))[0];
-  return { ...initialPractice(createInitialGameState(players.map((player) => player.id), seed), 'fullGame', players),
-    phase: 'awaitingStart' as GemPracticePhase, turnDeadlineAt: null };
+  return { ...initialLocalState(createInitialGameState(players.map((player) => player.id), seed), players),
+    phase: 'awaitingStart' as LocalGamePhase, turnDeadlineAt: null };
 }
 
-interface DemoGemState extends ReturnType<typeof fromEngineState> {
+interface LocalGameState extends ReturnType<typeof fromEngineState> {
+  theme: GameTheme;
+  setTheme: (theme: GameTheme) => void;
   game: ServerGameState;
-  players: PreviewPlayer[];
-  scenario: DemoScenario;
+  players: PlayerDisplay[];
   mode: GemMode;
-  phase: GemPracticePhase;
+  phase: LocalGamePhase;
   selectedColors: GemColor[];
   returned: Inventory;
   notice: string;
@@ -124,9 +54,6 @@ interface DemoGemState extends ReturnType<typeof fromEngineState> {
   changeReturn: (color: Gem, delta: -1 | 1) => void;
   takeSelected: () => void;
   confirmReturn: () => void;
-  loadDiscardExample: () => void;
-  loadNobleExample: () => void;
-  loadFinalRoundExample: () => void;
   chooseNoble: (nobleId: string) => boolean;
   advanceTurn: () => void;
   purchaseCard: (cardId: string, source: 'market' | 'reserved', payment: Inventory) => boolean;
@@ -136,22 +63,19 @@ interface DemoGemState extends ReturnType<typeof fromEngineState> {
   startNewGame: (count: 2 | 3 | 4) => void;
   beginGame: () => void;
   restart: () => void;
-  reset: () => void;
 }
 
-function initialPractice(
-  game = initialGame(), scenario: DemoScenario = 'standard', players: PreviewPlayer[] = previewGame.players,
-) {
+function initialLocalState(game: ServerGameState, players: PlayerDisplay[]) {
   return {
-    game, scenario, players, ...fromEngineState(game),
-    mode: 'different' as GemMode, phase: 'selecting' as GemPracticePhase,
+    game, players, ...fromEngineState(game),
+    mode: 'different' as GemMode, phase: 'awaitingStart' as LocalGamePhase,
     selectedColors: [] as GemColor[], returned: emptyInventory(), notice: '',
-    turnDeadlineAt: scenario === 'fullGame' ? Date.now() + TURN_DURATION_MS : null,
+    turnDeadlineAt: null as number | null,
     turnWarningPlayed: false,
   };
 }
 
-function uiPhase(game: ServerGameState): GemPracticePhase {
+function uiPhase(game: ServerGameState): LocalGamePhase {
   if (game.phase === 'discarding') return 'discarding';
   if (game.phase === 'choosingNoble') return 'choosingNoble';
   if (game.phase === 'finished') return 'finished';
@@ -159,7 +83,7 @@ function uiPhase(game: ServerGameState): GemPracticePhase {
 }
 
 function applyAction(
-  state: DemoGemState, action: Parameters<typeof reduceGameAction>[2], notice: string,
+  state: LocalGameState, action: Parameters<typeof reduceGameAction>[2], notice: string,
 ) {
   const next = reduceGameAction(state.game, state.currentPlayerId, action);
   return { game: next, ...fromEngineState(next), phase: uiPhase(next),
@@ -168,18 +92,20 @@ function applyAction(
       ? state.turnDeadlineAt : null };
 }
 
-export const useDemoGemStore = create<DemoGemState>((set, get) => ({
-  ...initialPractice(),
+export const useLocalGameStore = create<LocalGameState>((set, get) => ({
+  ...newLocalGame(2),
+  theme: 'default',
+  setTheme: (theme) => set({ theme }),
   markTurnWarning: () => {
     const state = get();
-    if (state.scenario !== 'fullGame' || state.turnDeadlineAt === null || state.turnWarningPlayed ||
+    if (state.turnDeadlineAt === null || state.turnWarningPlayed ||
         state.phase === 'completed' || state.phase === 'finished') return false;
     set({ turnWarningPlayed: true });
     return true;
   },
   expireTurn: () => {
     const state = get();
-    if (state.scenario !== 'fullGame' || state.turnDeadlineAt === null ||
+    if (state.turnDeadlineAt === null ||
         Date.now() < state.turnDeadlineAt || state.phase === 'completed' || state.phase === 'finished') return;
     try {
       const next = applyAction(state, { type: 'TIMEOUT' }, '3분이 지나 이번 턴을 자동으로 마쳤습니다.');
@@ -242,22 +168,10 @@ export const useDemoGemStore = create<DemoGemState>((set, get) => ({
       set({ notice: '초과한 수량만큼 보유 보석을 선택해 반환하세요.' });
     }
   },
-  loadDiscardExample: () => {
-    const bank = { ...previewGame.bank, white: previewGame.bank.white - 2,
-      blue: previewGame.bank.blue - 2, black: previewGame.bank.black - 1 };
-    const gems = { ...localGems, white: localGems.white + 2,
-      blue: localGems.blue + 2, black: localGems.black + 1 };
-    const base = initialGame();
-    const id = previewGame.currentPlayerId;
-    const game = { ...base, bank, players: { ...base.players,
-      [id]: { ...base.players[id], gems } } };
-    set({ ...initialPractice(game, 'discard'),
-      notice: '보석 9개 상황입니다. 세 색을 받아 반환을 연습하세요.' });
-  },
   purchaseCard: (cardId, source, payment) => {
     const state = get();
     if (state.phase !== 'selecting') {
-      set({ notice: '이번 연습 턴은 이미 진행 중이거나 완료됐습니다.' });
+      set({ notice: '이번 턴은 이미 진행 중이거나 완료됐습니다.' });
       return false;
     }
     try {
@@ -272,7 +186,7 @@ export const useDemoGemStore = create<DemoGemState>((set, get) => ({
   reserveMarketCard: (cardId) => {
     const state = get();
     if (state.phase !== 'selecting') {
-      set({ notice: '이번 연습 턴은 이미 진행 중이거나 완료됐습니다.' });
+      set({ notice: '이번 턴은 이미 진행 중이거나 완료됐습니다.' });
       return false;
     }
     try {
@@ -310,20 +224,6 @@ export const useDemoGemStore = create<DemoGemState>((set, get) => ({
       return false;
     }
   },
-  loadNobleExample: () => {
-    set({ ...initialPractice(nobleFinishGame(), 'nobleFinish'),
-      notice: '빨간 1단계 카드 구매 후 귀족을 선택하면 15점으로 종료됩니다.' });
-  },
-  loadFinalRoundExample: () => {
-    const base = initialGame();
-    const first = base.playerOrder[0];
-    const last = base.playerOrder[2];
-    const game: ServerGameState = { ...base, turnIndex: 2, finalRoundTriggeredBy: first,
-      players: { ...base.players, [first]: { ...base.players[first], score: 15 },
-        [last]: { ...base.players[last], score: 14 } } };
-    set({ ...initialPractice(game, 'finalRound'),
-      notice: '최종 라운드 마지막 차례입니다. 행동을 마치면 승자가 결정됩니다.' });
-  },
   chooseNoble: (nobleId) => {
     const state = get();
     if (state.phase !== 'choosingNoble') return false;
@@ -336,19 +236,15 @@ export const useDemoGemStore = create<DemoGemState>((set, get) => ({
     }
   },
   advanceTurn: () => set((state) => state.phase === 'completed' && state.game.phase === 'playing'
-    ? { phase: 'selecting', turnDeadlineAt: state.scenario === 'fullGame' ? Date.now() + TURN_DURATION_MS : null,
+    ? { phase: 'selecting', turnDeadlineAt: Date.now() + TURN_DURATION_MS,
       turnWarningPlayed: false,
       notice: `${state.players.find((player) => player.id === state.currentPlayerId)?.name ?? '플레이어'}님의 차례입니다.` } : {}),
   startNewGame: (count) => {
     if (count !== 2 && count !== 3 && count !== 4) return;
     set({ ...newLocalGame(count), notice: `${count}인 로컬 게임이 준비됐습니다. 게임 시작을 누르면 첫 턴이 시작됩니다.` });
   },
-  beginGame: () => set((state) => state.scenario === 'fullGame' && state.phase === 'awaitingStart'
+  beginGame: () => set((state) => state.phase === 'awaitingStart'
     ? { phase: 'selecting', turnDeadlineAt: Date.now() + TURN_DURATION_MS,
       turnWarningPlayed: false, notice: `${state.players.find((player) => player.id === state.currentPlayerId)?.name ?? '첫 번째 플레이어'}님의 차례입니다.` } : {}),
-  restart: () => {
-    const state = get();
-    set(state.scenario === 'fullGame' ? newLocalGame(state.players.length as 2 | 3 | 4) : initialPractice());
-  },
-  reset: () => set(initialPractice()),
+  restart: () => set(newLocalGame(get().players.length as 2 | 3 | 4)),
 }));

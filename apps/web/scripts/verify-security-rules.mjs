@@ -13,6 +13,8 @@ const requireFunctions = createRequire(new URL('../../../functions/package.json'
 const { initializeApp: initializeAdminApp } = requireFunctions('firebase-admin/app');
 const { getFirestore: getAdminFirestore } = requireFunctions('firebase-admin/firestore');
 process.env.FIRESTORE_EMULATOR_HOST ??= '127.0.0.1:8080';
+const [firestoreHost, firestorePort] = process.env.FIRESTORE_EMULATOR_HOST.split(':');
+const authEmulatorHost = process.env.FIREBASE_AUTH_EMULATOR_HOST ?? '127.0.0.1:9099';
 setLogLevel('silent');
 
 const config = { apiKey: 'demo-api-key', authDomain: 'demo-gem-arena.firebaseapp.com',
@@ -27,10 +29,10 @@ async function client(name, authenticate = true) {
   const app = initializeApp(config, `${name}-${randomBytes(4).toString('hex')}`);
   apps.push(app);
   const auth = getAuth(app);
-  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
+  connectAuthEmulator(auth, `http://${authEmulatorHost}`, { disableWarnings: true });
   const user = authenticate ? (await signInAnonymously(auth)).user : null;
   const db = getFirestore(app);
-  connectFirestoreEmulator(db, '127.0.0.1', 8080);
+  connectFirestoreEmulator(db, firestoreHost, Number(firestorePort));
   return { user, db };
 }
 
@@ -64,7 +66,7 @@ try {
   const guestRoom = doc(guest.db, 'rooms', roomCode);
   const outsiderRoom = doc(outsider.db, 'rooms', roomCode);
   const anonymousRoom = doc(anonymous.db, 'rooms', roomCode);
-  const roomData = (id = roomCode) => ({ roomCode: id, hostUid: host.user.uid, status: 'waiting',
+  const roomData = (id = roomCode) => ({ roomCode: id, title: '보석 상인의 방', theme: 'default', hostUid: host.user.uid, status: 'waiting',
     capacity: 4, playerOrder: [host.user.uid],
     players: { [host.user.uid]: initialPlayer(host.user.uid, '방장') },
     createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
@@ -80,17 +82,40 @@ try {
     { ...roomData(capacityCode), capacity: 5 }));
   await denied('공백 닉네임 방 생성', () => setDoc(doc(host.db, 'rooms', nicknameCode),
     { ...roomData(nicknameCode), players: { [host.user.uid]: initialPlayer(host.user.uid, '  ') } }));
+  const titleCode = code();
+  await denied('빈 방 제목 생성', () => setDoc(doc(host.db, 'rooms', titleCode),
+    { ...roomData(titleCode), title: ' ' }));
+  const badThemeCode = code();
+  await denied('알 수 없는 테마로 방 생성', () => setDoc(doc(host.db, 'rooms', badThemeCode),
+    { ...roomData(badThemeCode), theme: 'unknown' }));
+  const missingTitleCode = code();
+  await denied('방 제목 없는 생성', () => setDoc(doc(host.db, 'rooms', missingTitleCode),
+    Object.fromEntries(Object.entries(roomData(missingTitleCode)).filter(([key]) => key !== 'title'))));
   await allowed('정상 방 생성', () => setDoc(hostRoom, roomData()));
   await allowed('방장 방 읽기', () => getDocFromServer(hostRoom), snapshot =>
     assert.equal(snapshot.data().hostUid, host.user.uid));
   await denied('비로그인 방 읽기', () => getDocFromServer(anonymousRoom));
   await denied('비참가자 방 읽기', () => getDocFromServer(outsiderRoom));
   await denied('방 목록 조회', () => getDocsFromServer(collection(host.db, 'rooms')));
+  const listingRef = admin.doc(`roomListings/${roomCode}`);
+  await listingRef.set({ roomCode, title: '보석 상인의 방', hostNickname: '방장', playerCount: 1,
+    capacity: 4, createdAt: new Date() });
+  await allowed('공개 방 목록 조회', () => getDocsFromServer(collection(outsider.db, 'roomListings')), snapshot =>
+    assert.equal(snapshot.docs.find(item => item.id === roomCode)?.data().title, '보석 상인의 방'));
+  await denied('비로그인 공개 방 목록 조회', () => getDocsFromServer(collection(anonymous.db, 'roomListings')));
+  await denied('공개 방 목록 위조', () => setDoc(doc(host.db, 'roomListings', code()),
+    { roomCode, title: '위조된 방' }));
   await denied('방 직접 삭제', () => deleteDoc(hostRoom));
   await denied('방장 변경', () => updateDoc(hostRoom, 'hostUid', guest.user.uid,
     'updatedAt', serverTimestamp()));
   await denied('방장이 임의 참가자 추가', () => updateDoc(hostRoom,
     'playerOrder', arrayUnion(guest.user.uid), 'updatedAt', serverTimestamp()));
+  await allowed('방장 테마 변경', () => updateDoc(hostRoom,
+    'theme', 'lol', 'updatedAt', serverTimestamp()));
+  await denied('알 수 없는 테마 변경', () => updateDoc(hostRoom,
+    'theme', 'unknown', 'updatedAt', serverTimestamp()));
+  await denied('테마 변경에 방 제목 변경 섞기', () => updateDoc(hostRoom,
+    'theme', 'demon-slayer', 'title', '위조', 'updatedAt', serverTimestamp()));
 
   const guestPath = new FieldPath('players', guest.user.uid);
   await denied('참가하면서 방장 변경', () => updateDoc(guestRoom,
@@ -120,6 +145,8 @@ try {
   await allowed('정상 참가', () => updateDoc(guestRoom,
     'playerOrder', arrayUnion(guest.user.uid), guestPath,
     initialPlayer(guest.user.uid, '손님'), 'updatedAt', serverTimestamp()));
+  await denied('참가자 테마 변경', () => updateDoc(guestRoom,
+    'theme', 'demon-slayer', 'updatedAt', serverTimestamp()));
   await allowed('참가자 방 읽기', () => getDocFromServer(guestRoom), snapshot =>
     assert.deepEqual(snapshot.data().playerOrder, [host.user.uid, guest.user.uid]));
   await denied('중복 참가', () => updateDoc(guestRoom,
@@ -149,6 +176,8 @@ try {
   await denied('시작 후 준비 변경', () => updateDoc(guestRoom,
     new FieldPath('players', guest.user.uid, 'ready'), false,
     'updatedAt', serverTimestamp()));
+  await denied('시작 후 테마 변경', () => updateDoc(hostRoom,
+    'theme', 'demon-slayer', 'updatedAt', serverTimestamp()));
   await denied('시작 후 참가', () => updateDoc(outsiderRoom,
     'playerOrder', arrayUnion(outsider.user.uid),
     new FieldPath('players', outsider.user.uid),
