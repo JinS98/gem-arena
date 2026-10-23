@@ -3,6 +3,7 @@ import type { ColorCounts, DevelopmentCard } from '@gem-arena/engine';
 import { developmentCardArtwork } from './cardArtwork';
 import { GemIcon } from './GemIcon';
 import { useGameTheme, useGemNames } from './GameTheme';
+import './tactileCard.scss';
 
 export function CardFace({ card, discountedCost, discountCount = 0 }: {
   card: DevelopmentCard; discountedCost?: ColorCounts; discountCount?: number;
@@ -36,8 +37,8 @@ export function CardFace({ card, discountedCost, discountCount = 0 }: {
   );
 }
 
-export function MarketCard({ card, onSelect, disabled = false, className = '', bonuses }: {
-  card: DevelopmentCard; onSelect: () => void; disabled?: boolean; className?: string; bonuses?: ColorCounts;
+export function MarketCard({ card, onSelect, disabled = false, className = '', bonuses, tactile = false, purchasable = false }: {
+  card: DevelopmentCard; onSelect: () => void; disabled?: boolean; className?: string; bonuses?: ColorCounts; tactile?: boolean; purchasable?: boolean;
 }) {
   const gemNames = useGemNames();
   const remaining = bonuses ? remainingCardCost(card.cost, bonuses) : null;
@@ -49,9 +50,21 @@ export function MarketCard({ card, onSelect, disabled = false, className = '', b
     ? CARD_COLORS.filter(color => discountedCost[color] > 0).map(color => `${gemNames[color]} ${discountedCost[color]}개`).join(', ') || '무료'
     : '';
   return (
-    <button type="button" className={`market-card${discountedCost ? ' market-card--discounted' : ''}${className ? ` ${className}` : ''}`} onClick={onSelect} disabled={disabled}
-      aria-label={`${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 인쇄 비용 ${costDescription}${discountedCost ? `, 내 할인 적용 비용 ${remainingDescription}` : ''}, 구매 또는 예약 보기`}>
+    <button type="button" className={`market-card${discountedCost ? ' market-card--discounted' : ''}${tactile ? ' market-card--tactile' : ''}${className ? ` ${className}` : ''}`} onClick={onSelect} disabled={disabled}
+      onPointerMove={tactile ? event => {
+        if (disabled || event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const element = event.currentTarget;
+        const rect = element.getBoundingClientRect();
+        element.style.setProperty('--tilt-x', `${-(event.clientY - rect.top - rect.height / 2) / rect.height * 7}deg`);
+        element.style.setProperty('--tilt-y', `${(event.clientX - rect.left - rect.width / 2) / rect.width * 8}deg`);
+        element.style.setProperty('--shine-x', `${(event.clientX - rect.left) / rect.width * 100}%`);
+      } : undefined}
+      onPointerLeave={tactile ? event => {
+        for (const name of ['--tilt-x', '--tilt-y', '--shine-x']) event.currentTarget.style.removeProperty(name);
+      } : undefined}
+      aria-label={`${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 인쇄 비용 ${costDescription}${discountedCost ? `, 내 할인 적용 비용 ${remainingDescription}` : ''}${purchasable && !disabled ? ', 구매 가능' : ''}, 구매 또는 예약 보기`}>
       <CardFace card={card} discountedCost={discountedCost} discountCount={discountCount} />
+      {purchasable && !disabled && <span className="market-card__purchase-tag">구매 가능</span>}
     </button>
   );
 }

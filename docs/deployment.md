@@ -3,6 +3,7 @@
 ## 현재 배포 상태
 
 - Firebase 프로젝트: `gem-arena` (Blaze)
+- 2026-10-23 화면 개선 재배포: 멀티 카드 입체 표면·호버·구매 가능 태그, 보석 은행 호버·클릭 효과와 흰색 글자 대비를 Hosting에 반영했다. 3D 예시는 `/examples/3d`에 유지하되 헤더 메뉴에서는 숨겼다. 엔진 84개·웹 8개 테스트와 운영 빌드가 통과했으며 `gem-arena.web.app`, `gem-arena.kr`의 최신 HTML·JS 및 실제 헤더를 확인했다. 이번 배포는 Hosting만 대상으로 했다.
 - Hosting 기본 주소: <https://gem-arena.web.app>
 - Firestore: 기본 데이터베이스, `firestore.rules` 게시됨
 - Cloud Functions: `roomStarted`, `submitAction`, `leaveRoom`, `expireTurn`, `sweepExpiredTurns`, `roomListingUpdated` — 서울(`asia-northeast3`), 2026-10-23 배포 후 모두 ACTIVE

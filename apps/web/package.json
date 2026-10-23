@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "typecheck": "tsc --noEmit",
-    "test": "node --experimental-strip-types --test src/services/nickname.test.mjs"
+    "test": "node --experimental-strip-types --test src/services/nickname.test.mjs src/animations/tabletopEvents.test.mjs src/data/tabletopDemo.test.mjs"
   },
   "dependencies": {
     "@gem-arena/engine": "workspace:*",

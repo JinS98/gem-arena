@@ -1,0 +1,58 @@
+/* Preserve the live board's dimensions; the standalone 3D demo keeps its own skin. */
+.multiplayer-page:not(.tabletop-game) {
+  .gem-bank__button.gem-box {
+    transition: background .18s, border-color .18s, box-shadow .18s, transform .14s;
+    color: var(--gem-ink, #fff);
+  }
+  .gem-bank__button.gem-box > span:not(.gem-icon),
+  .gem-bank__button.gem-box > strong { color: inherit; }
+  .gem-bank__button .gem-icon { transition: transform .18s, filter .18s; }
+
+  button.gem-bank__button.gem-box:not(:disabled):is(:hover, :focus-visible) {
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--gem-box-light), #fff 23%),
+      color-mix(in srgb, var(--gem-box-color), #142338 28%));
+    border-color: #ffe6a6;
+    filter: none;
+    box-shadow: inset 0 1px #fff6, 0 0 0 1px #f1d38d66, 0 5px 12px #0005;
+  }
+  button.gem-bank__button.gem-box:not(:disabled):hover .gem-icon {
+    transform: translateY(-2px) rotate(-6deg);
+  }
+  button.gem-bank__button.gem-box.gem-bank__button--selected,
+  button.gem-bank__button.gem-box.gem-bank__button--selected:is(:hover, :focus-visible) {
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--gem-box-light), #ffe2a1 30%),
+      color-mix(in srgb, var(--gem-box-color), #66502d 28%));
+    border-color: #ffe1a1;
+    box-shadow: inset 0 0 0 2px #f8dc9b, 0 3px 9px #0006;
+    filter: none;
+  }
+  button.gem-bank__button--selected .gem-icon { transform: translateY(-3px) rotate(-8deg); }
+  button.gem-bank__button.gem-box:not(:disabled):active {
+    transform: translateY(2px) scale(.98);
+    box-shadow: inset 0 2px 5px #0005, 0 0 0 2px #f8dc9b;
+  }
+  .gem-bank__button.gem-box--white {
+    --gem-ink: #172136;
+    color: #172136;
+    text-shadow: none;
+  }
+  button.gem-bank__button.gem-box--white:not(:disabled):is(:hover, :focus-visible) {
+    background: linear-gradient(135deg, #fff, #c9dcef);
+    color: #172136;
+  }
+  button.gem-bank__button.gem-box--white.gem-bank__button--selected,
+  button.gem-bank__button.gem-box--white.gem-bank__button--selected:is(:hover, :focus-visible) {
+    background: linear-gradient(135deg, #fff9e8, #e4d4aa);
+    color: #172136;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiplayer-page:not(.tabletop-game) .gem-bank__button.gem-box,
+  .multiplayer-page:not(.tabletop-game) .gem-bank__button .gem-icon { transition: none; }
+  .multiplayer-page:not(.tabletop-game) button.gem-bank__button.gem-box:not(:disabled):active,
+  .multiplayer-page:not(.tabletop-game) button.gem-bank__button.gem-box:not(:disabled):hover .gem-icon,
+  .multiplayer-page:not(.tabletop-game) button.gem-bank__button.gem-box .gem-icon { transform: none; }
+}

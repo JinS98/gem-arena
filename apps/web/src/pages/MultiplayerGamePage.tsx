@@ -26,6 +26,7 @@ import { getFirebase } from '../services/firebase';
 import { subscribeMyGameViews, type GameViewUpdate, type MyGameViews } from '../services/gameViews';
 import { ensureAnonymousSession } from '../services/playerIdentity';
 import { leaveRoom, roomErrorMessage, type WaitingRoom } from '../services/rooms';
+import '../multiplayerGemBank.scss';
 
 const levels: CardLevel[] = [3, 2, 1];
 const gems: Gem[] = [...CARD_COLORS, 'gold'];
@@ -558,6 +559,8 @@ export function MultiplayerGamePage() {
   const activePlayerCount = game.playerOrder.filter(uid => !game.players[uid]?.forfeited).length;
   const selectedCard = selection ? getDevelopmentCard(selection.cardId) : undefined;
   const myBonuses = countCardBonuses(me.purchasedCardIds);
+  const canPurchase = (card: DevelopmentCard) => canAct && game.phase === 'playing' &&
+    canPayForCard(card.cost, myBonuses, me.gems, suggestedPayment(card, me));
   const canTake = canAct && game.phase === 'playing';
   const takeColors = gemMode === 'pair' && selectedColors.length === 1
     ? [selectedColors[0], selectedColors[0]] : selectedColors;
@@ -615,7 +618,7 @@ export function MultiplayerGamePage() {
             const refill = marketRefill?.level === level && marketRefill.slot === slot ? marketRefill : null;
             if (refill?.phase === 'empty') return <div className="market-card-empty market-card-empty--refilling" key={`${level}-${slot}`} role="status">새 카드 보충 중…</div>;
             const card = id ? getDevelopmentCard(id) : undefined;
-            return card ? <MarketCard key={`${level}-${slot}`} card={card} bonuses={myBonuses} className={refill?.phase === 'revealing' ? 'market-card--dealt' : ''} disabled={Boolean(refill)} onSelect={() => setSelection({ cardId: card.id, source: 'market' })} />
+            return card ? <MarketCard tactile purchasable={canPurchase(card)} key={`${level}-${slot}`} card={card} bonuses={myBonuses} className={refill?.phase === 'revealing' ? 'market-card--dealt' : ''} disabled={Boolean(refill)} onSelect={() => setSelection({ cardId: card.id, source: 'market' })} />
               : <div className="market-card-empty" key={`${level}-${slot}`}>빈 칸</div>;
           })}</div>
         </div>)}</div>
@@ -637,7 +640,7 @@ export function MultiplayerGamePage() {
               gemAnimation={gemAnimation ?? undefined} bonusAnimation={bonusAnimation ?? undefined} scoreAnimation={scoreAnimation ?? undefined} />
             {handExpanded && <div className="multiplayer-self__reserved"><div><span className="eyebrow">PRIVATE CARDS</span><h3>내 예약 카드 <small>{views.privatePlayer.reservedCardIds.length}/3</small></h3></div>{views.privatePlayer.reservedCardIds.length === 0 ? <p>예약한 카드가 없습니다.</p> : <div className="multiplayer-self__cards">{views.privatePlayer.reservedCardIds.map(id => {
               const card = getDevelopmentCard(id);
-              return card && <MarketCard key={id} card={card} bonuses={myBonuses} onSelect={() => setSelection({ cardId: id, source: 'reserved' })} />;
+              return card && <MarketCard tactile purchasable={canPurchase(card)} key={id} card={card} bonuses={myBonuses} onSelect={() => setSelection({ cardId: id, source: 'reserved' })} />;
             })}</div>}</div>}
           </div>
         </section>
