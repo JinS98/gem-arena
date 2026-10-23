@@ -4,28 +4,42 @@ import { LobbyPage } from './pages/LobbyPage';
 import { MultiplayerGamePage } from './pages/MultiplayerGamePage';
 import { RoomPage } from './pages/RoomPage';
 import { RulesPage } from './pages/RulesPage';
-import blueNavigator from './assets/cards/merchant-blue-navigator.jpg';
-import greenBotanist from './assets/cards/merchant-green-botanist.jpg';
-import redRubyDealer from './assets/cards/merchant-red-ruby-dealer.jpg';
+import { themePreviewArtwork } from './components/cardArtwork';
+import { GAME_THEMES, themeLabels, type GameTheme } from './components/GameTheme';
+
+const homeThemeDescriptions: Record<GameTheme, string> = {
+  default: '보석 상인의 도시',
+  lol: '룬테라의 챔피언',
+  'demon-slayer': '귀살대와 호흡',
+};
 
 function Home() {
   return <section className="welcome-page">
     <div className="welcome-page__copy">
-      <span className="eyebrow">GEM ARENA · STRATEGY CARD GAME</span>
+      <span className="eyebrow">GEM ARENA · THREE WORLDS, ONE GAME</span>
       <div className="welcome-page__rule" aria-hidden="true"><span>◆</span></div>
-      <h1>보석을 모으고,<br /><em>승리를 설계하세요.</em></h1>
-      <p>카드를 모아 구매 비용을 낮추고, 귀족의 방문을 이끌어 내세요. 매 턴의 선택이 승부를 바꿉니다.</p>
-      <div className="welcome-page__actions"><Link className="primary-link" to="/lobby">온라인 대전 입장 <span aria-hidden="true">↗</span></Link><Link className="welcome-page__secondary" to="/game/local">한 PC 대전 <span aria-hidden="true">→</span></Link></div>
-      <div className="welcome-page__details"><span><strong>02—04</strong> 플레이어</span><span><strong>03:00</strong> 온라인 턴 제한</span><span><strong>15+</strong> 최종 라운드</span></div>
-    </div>
-    <div className="welcome-showcase" aria-label="보석 상인 카드 미리보기">
-      <div className="welcome-showcase__heading"><span>THE MARKET</span><span>보석 상인의 거리</span></div>
-      <div className="welcome-showcase__cards">
-        <div className="welcome-showcase__card welcome-showcase__card--blue"><img src={blueNavigator} alt="항구의 파란 상인 카드" /><span className="welcome-showcase__card-number">2</span><span className="welcome-showcase__gem welcome-showcase__gem--blue" aria-label="파란 보석">◆</span></div>
-        <div className="welcome-showcase__card welcome-showcase__card--green"><img src={greenBotanist} alt="정원의 초록 상인 카드" /><span className="welcome-showcase__card-number">3</span><span className="welcome-showcase__gem welcome-showcase__gem--green" aria-label="초록 보석">◆</span></div>
-        <div className="welcome-showcase__card welcome-showcase__card--red"><img src={redRubyDealer} alt="시장의 붉은 상인 카드" /><span className="welcome-showcase__card-number">1</span><span className="welcome-showcase__gem welcome-showcase__gem--red" aria-label="빨간 보석">◆</span></div>
+      <h1>하나의 전략,<br /><em>세 가지 세계.</em></h1>
+      <p>보석 상인의 도시, 룬테라, 귀살대의 세계에서 카드를 모으고 자원을 활용해 승점을 쌓으세요. 테마를 골라도 게임의 규칙은 같습니다.</p>
+      <div className="welcome-page__actions">
+        <Link className="primary-link" to="/lobby">온라인 대전 입장 <span aria-hidden="true">↗</span></Link>
+        <Link className="welcome-page__secondary" to="/game/local">한 PC 대전 <span aria-hidden="true">→</span></Link>
       </div>
-      <div className="welcome-showcase__footer"><span>TAKE GEMS</span><i aria-hidden="true" /> <span>BUILD YOUR ENGINE</span><i aria-hidden="true" /> <span>WIN THE ARENA</span></div>
+      <div className="welcome-page__details">
+        <span><strong>02–04</strong> 플레이어</span>
+        <span><strong>03:00</strong> 온라인 턴 제한</span>
+        <span><strong>03</strong> 선택 가능한 테마</span>
+      </div>
+    </div>
+    <div className="welcome-showcase" aria-label="게임 테마 미리보기">
+      <div className="welcome-showcase__heading"><span>CHOOSE YOUR WORLD</span><span>같은 규칙, 새로운 분위기</span></div>
+      <div className="welcome-showcase__cards">
+        {GAME_THEMES.map((option, index) => <div className={'welcome-showcase__card welcome-showcase__card--' + option} key={option}>
+          <img src={themePreviewArtwork(option)} alt="" />
+          <span className="welcome-showcase__card-index">0{index + 1}</span>
+          <div className="welcome-showcase__card-copy"><small>{homeThemeDescriptions[option]}</small><strong>{themeLabels[option]}</strong></div>
+        </div>)}
+      </div>
+      <div className="welcome-showcase__footer"><span>테마는 게임 시작 전에 선택할 수 있습니다.</span><span>추가 테마는 비공식 팬 테마입니다.</span></div>
     </div>
   </section>;
 }
