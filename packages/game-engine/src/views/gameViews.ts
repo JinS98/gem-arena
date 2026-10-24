@@ -1,4 +1,11 @@
 import type { CardLevel, Inventory, ServerGameState } from '../types/index.js';
+import { getDevelopmentCard } from '../data/catalog.js';
+
+export interface PublicReservedCard {
+  /** Only a card reserved from the face-up market may expose its identity. */
+  cardId: string | null;
+  level: CardLevel | null;
+}
 
 export interface PublicPlayerView {
   uid: string;
@@ -8,6 +15,8 @@ export interface PublicPlayerView {
   nobleIds: string[];
   score: number;
   reservedCount: number;
+  /** Absent on older published games; treat those reservations as hidden. */
+  reservedCards?: PublicReservedCard[];
   forfeited: boolean;
 }
 
@@ -48,6 +57,10 @@ export function toPublicGameView(state: ServerGameState): PublicGameView {
       nobleIds: [...player.nobleIds],
       score: player.score,
       reservedCount: player.reservedCardIds.length,
+      reservedCards: player.reservedCardIds.map(id => ({
+        cardId: player.publicReservedCardIds?.includes(id) ? id : null,
+        level: getDevelopmentCard(id)?.level ?? null,
+      })),
       forfeited: player.forfeited === true,
     };
   }

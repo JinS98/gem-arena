@@ -63,6 +63,7 @@ export function buyCard(state: ServerGameState, playerId: string, action: BuyCar
         reservedCardIds: action.source === 'reserved'
           ? player.reservedCardIds.filter((id) => id !== card.id)
           : player.reservedCardIds,
+        publicReservedCardIds: (player.publicReservedCardIds ?? []).filter(id => id !== card.id),
         score: nextScore,
       },
     },

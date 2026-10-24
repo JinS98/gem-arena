@@ -1,0 +1,57 @@
+.multiplayer-turn-notice {
+  position: fixed;
+  inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  animation: multiplayer-turn-notice-fade 2s ease both;
+
+  &__edges {
+    position: absolute;
+    inset: 0;
+    border: 3px solid #f4d48a;
+    background: radial-gradient(ellipse at center, transparent 42%, #e6bd5d24 80%, #f4cf7566);
+    box-shadow: inset 0 0 55px #ebc36c88, inset 0 0 130px #e0ae3e38;
+  }
+  &__banner {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 30px;
+    width: min(100%, 560px);
+    padding: 26px 30px;
+    border: 1px solid #e5c580;
+    border-radius: 12px;
+    background: linear-gradient(120deg, #132c3bf5, #213a44fa, #142638f5);
+    color: #fff0c5;
+    box-shadow: inset 0 1px #ffefbb44, 0 16px 65px #0009, 0 0 45px #dfb25944;
+    text-align: center;
+    animation: multiplayer-turn-notice-enter .35s cubic-bezier(.2,.8,.25,1) both;
+  }
+  &__banner > div { display: grid; gap: 7px; }
+  &__banner small { color: #e7c680; font-size: 11px; letter-spacing: .26em; font-weight: 800; }
+  &__banner strong { color: #fff1c8; font-size: clamp(26px, 4vw, 38px); line-height: 1.4; font-weight: 800; letter-spacing: -.04em; }
+  &__banner div > span { color: #c8d7de; font-size: 12px; line-height: 1.6; }
+  &__gem { flex: none; color: #edcb7c; font-size: 25px; text-shadow: 0 0 18px #e7c07388; }
+}
+@keyframes multiplayer-turn-notice-fade {
+  0% { opacity: 0; }
+  12%, 78% { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes multiplayer-turn-notice-enter {
+  from { transform: translateY(15px) scale(.96); }
+  to { transform: translateY(0) scale(1); }
+}
+@media (max-width: 500px) {
+  .multiplayer-turn-notice__banner { gap: 13px; padding: 22px 14px; }
+  .multiplayer-turn-notice__gem { font-size: 16px; }
+  .multiplayer-turn-notice__banner div > span { font-size: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .multiplayer-turn-notice, .multiplayer-turn-notice__banner { animation: none; }
+  .multiplayer-turn-notice__edges { background: none; box-shadow: inset 0 0 25px #ebc36c55; }
+}

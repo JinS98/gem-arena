@@ -73,6 +73,7 @@ export function reserveCard(
           ...player,
           gems,
           reservedCardIds: [...player.reservedCardIds, cardId],
+          publicReservedCardIds: [...(player.publicReservedCardIds ?? []), ...(hasCardId ? [cardId] : [])],
         },
       },
     },

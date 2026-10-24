@@ -26,7 +26,7 @@ export function forfeitPlayer(state: ServerGameState, playerId: string): ServerG
     ...state.players,
     [playerId]: {
       ...player, forfeited: true, gems: emptyGems(), purchasedCardIds: [],
-      reservedCardIds: [], nobleIds: [], score: 0,
+      reservedCardIds: [], publicReservedCardIds: [], nobleIds: [], score: 0,
     },
   };
   const remaining = state.playerOrder.filter(uid => players[uid].forfeited !== true);

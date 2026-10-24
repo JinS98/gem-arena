@@ -4,10 +4,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import type { User } from 'firebase/auth';
 import { getFirebase } from '../services/firebase';
 import { ensureAnonymousSession, nicknameError, savePreferredNickname } from '../services/playerIdentity';
-import { createRoom, isRoomConnectionError, joinRoom, roomErrorMessage, roomTitleError,
+import { createRoom, joinRoom, roomErrorMessage, roomTitleError,
   withRoomRequestTimeout, type RoomAccess, type RoomListing } from '../services/rooms';
 import { themePreviewArtwork } from '../components/cardArtwork';
 import { normalizeGameTheme, themeLabels } from '../components/GameTheme';
+import { CenterNotice } from '../components/CenterNotice';
 
 type SessionState =
   | { status: 'loading' }
@@ -44,6 +45,8 @@ export function LobbyPage() {
   const [roomTitle, setRoomTitle] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [roomError, setRoomError] = useState('');
+  const [roomNoticeId, setRoomNoticeId] = useState(0);
+  const [roomErrorField, setRoomErrorField] = useState('room-code');
   const [roomBusy, setRoomBusy] = useState(false);
   const [activeRoomKey, setActiveRoomKey] = useState('');
   const [listings, setListings] = useState<RoomListing[]>([]);
@@ -93,6 +96,15 @@ export function LobbyPage() {
     }
   }
 
+  function showRoomError(message: string, kind: 'create' | 'join') {
+    setRoomError(message);
+    setRoomErrorField(kind === 'create' ? 'room-title' : 'room-code');
+    setRoomNoticeId(value => value + 1);
+  }
+  function closeRoomNotice(restoreFocus: boolean) {
+    setRoomError('');
+    if (restoreFocus) document.getElementById(roomErrorField)?.focus();
+  }
   async function enterRoom(kind: 'create' | 'join', selectedCode = roomCode) {
     if (session.status !== 'ready' || roomBusy) return;
     if (!savedNickname) {
@@ -102,9 +114,10 @@ export function LobbyPage() {
     }
     if (kind === 'create') {
       const error = roomTitleError(roomTitle);
-      if (error) { setRoomError(error); return; }
+      if (error) { showRoomError(error, kind); return; }
     }
     const code = selectedCode.trim().toUpperCase();
+    if (kind === 'join' && !code) { showRoomError('초대 코드를 입력해 주세요.', kind); return; }
     const key = kind === 'create' ? `create:${roomTitle.trim()}` : `join:${code}`;
     setRoomError('');
     setRoomBusy(true);
@@ -123,8 +136,7 @@ export function LobbyPage() {
       navigate(`/rooms/${access.roomId}`);
     } catch (error) {
       const message = roomErrorMessage(error);
-      setRoomError(message);
-      if (isRoomConnectionError(error)) window.alert(message);
+      showRoomError(message, kind);
     } finally {
       setRoomBusy(false);
       setActiveRoomKey('');
@@ -135,6 +147,7 @@ export function LobbyPage() {
   const entryLocked = !savedNickname || session.status !== 'ready';
 
   return <section className="lobby-page">
+    {roomError && <CenterNotice message={roomError} title={roomErrorField === 'room-title' ? '방 만들기 안내' : '방 참가 안내'} noticeId={roomNoticeId} onClose={closeRoomNotice} />}
     <div className="lobby-page__heading">
       <div><span className="eyebrow">ONLINE ARENA</span><h1>온라인 대전 로비</h1><p>새로운 방을 열거나, 기다리는 플레이어의 방에 참가하세요.</p></div>
       <Link className="lobby-page__local" to="/game/local">한 PC에서 플레이 <span aria-hidden="true">↗</span></Link>
@@ -171,7 +184,6 @@ export function LobbyPage() {
           <label htmlFor="room-code">8자리 초대 코드</label>
           <div className="lobby-panel__join"><input id="room-code" value={roomCode} onChange={event => { setRoomCode(event.target.value.toUpperCase()); setRoomError(''); }} maxLength={8} autoCapitalize="characters" autoComplete="off" placeholder="초대 코드" disabled={roomBusy} /><button type="button" className="lobby-button lobby-button--outline" onClick={() => void enterRoom('join')} disabled={!canEnter}>방 참가</button></div>
         </section>
-        {roomError && <p className="lobby-page__error" role="alert">{roomError}</p>}
       </div>
 
       <section className="lobby-panel lobby-panel--list" aria-live="polite">

@@ -10,6 +10,18 @@ export function captureRewardSource(element: HTMLElement | null): RewardSource |
     focusRect: element.querySelector<HTMLElement>('.noble-card__portrait')?.getBoundingClientRect() ?? null };
 }
 
+export function pulseBoardTarget(target: HTMLElement | null, signal: AbortSignal): void {
+  if (!target?.animate || signal.aborted || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return;
+  const animation = target.animate([
+    { transform: 'scale(1)', filter: 'brightness(1)' },
+    { transform: 'scale(1.35)', filter: 'brightness(1.6)', offset: .45 },
+    { transform: 'scale(1)', filter: 'brightness(1)' },
+  ], { duration: 340, easing: 'ease-out' });
+  const abort = () => animation.cancel();
+  signal.addEventListener('abort', abort, { once: true });
+  void animation.finished.catch(() => {}).finally(() => signal.removeEventListener('abort', abort));
+}
+
 async function playRewardAnimation(
   visual: HTMLElement, frames: Keyframe[], duration: number, signal: AbortSignal,
 ): Promise<void> {

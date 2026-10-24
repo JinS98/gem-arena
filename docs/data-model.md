@@ -1,5 +1,13 @@
 # 데이터 모델
 
+## 상대 예약 카드 공개 범위 (2026-10-24)
+
+서버 플레이어 상태의 `reservedCardIds`는 본인만 볼 수 있는 전체 예약 목록이고, `publicReservedCardIds`는 시장에서 앞면으로 예약한 카드 ID만 기록한다. 덱 예약의 ID는 이 공개 목록에 추가하지 않는다. 구매·기권 시 해당 예약 정보를 함께 제거한다.
+
+공개 뷰의 `players.{uid}.reservedCards`는 예약 순서대로 `{ cardId, level }`를 제공한다. 시장 예약은 `cardId`를 공개하고, 덱 예약은 `cardId: null`과 단계만 제공한다. 타인의 개인 문서를 읽지 않아도 상대 현황 버튼의 모달에서 앞면과 뒷면을 구분할 수 있다. 예전 서버 상태에 공개 여부 기록이 없으면 ID를 추정하지 않고 뒷면으로 표시한다. 기존 Security Rules의 공개 뷰 읽기·타인 개인 문서 접근 거부 정책은 유지한다.
+
+운영 반영에는 공유 엔진을 포함한 Functions와 웹 배포가 모두 필요하다. 엔진·Functions 빌드 후 Auth·Firestore·Functions 에뮬레이터를 실행하고 `node apps/web/scripts/verify-opponent-reservations.mjs`로 시장/덱 예약 공개 범위, 재시도 중복 방지, 타인 개인 문서 접근 차단과 구매 후 제거를 검증할 수 있다. 이 스크립트는 로컬 에뮬레이터만 사용한다.
+
 > **현재 방 모델:** `rooms/{roomCode}` 문서에 `roomCode`, `title`, `hostUid`, `status`, `capacity`, `playerOrder`, `players`, `createdAt`, `updatedAt`을 저장합니다. `players`는 UID를 키로 하는 맵이며 값은 `uid`, `nickname`, `ready`, `forfeited`, `joinedAt`입니다. 좌석 번호는 `playerOrder` 순서로 계산합니다. 22~25일차의 게임 상태 문서는 아래에 설명합니다.
 
 로비는 참가자 정보가 들어 있는 `rooms` 컬렉션을 직접 나열하지 않는다. `roomListingUpdated` Functions 트리거가 대기 중인 방을 `roomListings/{roomCode}`에 `title`, `hostNickname`, `playerCount`, `capacity`, `createdAt`과 코드만 복사한다. 로그인 사용자는 이 목록을 읽을 수 있지만 수정할 수 없다. 방이 시작되거나 종료되면 목록 문서를 지운다. 기존 방 문서에 제목이 없으면 목록에는 방장 닉네임을 사용한 기본 제목을 표시한다.

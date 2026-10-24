@@ -9,9 +9,11 @@ import type {
   PublicGameView, PublicPlayerView,
 } from '@gem-arena/engine';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { captureRewardSource, flyBoardReward, type RewardSource } from '../animations/boardReward';
+import { captureRewardSource, flyBoardReward, pulseBoardTarget, type RewardSource } from '../animations/boardReward';
 import { flyMarketDeal } from '../animations/marketDeal';
 import { DeckCard } from '../components/DeckCard';
+import { MultiplayerTurnNotice } from '../components/MultiplayerTurnNotice';
+import { OpponentReservedCardsModal } from '../components/OpponentReservedCardsModal';
 import { GemBank } from '../components/GemBank';
 import { GemIcon } from '../components/GemIcon';
 import { GameThemeProvider, normalizeGameTheme, themeGemNames, themeLabels, useGemNames } from '../components/GameTheme';
@@ -22,6 +24,7 @@ import { PlayerPanel } from '../components/PlayerPanel';
 import type { PlayerDisplay } from '../data/playerDisplay';
 import { submitGameAction, type SubmitGameActionRequest } from '../services/gameActions';
 import { useMultiplayerTurnCountdown } from '../hooks/useMultiplayerTurnCountdown';
+import { useOpponentBoardEffects } from '../hooks/useOpponentBoardEffects';
 import { getFirebase } from '../services/firebase';
 import { subscribeMyGameViews, type GameViewUpdate, type MyGameViews } from '../services/gameViews';
 import { ensureAnonymousSession } from '../services/playerIdentity';
@@ -258,6 +261,7 @@ export function MultiplayerGamePage() {
   const requestInFlight = useRef(false);
   const pendingRequest = useRef<SubmitGameActionRequest | null>(null);
   const [selection, setSelection] = useState<CardSelection | null>(null);
+  const [opponentReservations, setOpponentReservations] = useState<string | null>(null);
   const [marketRefill, setMarketRefill] = useState<MarketRefill | null>(null);
   const [gemMode, setGemMode] = useState<'different' | 'pair'>('different');
   const [handExpanded, setHandExpanded] = useState(() => {
@@ -317,6 +321,9 @@ export function MultiplayerGamePage() {
   const syncing = awaitingVersion !== null && (game?.version ?? -1) < awaitingVersion;
   const canAct = Boolean(myTurn && room?.status === 'playing' && !room.players[myUid]?.forfeited && update.status === 'ready' &&
     !update.fromCache && !busy && !syncing && !retryRequest && !countdown.isExpired);
+  const opponentEffects = useOpponentBoardEffects(roomId, myUid, game, update.status === 'ready' && !update.fromCache);
+  useEffect(() => { setOpponentReservations(null); }, [roomId]);
+  useEffect(() => { if (game?.phase === 'finished') setOpponentReservations(null); }, [game?.phase]);
 
   useEffect(() => {
     if (awaitingVersion !== null && game && game.version >= awaitingVersion && update.status === 'ready') {
@@ -372,13 +379,7 @@ export function MultiplayerGamePage() {
               const target = document.querySelector<HTMLElement>(`.multiplayer-actions .gem-bank [data-bank-color="${color}"] .gem-icon`);
               await flyBoardReward(source, target, 'gem', controller.signal);
               if (controller.signal.aborted) return;
-              if (target?.animate && !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-                target.animate([
-                  { transform: 'scale(1)', filter: 'brightness(1)' },
-                  { transform: 'scale(1.35)', filter: 'brightness(1.6)', offset: .45 },
-                  { transform: 'scale(1)', filter: 'brightness(1)' },
-                ], { duration: 340, easing: 'ease-out' });
-              }
+              pulseBoardTarget(target, controller.signal);
               setGemAnimation(current => current?.direction === 'outgoing' ? { ...current,
                 arrived: { ...current.arrived, [color]: current.arrived[color] + 1 } } : current);
             }));
@@ -573,6 +574,8 @@ export function MultiplayerGamePage() {
   });
 
   return <GameThemeProvider theme={theme}><div className={`multiplayer-page game-theme--${theme}`}>
+    <MultiplayerTurnNotice roomId={roomId} turnId={String(game.turnDeadlineAt ?? currentUid)} isMyTurn={myTurn}
+      ready={update.status === 'ready' && !update.fromCache && !countdown.isExpired && room.status === 'playing'} />
     <div className="multiplayer-page__heading">
       <div className="multiplayer-page__title"><span className="eyebrow">LIVE TABLE · {game.playerOrder.length} PLAYERS · {roomId} · {themeLabels[theme]}</span><h1>온라인 대전</h1></div>
       <div className="multiplayer-page__heading-side">
@@ -603,8 +606,13 @@ export function MultiplayerGamePage() {
           <div className="multiplayer-section-label"><span className="eyebrow">OPPONENTS</span><h2>상대 플레이어</h2></div>
           <div className="multiplayer-opponents__list">{opponents.map(uid => {
             const player = game.players[uid];
-            return player && <PlayerPanel key={uid} player={displayedPlayer(uid, player, room, myUid)}
-              isCurrent={uid === currentUid} forfeited={player.forfeited} gems={player.gems} showGemNames />;
+            return player && <div className="multiplayer-opponent" key={uid}><PlayerPanel player={displayedPlayer(uid, player, room, myUid)}
+              isCurrent={uid === currentUid} forfeited={player.forfeited} gems={player.gems} showGemNames
+              gemAnimation={opponentEffects.players[uid]?.gem} bonusAnimation={opponentEffects.players[uid]?.bonus}
+              scoreAnimation={opponentEffects.players[uid]?.score} />
+              <button type="button" className="multiplayer-opponent__reservations" aria-haspopup="dialog"
+                aria-label={`${room.players[uid]?.nickname ?? '상대'}의 예약 카드 ${player.reservedCount}장 보기`} onClick={() => setOpponentReservations(uid)}>
+                <span>예약 카드 보기</span><strong>{player.reservedCount} / 3 <span aria-hidden="true">↗</span></strong></button></div>;
           })}</div>
         </section>
       </div>
@@ -615,7 +623,7 @@ export function MultiplayerGamePage() {
             disabled={!canAct || game.phase !== 'playing' || game.deckCounts[level] === 0 || me.reservedCount >= 3}
             onReserve={() => void submit({ type: 'RESERVE_CARD', level })} /></div>
           <div className="market-row__cards">{game.market[level].map((id, slot) => {
-            const refill = marketRefill?.level === level && marketRefill.slot === slot ? marketRefill : null;
+            const refill = marketRefill?.level === level && marketRefill.slot === slot ? marketRefill : opponentEffects.refills[`${level}-${slot}`] ?? null;
             if (refill?.phase === 'empty') return <div className="market-card-empty market-card-empty--refilling" key={`${level}-${slot}`} role="status">새 카드 보충 중…</div>;
             const card = id ? getDevelopmentCard(id) : undefined;
             return card ? <MarketCard tactile purchasable={canPurchase(card)} key={`${level}-${slot}`} card={card} bonuses={myBonuses} className={refill?.phase === 'revealing' ? 'market-card--dealt' : ''} disabled={Boolean(refill)} onSelect={() => setSelection({ cardId: card.id, source: 'market' })} />
@@ -646,6 +654,9 @@ export function MultiplayerGamePage() {
         </section>
       </aside>
     </div>
+    {opponentReservations && game.players[opponentReservations] && <OpponentReservedCardsModal
+      playerName={room.players[opponentReservations]?.nickname ?? '상대'} player={game.players[opponentReservations]}
+      onClose={() => setOpponentReservations(null)} />}
     {selectedCard && selection && <MultiplayerCardDialog key={`${selection.source}-${selection.cardId}`}
       card={selectedCard} source={selection.source} player={me} bankGold={game.bank.gold}
       canAct={canAct && game.phase === 'playing'} busy={busy || syncing} error={actionError} onClose={() => setSelection(null)} onAction={submit} />}

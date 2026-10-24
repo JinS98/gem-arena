@@ -6,7 +6,7 @@ export type CardLevel = 1 | 2 | 3;
 export type GamePhase = 'waiting' | 'playing' | 'discarding' | 'choosingNoble' | 'finished';
 export interface DevelopmentCard { id:string; level:CardLevel; bonusColor:GemColor; points:number; cost:ColorCounts }
 export interface Noble { id:string; points:number; requirements:ColorCounts }
-export interface PlayerState { uid:string; seatIndex:number; gems:Inventory; purchasedCardIds:string[]; reservedCardIds:string[]; nobleIds:string[]; score:number; forfeited:boolean }
+export interface PlayerState { uid:string; seatIndex:number; gems:Inventory; purchasedCardIds:string[]; reservedCardIds:string[]; publicReservedCardIds?:string[]; nobleIds:string[]; score:number; forfeited:boolean }
 export interface ServerGameState { phase:GamePhase; version:number; firstPlayerIndex:number; turnIndex:number; turnNobleResolved:boolean; consecutivePasses:number; playerOrder:string[]; players:Record<string,PlayerState>; bank:Inventory; market:Record<CardLevel,(string|null)[]>; decks:Record<CardLevel,string[]>; availableNobleIds:string[]; finalRoundTriggeredBy:string|null; winnerIds:string[] }
 export type GameAction =
  | { type:'TAKE_GEMS'; colors:GemColor[] }

@@ -1,0 +1,37 @@
+.multiplayer-opponent { min-width: 0; }
+.multiplayer-opponent__reservations {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  width: 100%; min-height: 33px; padding: 6px 10px; margin-top: 5px;
+  border: 1px solid #bca36c55; border-radius: 6px; background: #17283d;
+  color: #e8d7b2; font-size: 11px; cursor: pointer;
+  transition: background .15s, border-color .15s;
+}
+.multiplayer-opponent__reservations strong { font-size: 10px; font-variant-numeric: tabular-nums; color: #c5b17e; }
+.multiplayer-opponent__reservations:hover { background: #2b3e52; border-color: #dcc087; }
+.multiplayer-opponent__reservations:focus-visible { outline: 3px solid #ffe6a2; outline-offset: 3px; }
+.opponent-reserved-modal { width: min(100%, 740px); }
+.opponent-reserved-cards { display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 18px; padding: 12px 3px; }
+.opponent-reserved-card { min-width: 0; margin: 0; }
+.opponent-reserved-card__face, .opponent-reserved-card__back {
+  position: relative; width: 100%; aspect-ratio: 2 / 3; overflow: hidden;
+  border: 1px solid #c8aa6e; border-radius: 7px;
+  box-shadow: 0 2px #e0d3b3, 0 4px #756144, 0 10px 20px #0006;
+}
+.opponent-reserved-card figcaption { margin-top: 11px; color: #cbb78b; font-size: 11px; text-align: center; }
+.opponent-reserved-card--level-1 { --deck-top: #218f67; --deck-bottom: #0b3e36; --deck-accent: #9af1bb; }
+.opponent-reserved-card--level-2 { --deck-top: #a78132; --deck-bottom: #554016; --deck-accent: #ffe1a0; }
+.opponent-reserved-card--level-3 { --deck-top: #277eae; --deck-bottom: #103e65; --deck-accent: #a9dfff; }
+.opponent-reserved-card__back .market-deck { filter: none; cursor: default; opacity: 1; }
+.opponent-reserved-card__back .market-deck__level { position: absolute; top: 14px; left: 0; right: 0; text-align: center; font-size: 10px; letter-spacing: .12em; }
+.opponent-reserved-card__back .market-deck__level strong { display: block; margin-top: 4px; font: italic 700 36px Georgia, serif; }
+.opponent-reserved-card__back .market-deck__count, .opponent-reserved-card__back .market-deck__action { display: none; }
+.opponent-reserved-card--unknown .market-deck__level { display: none; }
+.opponent-reserved-card--unknown { --deck-top: #3e526b; --deck-bottom: #17263b; --deck-accent: #c4d1e0; }
+.opponent-reserved-card__back > span { position: absolute; right: 0; bottom: 15px; left: 0; pointer-events: none; color: #e7d6ac; font-size: 13px; font-weight: 800; text-align: center; }
+@media (max-width: 600px) {
+  .multiplayer-opponents__list .multiplayer-opponent { flex: 0 0 230px; scroll-snap-align: start; }
+  .multiplayer-opponent__reservations { min-height: 40px; }
+  .opponent-reserved-cards { gap: 12px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .opponent-reserved-card .card-face__cost-chip { min-width: 27px; height: 23px; font-size: 13px; }
+}
+@media (prefers-reduced-motion: reduce) { .multiplayer-opponent__reservations { transition: none; } }
