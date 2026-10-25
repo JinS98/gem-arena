@@ -4,14 +4,16 @@ import { developmentCardArtwork } from './cardArtwork';
 import { GemIcon } from './GemIcon';
 import { useGameTheme, useGemNames } from './GameTheme';
 import './tactileCard.scss';
+import { usePreviewAppearance } from './PreviewAppearance';
 
 export function CardFace({ card, discountedCost, discountCount = 0 }: {
   card: DevelopmentCard; discountedCost?: ColorCounts; discountCount?: number;
 }) {
   const theme = useGameTheme();
+  const portrait = usePreviewAppearance()?.card(card);
   return (
     <div className={`card-face card-face--${card.bonusColor} card-face--level-${card.level}`}>
-      <img className="card-face__portrait" src={developmentCardArtwork(card, theme)} alt="" loading="lazy" />
+      <img className="card-face__portrait" src={portrait?.src ?? developmentCardArtwork(card, theme)} alt={portrait?.label ?? ''} loading="lazy" />
       <span className="card-face__points" aria-hidden="true">{card.points}</span>
       <span className={`card-face__bonus gem-box gem-box--${card.bonusColor}`} aria-hidden="true"><GemIcon color={card.bonusColor} /></span>
       <div className={`card-face__cost${discountedCost ? ' card-face__cost--printed' : ''}`} aria-hidden="true">

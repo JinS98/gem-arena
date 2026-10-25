@@ -19,7 +19,7 @@ export async function syncRoomListing(db: Firestore, roomCode: string): Promise<
       roomCode,
       title: typeof room.title === 'string' && room.title.trim()
         ? room.title : `${typeof hostNickname === 'string' ? hostNickname : '플레이어'}의 방`,
-      theme: ['default', 'lol', 'demon-slayer'].includes(room.theme) ? room.theme : 'default',
+      theme: ['default', 'lol', 'demon-slayer', 'hidden'].includes(room.theme) ? room.theme : 'default',
       hostNickname: typeof hostNickname === 'string' ? hostNickname : '플레이어',
       playerCount: playerOrder.length,
       capacity: room.capacity,

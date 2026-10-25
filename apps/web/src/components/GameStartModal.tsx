@@ -19,6 +19,7 @@ export function GameStartModal({ playerCount, firstPlayerName, theme, onPlayerCo
     document.body.style.overflow = 'hidden';
     dialogRef.current?.querySelector<HTMLButtonElement>('[aria-pressed="true"]')?.focus();
     const keepFocus = (event: KeyboardEvent) => {
+      if (document.querySelector('dialog[open]')) return;
       if (event.key === 'Escape') {
         event.preventDefault();
         onBack();
