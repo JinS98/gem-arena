@@ -16,7 +16,7 @@ function readSetting(name: string) {
 }
 
 /** A presentation-only surface. It observes confirmed engine states, never mutates them. */
-export function TabletopScene({ game, children, multiplayer = false }: { game: TabletopSnapshot; children: ReactNode; multiplayer?: boolean }) {
+export function TabletopScene({ game, children }: { game: TabletopSnapshot; children: ReactNode }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const previous = useRef<{ game: TabletopSnapshot; pieces: Map<string, CapturedPiece> } | null>(null);
   const animations = useRef(new Set<Animation>());
@@ -157,7 +157,7 @@ export function TabletopScene({ game, children, multiplayer = false }: { game: T
     element.style.removeProperty('--tilt-y');
     element.style.removeProperty('--shine-x');
   };
-  return <div className={`${multiplayer ? 'multiplayer-preview' : 'tabletop-example'}${reduced ? ' tabletop-example--still' : ''}`} ref={rootRef}
+  return <div className={`tabletop-example${reduced ? ' tabletop-example--still' : ''}`} ref={rootRef}
     onPointerDown={event => {
       if (!sound) return;
       audio.current.unlock();

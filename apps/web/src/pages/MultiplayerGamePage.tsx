@@ -1,4 +1,3 @@
-import { HiddenGameIntro } from '../components/HiddenThemeFlow';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
@@ -574,7 +573,7 @@ export function MultiplayerGamePage() {
     return noble && CARD_COLORS.every(color => bonuses[color] >= noble.requirements[color]);
   });
 
-  return <GameThemeProvider theme={theme}>{theme === 'hidden' && <HiddenGameIntro key={roomId} />}<div className={`multiplayer-page game-theme--${theme}`}>
+  return <GameThemeProvider theme={theme}><div className={`multiplayer-page game-theme--${theme}`}>
     <MultiplayerTurnNotice roomId={roomId} turnId={String(game.turnDeadlineAt ?? currentUid)} isMyTurn={myTurn}
       ready={update.status === 'ready' && !update.fromCache && !countdown.isExpired && room.status === 'playing'} />
     <div className="multiplayer-page__heading">

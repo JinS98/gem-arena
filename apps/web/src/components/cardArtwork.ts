@@ -45,7 +45,6 @@ const themedArtwork = import.meta.glob('../assets/cards/themes/*/*.{jpg,png}', {
 }) as Record<string, string>;
 
 export function themePreviewArtwork(theme: GameTheme): string {
-  if (theme === 'hidden') return `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#111725"/><text x="100" y="130" text-anchor="middle" fill="#ddc18a" font-size="100">✧</text></svg>')}`;
   if (theme === 'lol') return themedArtwork['../assets/cards/themes/lol/L3-BLUE-01.jpg']
     ?? themedArtwork['../assets/cards/themes/lol/L1-WHITE-05.jpg'] ?? whiteBase;
   if (theme === 'demon-slayer') return themedArtwork['../assets/cards/themes/demon-slayer/L3-RED-01.jpg']
@@ -53,13 +52,13 @@ export function themePreviewArtwork(theme: GameTheme): string {
   return blueNavigator;
 }
 
-const nobleThemeCardIds: Record<Exclude<GameTheme, 'default' | 'hidden'>, readonly string[]> = {
+const nobleThemeCardIds: Record<Exclude<GameTheme, 'default'>, readonly string[]> = {
   lol: ['L3-WHITE-04', 'L3-BLUE-04', 'L3-GREEN-04', 'L3-RED-04', 'L1-BLACK-01'],
   'demon-slayer': ['L1-WHITE-04', 'L1-BLUE-01', 'L1-GREEN-02', 'L1-RED-01', 'L3-GREEN-04'],
 };
 
 export function nobleThemeArtwork(theme: GameTheme, index: number, fallback: string): string {
-  if (theme === 'default' || theme === 'hidden') return fallback;
+  if (theme === 'default') return fallback;
   const id = nobleThemeCardIds[theme][index % nobleThemeCardIds[theme].length];
   const stem = `../assets/cards/themes/${theme}/${id}`;
   return themedArtwork[`${stem}.jpg`] ?? themedArtwork[`${stem}.png`] ?? fallback;

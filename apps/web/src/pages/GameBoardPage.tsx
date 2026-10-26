@@ -8,7 +8,6 @@ import { CardActionModal } from '../components/CardActionModal';
 import { GemBank } from '../components/GemBank';
 import { GemActionPanel } from '../components/GemActionPanel';
 import { GameResultModal } from '../components/GameResultModal';
-import { HiddenGameIntro } from '../components/HiddenThemeFlow';
 import { GameStartModal } from '../components/GameStartModal';
 import { GameThemeProvider, themeLabels } from '../components/GameTheme';
 import { MarketCard } from '../components/MarketCard';
@@ -30,7 +29,6 @@ export function GameBoardPage() {
   const navigate = useNavigate();
   const goBack = useCallback(() => navigate('/'), [navigate]);
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(() => useLocalGameStore.getState().players.length as 2 | 3 | 4);
-  const [introOpen, setIntroOpen] = useState(false);
   const [reservedOpen, setReservedOpen] = useState(false);
   const [bonusAnimation, setBonusAnimation] = useState<BonusAnimation | null>(null);
   const [gemAnimation, setGemAnimation] = useState<GemAnimation | null>(null);
@@ -259,12 +257,11 @@ export function GameBoardPage() {
         }} />}
       {phase === 'finished' && !bonusAnimation && !gemAnimation && !scoreAnimation && <GameResultModal game={game} players={players} onRestart={restart}
         restartLabel="같은 인원으로 새 게임" />}
-      {introOpen && <HiddenGameIntro onComplete={() => { setIntroOpen(false); beginGame(); }} />}
-      {phase === 'awaitingStart' && !introOpen && <GameStartModal playerCount={players.length as 2 | 3 | 4} theme={theme}
+      {phase === 'awaitingStart' && <GameStartModal playerCount={players.length as 2 | 3 | 4} theme={theme}
         firstPlayerName={currentPlayer?.name ?? '첫 번째 플레이어'}
         onPlayerCountChange={count => { setPlayerCount(count); startNewGame(count); }}
         onThemeChange={setTheme}
-        onBack={goBack} onStart={() => theme === 'hidden' ? setIntroOpen(true) : beginGame()} />}
+        onBack={goBack} onStart={beginGame} />}
     </div></GameThemeProvider>
   );
 }

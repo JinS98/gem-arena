@@ -1,5 +1,4 @@
 import type { Gem } from '@gem-arena/engine';
-import { usePreviewAppearance } from './PreviewAppearance';
 import { useGameTheme } from './GameTheme';
 
 const themedIcons = import.meta.glob('../assets/gems/themes/*.png', {
@@ -13,8 +12,7 @@ export const gemNames: Record<Gem, string> = {
 
 export function GemIcon({ color, small = false }: { color: Gem; small?: boolean }) {
   const theme = useGameTheme();
-  const preview = usePreviewAppearance();
-  const artwork = preview?.icons[color] ?? (theme === 'default' ? undefined : themedIcons[`../assets/gems/themes/${theme}-${color}.png`]);
+  const artwork = theme === 'default' ? undefined : themedIcons[`../assets/gems/themes/${theme}-${color}.png`];
   return <span className={`gem-icon gem-icon--${color} gem-icon--theme-${theme}${artwork ? ' gem-icon--illustrated' : ''}${small ? ' gem-icon--small' : ''}`}
     style={artwork ? { backgroundImage: `url(${artwork})` } : undefined} aria-hidden="true" />;
 }
