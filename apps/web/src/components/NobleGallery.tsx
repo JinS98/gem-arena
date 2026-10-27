@@ -16,8 +16,8 @@ export function NobleGallery({ nobles, eligibleIds = [], onChoose }: {
 }) {
   const theme = useGameTheme();
   const gemNames = useGemNames();
-  const nobleTitle = theme === 'lol' ? '전설적 동맹' : theme === 'demon-slayer' ? '특별 인연' : '방문 가능한 귀족';
-  const nobleShort = theme === 'lol' ? '동맹' : theme === 'demon-slayer' ? '인연' : '귀족';
+  const nobleTitle = '방문 가능한 귀족';
+  const nobleShort = '귀족';
   return (
     <section className="nobles-section" aria-labelledby="nobles-title">
       <div className="section-heading"><div><span className="eyebrow">NOBLES</span><h2 id="nobles-title">{nobleTitle}</h2></div><span className="section-heading__meta">{nobles.length}명 공개</span></div>

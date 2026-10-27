@@ -6,21 +6,14 @@ import { RoomPage } from './pages/RoomPage';
 import { RulesPage } from './pages/RulesPage';
 import { TabletopDemoPage } from './pages/TabletopDemoPage';
 import { themePreviewArtwork } from './components/cardArtwork';
-import { GAME_THEMES, themeLabels, type GameTheme } from './components/GameTheme';
-
-const homeThemeDescriptions: Record<GameTheme, string> = {
-  default: '보석 상인의 도시',
-  lol: '룬테라의 챔피언',
-  'demon-slayer': '귀살대와 호흡',
-};
 
 function Home() {
   return <section className="welcome-page">
     <div className="welcome-page__copy">
-      <span className="eyebrow">GEM ARENA · THREE WORLDS, ONE GAME</span>
+      <span className="eyebrow">GEM ARENA · THE ORIGINAL GEM GAME</span>
       <div className="welcome-page__rule" aria-hidden="true"><span>◆</span></div>
-      <h1>하나의 전략,<br /><em>세 가지 세계.</em></h1>
-      <p>보석 상인의 도시, 룬테라, 귀살대의 세계에서 카드를 모으고 자원을 활용해 승점을 쌓으세요. 테마를 골라도 게임의 규칙은 같습니다.</p>
+      <h1>보석을 모아,<br /><em>전략을 완성하세요.</em></h1>
+      <p>보석 상인의 도시에서 카드를 모으고 자원을 활용해 승점을 쌓으세요. 친구와 함께 한 판의 전략 대전을 즐길 수 있습니다.</p>
       <div className="welcome-page__actions">
         <Link className="primary-link" to="/lobby">온라인 대전 입장 <span aria-hidden="true">↗</span></Link>
         <Link className="welcome-page__secondary" to="/game/local">한 PC 대전 <span aria-hidden="true">→</span></Link>
@@ -28,19 +21,18 @@ function Home() {
       <div className="welcome-page__details">
         <span><strong>02–04</strong> 플레이어</span>
         <span><strong>03:00</strong> 온라인 턴 제한</span>
-        <span><strong>03</strong> 선택 가능한 테마</span>
       </div>
     </div>
     <div className="welcome-showcase" aria-label="게임 테마 미리보기">
-      <div className="welcome-showcase__heading"><span>CHOOSE YOUR WORLD</span><span>같은 규칙, 새로운 분위기</span></div>
-      <div className="welcome-showcase__cards">
-        {GAME_THEMES.map((option, index) => <div className={'welcome-showcase__card welcome-showcase__card--' + option} key={option}>
-          <img src={themePreviewArtwork(option)} alt="" />
-          <span className="welcome-showcase__card-index">0{index + 1}</span>
-          <div className="welcome-showcase__card-copy"><small>{homeThemeDescriptions[option]}</small><strong>{themeLabels[option]}</strong></div>
-        </div>)}
+      <div className="welcome-showcase__heading"><span>THE GEM ARENA</span><span>보석 상인의 도시</span></div>
+      <div className="welcome-showcase__cards welcome-showcase__cards--single">
+        <div className="welcome-showcase__card welcome-showcase__card--default">
+          <img src={themePreviewArtwork('default')} alt="" />
+          <span className="welcome-showcase__card-index">01</span>
+          <div className="welcome-showcase__card-copy"><small>보석 상인의 도시</small><strong>기본 테마</strong></div>
+        </div>
       </div>
-      <div className="welcome-showcase__footer"><span>테마는 게임 시작 전에 선택할 수 있습니다.</span><span>추가 테마는 비공식 팬 테마입니다.</span></div>
+      <div className="welcome-showcase__footer"><span>2~4명이 함께 플레이할 수 있습니다.</span></div>
     </div>
   </section>;
 }

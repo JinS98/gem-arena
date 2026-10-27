@@ -1,13 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { ThemePicker } from './ThemePicker';
-import type { GameTheme } from './GameTheme';
 
-export function GameStartModal({ playerCount, firstPlayerName, theme, onPlayerCountChange, onThemeChange, onBack, onStart }: {
+export function GameStartModal({ playerCount, firstPlayerName, onPlayerCountChange, onBack, onStart }: {
   playerCount: 2 | 3 | 4;
   firstPlayerName: string;
-  theme: GameTheme;
   onPlayerCountChange: (count: 2 | 3 | 4) => void;
-  onThemeChange: (theme: GameTheme) => void;
   onBack: () => void;
   onStart: () => void;
 }) {
@@ -51,7 +47,7 @@ export function GameStartModal({ playerCount, firstPlayerName, theme, onPlayerCo
         <span className="eyebrow">LOCAL MATCH · {playerCount} PLAYERS</span>
         <div className="game-start-modal__emblem" aria-hidden="true"><span>✦</span></div>
         <h2 id="game-start-title">한 PC 대전</h2>
-        <p id="game-start-description">함께 플레이할 인원과 테마를 고르세요.<br />게임 시작을 누르면 {firstPlayerName}의 3분이 시작됩니다.</p>
+        <p id="game-start-description">함께 플레이할 인원을 고르세요.<br />게임 시작을 누르면 {firstPlayerName}의 3분이 시작됩니다.</p>
         <fieldset className="game-start-modal__players">
           <legend>플레이 인원</legend>
           <div className="game-start-modal__player-options">
@@ -60,7 +56,6 @@ export function GameStartModal({ playerCount, firstPlayerName, theme, onPlayerCo
               onClick={() => { if (count !== playerCount) onPlayerCountChange(count); }}>{count}명</button>)}
           </div>
         </fieldset>
-        <ThemePicker theme={theme} onChange={onThemeChange} />
         <div className="game-start-modal__detail"><span>첫 번째 차례</span><strong>{firstPlayerName}</strong><span>턴 제한</span><strong>03:00</strong></div>
         <div className="game-start-modal__actions">
           <button type="button" onClick={onBack}>뒤로가기</button>

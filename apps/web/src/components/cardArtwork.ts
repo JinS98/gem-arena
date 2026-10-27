@@ -39,38 +39,16 @@ const artwork: Record<GemColor, readonly string[]> = {
   black: [blackBase, blackNightBroker, blackAlchemist, blackMineOverseer, blackEngraver, blackTreasurer],
 };
 
-// The card ID remains the lookup key; theme artwork only changes the displayed image.
-const themedArtwork = import.meta.glob('../assets/cards/themes/*/*.{jpg,png}', {
-  eager: true, query: '?url', import: 'default',
-}) as Record<string, string>;
-
-export function themePreviewArtwork(theme: GameTheme): string {
-  if (theme === 'lol') return themedArtwork['../assets/cards/themes/lol/L3-BLUE-01.jpg']
-    ?? themedArtwork['../assets/cards/themes/lol/L1-WHITE-05.jpg'] ?? whiteBase;
-  if (theme === 'demon-slayer') return themedArtwork['../assets/cards/themes/demon-slayer/L3-RED-01.jpg']
-    ?? themedArtwork['../assets/cards/themes/demon-slayer/L1-WHITE-01.png'] ?? redBase;
+export function themePreviewArtwork(_theme: GameTheme): string {
   return blueNavigator;
 }
 
-const nobleThemeCardIds: Record<Exclude<GameTheme, 'default'>, readonly string[]> = {
-  lol: ['L3-WHITE-04', 'L3-BLUE-04', 'L3-GREEN-04', 'L3-RED-04', 'L1-BLACK-01'],
-  'demon-slayer': ['L1-WHITE-04', 'L1-BLUE-01', 'L1-GREEN-02', 'L1-RED-01', 'L3-GREEN-04'],
-};
-
-export function nobleThemeArtwork(theme: GameTheme, index: number, fallback: string): string {
-  if (theme === 'default') return fallback;
-  const id = nobleThemeCardIds[theme][index % nobleThemeCardIds[theme].length];
-  const stem = `../assets/cards/themes/${theme}/${id}`;
-  return themedArtwork[`${stem}.jpg`] ?? themedArtwork[`${stem}.png`] ?? fallback;
+export function nobleThemeArtwork(_theme: GameTheme, _index: number, fallback: string): string {
+  return fallback;
 }
 
-export function developmentCardArtwork(card: DevelopmentCard, theme: GameTheme = 'default'): string {
+export function developmentCardArtwork(card: DevelopmentCard, _theme: GameTheme = 'default'): string {
   const images = artwork[card.bonusColor];
   const patternIndex = Number(card.id.slice(-2)) - 1;
-  if (theme !== 'default') {
-    const stem = `../assets/cards/themes/${theme}/${card.id}`;
-    return themedArtwork[`${stem}.jpg`] ?? themedArtwork[`${stem}.png`]
-      ?? images[(patternIndex + card.level - 1) % images.length];
-  }
   return images[(patternIndex + card.level - 1) % images.length];
 }

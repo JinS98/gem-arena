@@ -212,16 +212,6 @@ export async function setReady(roomCode: string, ready: boolean): Promise<void> 
   );
 }
 
-export async function setRoomTheme(roomCode: string, theme: GameTheme): Promise<void> {
-  if (!GAME_THEMES.includes(theme)) throw new RoomActionError('INVALID_THEME');
-  const uid = (await ensureAnonymousSession()).uid;
-  const room = await currentRoom(roomCode, uid);
-  if (room.status !== 'waiting') throw new RoomActionError('ROOM_NOT_WAITING');
-  if (room.hostUid !== uid) throw new RoomActionError('NOT_HOST');
-  if ((room.theme ?? 'default') === theme) return;
-  await updateDoc(roomReference(roomCode), 'theme', theme, 'updatedAt', serverTimestamp());
-}
-
 export async function startGame(roomCode: string): Promise<void> {
   const uid = (await ensureAnonymousSession()).uid;
   const room = await currentRoom(roomCode, uid);

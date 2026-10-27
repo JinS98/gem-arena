@@ -6,7 +6,7 @@ import type { GameAction, Gem, GemColor, Inventory, ServerGameState } from '@gem
 import { createTabletopDemo, DEMO_ME, demoOpponentAction, demoPayment, demoPlayers, demoScenarios, emptyDemoGems, type DemoScenario } from '../data/tabletopDemo';
 import { TabletopScene } from '../components/TabletopScene';
 import { TabletopCardDialog, TabletopDialog } from '../components/TabletopDialog';
-import { GameThemeProvider, type GameTheme } from '../components/GameTheme';
+import { GameThemeProvider } from '../components/GameTheme';
 import { MarketCard } from '../components/MarketCard';
 import { DeckCard } from '../components/DeckCard';
 import { GemBank } from '../components/GemBank';
@@ -23,7 +23,7 @@ export function TabletopDemoPage() {
   gameRef.current = game;
   const [scenario, setScenario] = useState<DemoScenario>('explore');
   const [generation, setGeneration] = useState(0);
-  const [theme, setTheme] = useState<GameTheme>('default');
+  const theme = 'default';
   const [mode, setMode] = useState<'different' | 'pair'>('different');
   const [selected, setSelected] = useState<GemColor[]>([]);
   const [returned, setReturned] = useState<Inventory>(emptyDemoGems);
@@ -106,7 +106,7 @@ export function TabletopDemoPage() {
       <div className="tabletop-demo-heading__badge"><span aria-hidden="true">◇</span><div><strong>3D 예시</strong><small>연결 없이 혼자 체험하는 멀티 보드</small></div></div></header>
     <section className="tabletop-demo-controls" aria-label="시연 장면 선택"><div className="tabletop-demo-controls__scenes"><span>체험 장면</span>{Object.entries(demoScenarios).map(([id, item]) =>
       <button type="button" key={id} aria-pressed={scenario === id} onClick={() => reset(id as DemoScenario)}>{item.label}</button>)}</div>
-      <div className="tabletop-demo-controls__options"><label>테마 <select value={theme} onChange={event => setTheme(event.target.value as GameTheme)}><option value="default">보석 상인</option><option value="lol">리그 오브 레전드</option><option value="demon-slayer">귀멸의 칼날</option></select></label><button type="button" onClick={() => reset()}>장면 초기화 ↺</button></div></section>
+      <div className="tabletop-demo-controls__options"><button type="button" onClick={() => reset()}>장면 초기화 ↺</button></div></section>
     <p className="tabletop-demo-hint">{demoScenarios[scenario].hint}</p>
     <div className={`multiplayer-page tabletop-game game-theme--${theme}`} data-game-version={game.version} data-game-phase={game.phase}>
       <div className="multiplayer-page__heading"><div className="multiplayer-page__title"><span className="eyebrow">GEM ARENA · 4 PLAYER TABLE</span><h2>보석 상인의 테이블 <span>시연</span></h2></div>

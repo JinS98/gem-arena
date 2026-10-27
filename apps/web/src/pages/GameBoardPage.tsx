@@ -35,7 +35,7 @@ export function GameBoardPage() {
   const [scoreAnimation, setScoreAnimation] = useState<ScoreAnimation | null>(null);
   const rewardController = useRef(new AbortController());
   const pendingNobleReward = useRef<PendingNobleReward | null>(null);
-  const { bank, mode, phase, theme, setTheme, selectedColors, selectColor, market, decks,
+  const { bank, mode, phase, theme, selectedColors, selectColor, market, decks,
     reservedCardIds, game, players, currentPlayerId, chooseNoble,
     reserveDeckCard, startNewGame, beginGame, restart, advanceTurn } = useLocalGameStore();
   const { selectedCard, selectCard, closeCard } = useGameUIStore();
@@ -257,10 +257,9 @@ export function GameBoardPage() {
         }} />}
       {phase === 'finished' && !bonusAnimation && !gemAnimation && !scoreAnimation && <GameResultModal game={game} players={players} onRestart={restart}
         restartLabel="같은 인원으로 새 게임" />}
-      {phase === 'awaitingStart' && <GameStartModal playerCount={players.length as 2 | 3 | 4} theme={theme}
+      {phase === 'awaitingStart' && <GameStartModal playerCount={players.length as 2 | 3 | 4}
         firstPlayerName={currentPlayer?.name ?? '첫 번째 플레이어'}
         onPlayerCountChange={count => { setPlayerCount(count); startNewGame(count); }}
-        onThemeChange={setTheme}
         onBack={goBack} onStart={beginGame} />}
     </div></GameThemeProvider>
   );

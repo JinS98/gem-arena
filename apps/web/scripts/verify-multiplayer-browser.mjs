@@ -143,8 +143,6 @@ async function submit(token, roomCode, state, action) {
 
 async function completeInBrowsers(playerCount, browser, contexts, pages) {
   const started = performance.now();
-  const selectedTheme = process.env.GEM_ARENA_TEST_THEME ?? 'default';
-  if (!['default', 'lol', 'demon-slayer'].includes(selectedTheme)) throw new Error('지원하지 않는 검증 테마입니다');
   const tabs = [];
   for (let index = 0; index < playerCount; index++) {
     tabs.push(await openPage(browser, contexts, pages, index));
@@ -159,11 +157,6 @@ async function completeInBrowsers(playerCount, browser, contexts, pages) {
   await waitFor(() => tabs[0].evaluate("location.pathname.startsWith('/rooms/')"), '방 생성');
   const roomCode = (await tabs[0].evaluate('location.pathname')).split('/').at(-1);
   const room = admin.doc(`rooms/${roomCode}`);
-  if (selectedTheme !== 'default') {
-    await waitFor(() => tabs[0].evaluate(`Boolean(document.querySelector('.theme-picker__option--${selectedTheme}:not(:disabled)'))`), '테마 선택 버튼');
-    await tabs[0].evaluate(`document.querySelector('.theme-picker__option--${selectedTheme}').click()`);
-    await waitFor(async () => (await room.get()).get('theme') === selectedTheme, '방 테마 저장');
-  }
   for (const tab of tabs.slice(1)) {
     await tab.evaluate(`(() => {
       const input = document.querySelector('#room-code');
@@ -187,18 +180,6 @@ async function completeInBrowsers(playerCount, browser, contexts, pages) {
   for (const [index, tab] of tabs.entries()) {
     await waitFor(() => tab.evaluate(`location.pathname === '/game/${roomCode}'`), `참가자 ${index + 1} 게임판 자동 이동`);
     await waitFor(() => tab.evaluate("document.querySelector('.multiplayer-table') !== null"), `참가자 ${index + 1} 게임판 표시`);
-    if (selectedTheme !== 'default') {
-      const whiteName = selectedTheme === 'lol' ? '천상의 파편' : '안개';
-      const greenName = selectedTheme === 'lol' ? '자연의 정수' : '바람';
-      await waitFor(() => tab.evaluate(`(() => {
-        const white = document.querySelector('[data-bank-color="white"]');
-        const green = document.querySelector('[data-bank-color="green"]');
-        const portrait = document.querySelector('.market-card .card-face__portrait');
-        return white?.textContent?.includes('${whiteName}') && green?.textContent?.includes('${greenName}') &&
-          getComputedStyle(white.querySelector('.gem-icon')).backgroundImage.includes('${selectedTheme}-white') &&
-          portrait?.src.includes('/themes/${selectedTheme}/') && portrait.complete && portrait.naturalWidth === 600;
-      })()`), `참가자 ${index + 1} 테마 자원과 카드 이미지`);
-    }
   }
   const tokens = await Promise.all(tabs.map(authToken));
   assert.ok(tokens.every(Boolean));

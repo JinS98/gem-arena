@@ -3,9 +3,7 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { getFirebase } from '../services/firebase';
 import { ensureAnonymousSession } from '../services/playerIdentity';
-import { leaveRoom, roomErrorMessage, setReady, setRoomTheme, startGame, type WaitingRoom } from '../services/rooms';
-import { normalizeGameTheme, themeLabels, type GameTheme } from '../components/GameTheme';
-import { ThemePicker } from '../components/ThemePicker';
+import { leaveRoom, roomErrorMessage, setReady, startGame, type WaitingRoom } from '../services/rooms';
 
 export function RoomPage() {
   const { roomId } = useParams();
@@ -92,21 +90,6 @@ export function RoomPage() {
     }
   }
 
-  async function changeTheme(theme: GameTheme) {
-    if (!room || actionInFlight.current) return;
-    actionInFlight.current = true;
-    setActionBusy(true);
-    setActionError('');
-    try {
-      await setRoomTheme(room.roomCode, theme);
-    } catch (error) {
-      setActionError(roomErrorMessage(error));
-    } finally {
-      actionInFlight.current = false;
-      setActionBusy(false);
-    }
-  }
-
   async function depart() {
     if (!room || actionInFlight.current || room.status !== 'waiting') return;
     actionInFlight.current = true;
@@ -136,7 +119,6 @@ export function RoomPage() {
       <div className="waiting-room__panel">
         <span className="eyebrow">INVITATION CODE</span>
         <div className="waiting-room__code"><strong>{room.roomCode}</strong><button type="button" onClick={copyCode}>{copied ? '복사 완료' : '코드 복사'}</button></div>
-        <div className="waiting-room__theme"><p>선택한 테마: <strong>{themeLabels[normalizeGameTheme(room.theme)]}</strong></p><ThemePicker theme={normalizeGameTheme(room.theme)} onChange={changeTheme} disabled={!isHost || actionBusy} /><small>{isHost ? '게임 시작 전까지 방장이 변경할 수 있습니다.' : '방장이 테마를 선택합니다.'}</small></div>
         <p>상태: {room.status === 'waiting' ? '참가자 대기 중' : room.status === 'playing' ? '게임 진행 중' : '게임 종료'}</p>
         <Link className="text-link" to="/lobby">다른 방으로 이동</Link>
       </div>

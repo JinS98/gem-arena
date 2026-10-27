@@ -145,6 +145,7 @@ export function LobbyPage() {
 
   const canEnter = session.status === 'ready' && Boolean(savedNickname) && !roomBusy;
   const entryLocked = !savedNickname || session.status !== 'ready';
+  const publicListings = listings.filter(listing => !listing.theme || listing.theme === 'default');
 
   return <section className="lobby-page">
     {roomError && <CenterNotice message={roomError} title={roomErrorField === 'room-title' ? '방 만들기 안내' : '방 참가 안내'} noticeId={roomNoticeId} onClose={closeRoomNotice} />}
@@ -187,11 +188,11 @@ export function LobbyPage() {
       </div>
 
       <section className="lobby-panel lobby-panel--list" aria-live="polite">
-        <div className="lobby-panel__list-heading"><div><span className="eyebrow">OPEN ROOMS</span><h2>참가할 방</h2></div><span className="lobby-panel__count">{listStatus === 'ready' ? `${listings.length}개` : '—'}</span></div>
+        <div className="lobby-panel__list-heading"><div><span className="eyebrow">OPEN ROOMS</span><h2>참가할 방</h2></div><span className="lobby-panel__count">{listStatus === 'ready' ? `${publicListings.length}개` : '—'}</span></div>
         {listStatus === 'loading' && <p className="lobby-panel__state" role="status">대기 중인 방을 불러오고 있습니다…</p>}
         {listStatus === 'error' && <p className="lobby-panel__state" role="alert">방 목록을 불러오지 못했습니다. 잠시 후 다시 접속해 주세요.</p>}
-        {listStatus === 'ready' && listings.length === 0 && <div className="lobby-panel__empty"><span aria-hidden="true">◇</span><strong>아직 기다리는 방이 없어요</strong><p>첫 번째 방을 열고 친구를 초대해 보세요.</p></div>}
-        {listStatus === 'ready' && listings.length > 0 && <ul className="lobby-room-list">{listings.map(listing => {
+        {listStatus === 'ready' && publicListings.length === 0 && <div className="lobby-panel__empty"><span aria-hidden="true">◇</span><strong>아직 기다리는 방이 없어요</strong><p>첫 번째 방을 열고 친구를 초대해 보세요.</p></div>}
+        {listStatus === 'ready' && publicListings.length > 0 && <ul className="lobby-room-list">{publicListings.map(listing => {
           const full = listing.playerCount >= listing.capacity;
           const rowKey = `join:${listing.roomCode}`;
           const theme = normalizeGameTheme(listing.theme);

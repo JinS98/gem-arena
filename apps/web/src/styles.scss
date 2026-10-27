@@ -461,8 +461,7 @@ button{cursor:pointer}
 .welcome-showcase__heading span:last-child{color:#cad5df;font-size:12px;letter-spacing:-.02em}
 .welcome-showcase__cards{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.2vw,18px);padding:38px 0 29px}
 .welcome-showcase__card{position:relative;width:min(30%,205px);aspect-ratio:2/3;overflow:hidden;border:3px solid #c6ae79;border-radius:10px;background:#1b2840;box-shadow:0 12px 25px #0008,inset 0 0 0 2px #fff6;transform:rotate(-5deg) translateY(13px);transition:transform .3s,box-shadow .3s}
-.welcome-showcase__card--lol{z-index:2;transform:translateY(-9px);border-color:#81c9ed;box-shadow:0 20px 35px #0009}
-.welcome-showcase__card--demon-slayer{transform:rotate(5deg) translateY(13px);border-color:#d99486}
+.welcome-showcase__cards--single .welcome-showcase__card{width:min(64%,280px);transform:none}
 .welcome-showcase__card:hover{z-index:3;transform:translateY(-16px) rotate(0);box-shadow:0 25px 45px #000b}
 .welcome-showcase__card img{width:100%;height:100%;object-fit:cover;display:block}
 .welcome-showcase__card::after{content:'';position:absolute;inset:36% 0 0;background:linear-gradient(transparent,#07111be8);pointer-events:none}
@@ -470,8 +469,6 @@ button{cursor:pointer}
 .welcome-showcase__card-copy{position:absolute;z-index:1;right:10px;bottom:14px;left:10px;display:grid;gap:3px;text-shadow:0 2px 7px #000}
 .welcome-showcase__card-copy small{color:#d4deeb;font-size:10px;font-weight:700}
 .welcome-showcase__card-copy strong{color:#fff4dc;font-size:clamp(12px,1.3vw,18px);line-height:1.25;word-break:keep-all}
-.welcome-showcase__card--lol .welcome-showcase__card-copy strong{color:#c8edff}
-.welcome-showcase__card--demon-slayer .welcome-showcase__card-copy strong{color:#ffddd5}
 .welcome-showcase__footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px 14px;border-top:1px solid #e0c28a31;padding-top:18px;color:#d4c4a1;font-size:10px;font-weight:700;line-height:1.5}
 .welcome-showcase__footer span:last-child{color:#aab9ca}
 
@@ -567,8 +564,6 @@ button{cursor:pointer}
 .theme-picker__option{position:relative;isolation:isolate;display:flex;align-items:center;gap:12px;width:100%;min-height:65px;overflow:hidden;padding:8px 12px 8px 82px;border:1px solid #8493ab80;border-radius:9px;background:#101d33;color:#f5ecdb;text-align:left;cursor:pointer}
 .theme-picker__option::before{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,transparent 0 35px,#15243ad9 82px,#14223b 100%)}
 .theme-picker__option img{position:absolute;z-index:-2;inset:0 auto 0 0;width:104px;height:100%;object-fit:cover;object-position:50% 30%}
-.theme-picker__option--lol{background:#122b40}
-.theme-picker__option--demon-slayer{background:#33202b}
 .theme-picker__option.is-selected{border-color:#f1d399;box-shadow:inset 0 0 0 1px #f1d399,0 0 0 2px #d9b77725}
 .theme-picker__option:focus-visible{outline:3px solid #fff4c8;outline-offset:2px}
 .theme-picker__copy{display:grid;gap:3px;min-width:0}
@@ -585,16 +580,8 @@ button{cursor:pointer}
 .lobby-room-list__item{position:relative;isolation:isolate;overflow:hidden}
 .lobby-room-list__art{position:absolute;z-index:-1;top:0;right:0;width:40%;height:100%;object-fit:cover;object-position:center 35%;opacity:.48;mask-image:linear-gradient(90deg,transparent,#000 45%)}
 .lobby-room-list__item::before{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#1b2a3f 0 62%,#1b2a3f85)}
-.lobby-room-list__item--lol{border-color:#6ab7dd80}
-.lobby-room-list__item--demon-slayer{border-color:#d0777d80}
 .lobby-room-list__details .lobby-room-list__theme{width:max-content;max-width:100%;padding:2px 7px;border:1px solid #e2bd825c;border-radius:999px;background:#101b2cca;color:#f1d6a5;font-size:10px;font-weight:800}
-.lobby-room-list__item--lol .lobby-room-list__theme{border-color:#80ccf480;color:#b7e5fb}
-.lobby-room-list__item--demon-slayer .lobby-room-list__theme{border-color:#e6989c80;color:#ffd2cd}
 .lobby-room-list__crest,.lobby-room-list__details,.lobby-room-list__item button{position:relative;z-index:1}
-.game-theme--lol{--theme-accent:#81c9ed}
-.game-theme--demon-slayer{--theme-accent:#e59a89}
-.game-theme--lol .eyebrow,.game-theme--demon-slayer .eyebrow{color:var(--theme-accent)}
-.game-theme--lol .game-layout,.game-theme--demon-slayer .game-layout,.game-theme--lol .multiplayer-table,.game-theme--demon-slayer .multiplayer-table{border-color:var(--theme-accent)}
 .gem-icon--illustrated{border:0;border-radius:0;background-color:transparent;background-position:center;background-size:contain;background-repeat:no-repeat;box-shadow:0 1px 3px #0008,0 0 7px var(--gem-glow,#ffffff66)}
 .gem-icon--illustrated::after{display:none}
 
