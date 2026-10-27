@@ -112,6 +112,8 @@ try {
     'playerOrder', arrayUnion(guest.user.uid), 'updatedAt', serverTimestamp()));
   await allowed('방장 테마 변경', () => updateDoc(hostRoom,
     'theme', 'lol', 'updatedAt', serverTimestamp()));
+  await allowed('방장 히든 테마 변경', () => updateDoc(hostRoom,
+    'theme', 'hidden', 'updatedAt', serverTimestamp()));
   await denied('알 수 없는 테마 변경', () => updateDoc(hostRoom,
     'theme', 'unknown', 'updatedAt', serverTimestamp()));
   await denied('테마 변경에 방 제목 변경 섞기', () => updateDoc(hostRoom,

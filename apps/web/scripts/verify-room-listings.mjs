@@ -62,6 +62,8 @@ try {
 
   await updateDoc(roomRef, 'theme', 'demon-slayer', 'updatedAt', serverTimestamp());
   await waitFor(() => listingRef.get(), snapshot => snapshot.get('theme') === 'demon-slayer', '테마 반영');
+  await updateDoc(roomRef, 'theme', 'hidden', 'updatedAt', serverTimestamp());
+  await waitFor(() => listingRef.get(), snapshot => snapshot.get('theme') === 'hidden', '히든 테마 반영');
 
   const guestUid = guest.user.uid;
   await updateDoc(doc(guest.db, 'rooms', roomCode), 'playerOrder', arrayUnion(guestUid),
