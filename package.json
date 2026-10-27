@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev",
     "build": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web build && corepack pnpm --filter @gem-arena/functions build",
+    "build:theme": "node scripts/check-theme-env.mjs && corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web build --mode theme && corepack pnpm --filter @gem-arena/functions build",
     "deploy:prod": "npm run build && corepack pnpm exec firebase deploy --only functions,firestore:rules,hosting --project gem-arena",
+    "deploy:theme": "npm run build:theme && corepack pnpm exec firebase deploy --only functions,firestore:rules,hosting --project gem-arena-theme",
     "test": "corepack pnpm --filter @gem-arena/engine test && corepack pnpm --filter @gem-arena/web test",
     "typecheck": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm -r typecheck",
     "dev:emulators": "corepack pnpm --filter @gem-arena/engine build && corepack pnpm --filter @gem-arena/web dev --mode emulator",
