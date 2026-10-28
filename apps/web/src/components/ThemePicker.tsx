@@ -8,6 +8,7 @@ const descriptions: Record<GameTheme, string> = {
   default: '보석 상인의 도시',
   lol: '룬테라의 챔피언과 마법',
   'demon-slayer': '귀살대와 호흡의 전투',
+  naruto: '다양한 닌자와 색깔 차크라',
 };
 
 export function ThemePicker({ theme, onChange, disabled = false }: {

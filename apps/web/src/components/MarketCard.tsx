@@ -5,6 +5,7 @@ import { GemIcon } from './GemIcon';
 import { useGameTheme, useGemNames } from './GameTheme';
 import './tactileCard.scss';
 import { usePreviewAppearance } from './PreviewAppearance';
+import { narutoCardNames } from '../data/narutoCards';
 
 export function CardFace({ card, discountedCost, discountCount = 0 }: {
   card: DevelopmentCard; discountedCost?: ColorCounts; discountCount?: number;
@@ -12,8 +13,9 @@ export function CardFace({ card, discountedCost, discountCount = 0 }: {
   const theme = useGameTheme();
   const portrait = usePreviewAppearance()?.card(card);
   return (
-    <div className={`card-face card-face--${card.bonusColor} card-face--level-${card.level}`}>
-      <img className="card-face__portrait" src={portrait?.src ?? developmentCardArtwork(card, theme)} alt={portrait?.label ?? ''} loading="lazy" />
+    <div className={`card-face card-face--${card.bonusColor} card-face--level-${card.level}${theme === 'naruto' ? ' card-face--theme-naruto' : ''}`}>
+      <img className="card-face__portrait" src={portrait?.src ?? developmentCardArtwork(card, theme)} alt={portrait?.label ?? (theme === 'naruto' ? narutoCardNames[card.id] : '')} loading="lazy" />
+      {theme === 'naruto' && <span className="card-face__name">{narutoCardNames[card.id]}</span>}
       <span className="card-face__points" aria-hidden="true">{card.points}</span>
       <span className={`card-face__bonus gem-box gem-box--${card.bonusColor}`} aria-hidden="true"><GemIcon color={card.bonusColor} /></span>
       <div className={`card-face__cost${discountedCost ? ' card-face__cost--printed' : ''}`} aria-hidden="true">
@@ -43,6 +45,7 @@ export function MarketCard({ card, onSelect, disabled = false, className = '', b
   card: DevelopmentCard; onSelect: () => void; disabled?: boolean; className?: string; bonuses?: ColorCounts; tactile?: boolean; purchasable?: boolean;
 }) {
   const gemNames = useGemNames();
+  const theme = useGameTheme();
   const remaining = bonuses ? remainingCardCost(card.cost, bonuses) : null;
   const discountCount = remaining ? CARD_COLORS.reduce((sum, color) => sum + card.cost[color] - remaining[color], 0) : 0;
   const discountedCost = discountCount > 0 ? remaining ?? undefined : undefined;
@@ -64,7 +67,7 @@ export function MarketCard({ card, onSelect, disabled = false, className = '', b
       onPointerLeave={tactile ? event => {
         for (const name of ['--tilt-x', '--tilt-y', '--shine-x']) event.currentTarget.style.removeProperty(name);
       } : undefined}
-      aria-label={`${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 인쇄 비용 ${costDescription}${discountedCost ? `, 내 할인 적용 비용 ${remainingDescription}` : ''}${purchasable && !disabled ? ', 구매 가능' : ''}, 구매 또는 예약 보기`}>
+      aria-label={`${theme === 'naruto' ? `${narutoCardNames[card.id]}, ` : ''}${card.level}단계 ${gemNames[card.bonusColor]} 카드, ${card.points}점, 인쇄 비용 ${costDescription}${discountedCost ? `, 내 할인 적용 비용 ${remainingDescription}` : ''}${purchasable && !disabled ? ', 구매 가능' : ''}, 구매 또는 예약 보기`}>
       <CardFace card={card} discountedCost={discountedCost} discountCount={discountCount} />
       {purchasable && !disabled && <span className="market-card__purchase-tag">구매 가능</span>}
     </button>

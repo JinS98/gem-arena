@@ -460,9 +460,10 @@ button{cursor:pointer}
 .welcome-showcase__heading{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:0 4px 20px;border-bottom:1px solid #e0c28a31;color:#d9bd89;font-size:10px;font-weight:800;letter-spacing:.23em}
 .welcome-showcase__heading span:last-child{color:#cad5df;font-size:12px;letter-spacing:-.02em}
 .welcome-showcase__cards{display:flex;align-items:center;justify-content:center;gap:clamp(8px,1.2vw,18px);padding:38px 0 29px}
-.welcome-showcase__card{position:relative;width:min(30%,205px);aspect-ratio:2/3;overflow:hidden;border:3px solid #c6ae79;border-radius:10px;background:#1b2840;box-shadow:0 12px 25px #0008,inset 0 0 0 2px #fff6;transform:rotate(-5deg) translateY(13px);transition:transform .3s,box-shadow .3s}
+.welcome-showcase__card{position:relative;width:min(23%,190px);aspect-ratio:2/3;overflow:hidden;border:3px solid #c6ae79;border-radius:10px;background:#1b2840;box-shadow:0 12px 25px #0008,inset 0 0 0 2px #fff6;transform:rotate(-5deg) translateY(13px);transition:transform .3s,box-shadow .3s}
 .welcome-showcase__card--lol{z-index:2;transform:translateY(-9px);border-color:#81c9ed;box-shadow:0 20px 35px #0009}
 .welcome-showcase__card--demon-slayer{transform:rotate(5deg) translateY(13px);border-color:#d99486}
+.welcome-showcase__card--naruto{transform:rotate(7deg) translateY(9px);border-color:#73c79c}
 .welcome-showcase__card:hover{z-index:3;transform:translateY(-16px) rotate(0);box-shadow:0 25px 45px #000b}
 .welcome-showcase__card img{width:100%;height:100%;object-fit:cover;display:block}
 .welcome-showcase__card::after{content:'';position:absolute;inset:36% 0 0;background:linear-gradient(transparent,#07111be8);pointer-events:none}
@@ -587,14 +588,21 @@ button{cursor:pointer}
 .lobby-room-list__item::before{content:'';position:absolute;z-index:-1;inset:0;background:linear-gradient(90deg,#1b2a3f 0 62%,#1b2a3f85)}
 .lobby-room-list__item--lol{border-color:#6ab7dd80}
 .lobby-room-list__item--demon-slayer{border-color:#d0777d80}
+.lobby-room-list__item--naruto{border-color:#64c29480}
 .lobby-room-list__details .lobby-room-list__theme{width:max-content;max-width:100%;padding:2px 7px;border:1px solid #e2bd825c;border-radius:999px;background:#101b2cca;color:#f1d6a5;font-size:10px;font-weight:800}
 .lobby-room-list__item--lol .lobby-room-list__theme{border-color:#80ccf480;color:#b7e5fb}
 .lobby-room-list__item--demon-slayer .lobby-room-list__theme{border-color:#e6989c80;color:#ffd2cd}
+.lobby-room-list__item--naruto .lobby-room-list__theme{border-color:#73c79c80;color:#c4f1d9}
 .lobby-room-list__crest,.lobby-room-list__details,.lobby-room-list__item button{position:relative;z-index:1}
 .game-theme--lol{--theme-accent:#81c9ed}
 .game-theme--demon-slayer{--theme-accent:#e59a89}
-.game-theme--lol .eyebrow,.game-theme--demon-slayer .eyebrow{color:var(--theme-accent)}
-.game-theme--lol .game-layout,.game-theme--demon-slayer .game-layout,.game-theme--lol .multiplayer-table,.game-theme--demon-slayer .multiplayer-table{border-color:var(--theme-accent)}
+.game-theme--naruto{--theme-accent:#8adab1}
+.game-theme--lol .eyebrow,.game-theme--demon-slayer .eyebrow,.game-theme--naruto .eyebrow{color:var(--theme-accent)}
+.game-theme--lol .game-layout,.game-theme--demon-slayer .game-layout,.game-theme--naruto .game-layout,.game-theme--lol .multiplayer-table,.game-theme--demon-slayer .multiplayer-table,.game-theme--naruto .multiplayer-table{border-color:var(--theme-accent)}
+.card-face--theme-naruto .card-face__cost{right:4px;left:4px;display:flex;flex-wrap:wrap;align-content:end;justify-content:center;gap:2px}
+.card-face--theme-naruto .card-face__name{position:absolute;z-index:2;right:4px;bottom:66px;left:4px;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;padding:3px 2px;border-radius:4px;background:#0a1523bd;color:#fff;text-align:center;text-shadow:0 1px 3px #000;font-size:clamp(9px,.95vw,12px);font-weight:900;line-height:1.1;overflow-wrap:keep-all}
+.multiplayer-self__cards .card-face--theme-naruto .card-face__name{display:none}
+@media(max-width:520px){.welcome-showcase__cards{flex-wrap:wrap}.welcome-showcase__card{width:43%}}
 .gem-icon--illustrated{border:0;border-radius:0;background-color:transparent;background-position:center;background-size:contain;background-repeat:no-repeat;box-shadow:0 1px 3px #0008,0 0 7px var(--gem-glow,#ffffff66)}
 .gem-icon--illustrated::after{display:none}
 

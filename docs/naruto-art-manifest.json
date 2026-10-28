@@ -1,0 +1,792 @@
+{
+  "style": "Vertical 2:3 premium hand-painted anime-adventure portrait, accurate Naruto character appearance based on official reference where available. One human character, face in upper half, color-coordinated canonical skill or village background, calmer lower 20% for UI name. New pose/composition, never a copied frame. No words, logos, gore, horror, dismemberment or grotesque anatomy.",
+  "colorLogic": {
+    "white": "lightning, Byakugan, ice, paper, luminous Hidden Cloud",
+    "blue": "water, Hidden Mist, Rain Village, blue flame or sky",
+    "green": "wind, wood, Leaf Village, nature",
+    "red": "fire, Uchiha, Sand Village red sandstone and sunset",
+    "black": "shadow, earth, Sound Village, Akatsuki night scenes"
+  },
+  "entries": [
+    {
+      "id": "L1-WHITE-01",
+      "en": "Hinata Hyuga",
+      "ko": "휴우가 히나타",
+      "color": "white",
+      "level": 1,
+      "cue": "Byakugan pale eyes and Gentle Fist in the Hyuga courtyard; white chakra rings"
+    },
+    {
+      "id": "L1-WHITE-02",
+      "en": "Neji Hyuga",
+      "ko": "휴우가 네지",
+      "color": "white",
+      "level": 1,
+      "cue": "Byakugan and Eight Trigrams stance in a pale stone Konoha training court"
+    },
+    {
+      "id": "L1-WHITE-03",
+      "en": "Haku",
+      "ko": "하쿠",
+      "color": "white",
+      "level": 1,
+      "cue": "ice mirrors and snow crystals in the Hidden Mist winter"
+    },
+    {
+      "id": "L1-WHITE-04",
+      "en": "Sai",
+      "ko": "사이",
+      "color": "white",
+      "level": 1,
+      "cue": "ink brush painting black marks on a bright white scroll; Leaf studio"
+    },
+    {
+      "id": "L1-WHITE-05",
+      "en": "Shizune",
+      "ko": "시즈네",
+      "color": "white",
+      "level": 1,
+      "cue": "gentle white healing chakra inside the Leaf medical ward"
+    },
+    {
+      "id": "L1-WHITE-06",
+      "en": "Omoi",
+      "ko": "오모이",
+      "color": "white",
+      "level": 1,
+      "cue": "Hidden Cloud mountain ridge, billowing white clouds and sheathed sword"
+    },
+    {
+      "id": "L1-WHITE-07",
+      "en": "Samui",
+      "ko": "사무이",
+      "color": "white",
+      "level": 1,
+      "cue": "Hidden Cloud high peaks and ivory cloud banks; blonde hair and pale clothes"
+    },
+    {
+      "id": "L1-WHITE-08",
+      "en": "Mabui",
+      "ko": "마부이",
+      "color": "white",
+      "level": 1,
+      "cue": "Hidden Cloud messenger tower above luminous white clouds"
+    },
+    {
+      "id": "L2-WHITE-01",
+      "en": "Kakashi Hatake",
+      "ko": "하타케 카카시",
+      "color": "white",
+      "level": 2,
+      "cue": "Raikiri lightning glowing white around one hand on a Leaf rooftop"
+    },
+    {
+      "id": "L2-WHITE-02",
+      "en": "Konan",
+      "ko": "코난",
+      "color": "white",
+      "level": 2,
+      "cue": "white origami paper wings above the Rain Village; serene expression"
+    },
+    {
+      "id": "L2-WHITE-03",
+      "en": "Kimimaro",
+      "ko": "키미마로",
+      "color": "white",
+      "level": 2,
+      "cue": "ivory bone motifs as abstract petals around a healthy human figure; no exposed bones"
+    },
+    {
+      "id": "L2-WHITE-04",
+      "en": "Darui",
+      "ko": "다루이",
+      "color": "white",
+      "level": 2,
+      "cue": "pale storm lightning over the Hidden Cloud cliffs"
+    },
+    {
+      "id": "L2-WHITE-05",
+      "en": "Mu Second Tsuchikage",
+      "ko": "2대 츠치카게 무우",
+      "color": "white",
+      "level": 2,
+      "cue": "soft bandage-white invisibility haze over the Stone Village; human face clear"
+    },
+    {
+      "id": "L2-WHITE-06",
+      "en": "Killer Bee",
+      "ko": "킬러 비",
+      "color": "white",
+      "level": 2,
+      "cue": "Hidden Cloud cliffs, pale chakra and white cloud trails around twin swords"
+    },
+    {
+      "id": "L3-WHITE-01",
+      "en": "Sakumo Hatake",
+      "ko": "하타케 사쿠모",
+      "color": "white",
+      "level": 3,
+      "cue": "White Fang pale blade aura beneath the Leaf Village moon"
+    },
+    {
+      "id": "L3-WHITE-02",
+      "en": "Hamura Otsutsuki",
+      "ko": "오오츠츠키 하무라",
+      "color": "white",
+      "level": 3,
+      "cue": "luminous moon and ivory robes, serene ancient shinobi"
+    },
+    {
+      "id": "L3-WHITE-03",
+      "en": "Fourth Raikage A",
+      "ko": "4대 라이카게 에이",
+      "color": "white",
+      "level": 3,
+      "cue": "white lightning chakra cloak above the Hidden Cloud mountains"
+    },
+    {
+      "id": "L3-WHITE-04",
+      "en": "Kaguya Otsutsuki",
+      "ko": "오오츠츠키 카구야",
+      "color": "white",
+      "level": 3,
+      "cue": "ivory moonlight and white robes, elegant human form, never monstrous"
+    },
+    {
+      "id": "L1-BLUE-01",
+      "en": "Suigetsu Hozuki",
+      "ko": "호즈키 스이게츠",
+      "color": "blue",
+      "level": 1,
+      "cue": "water liquefaction splashes and Hidden Mist harbor"
+    },
+    {
+      "id": "L1-BLUE-02",
+      "en": "Chojuro",
+      "ko": "쵸쥬로",
+      "color": "blue",
+      "level": 1,
+      "cue": "Hidden Mist harbor and blue sword-light, youthful human face"
+    },
+    {
+      "id": "L1-BLUE-03",
+      "en": "Ao",
+      "ko": "아오",
+      "color": "blue",
+      "level": 1,
+      "cue": "Hidden Mist watchtower amid cool blue fog"
+    },
+    {
+      "id": "L1-BLUE-04",
+      "en": "Utakata",
+      "ko": "우타카타",
+      "color": "blue",
+      "level": 1,
+      "cue": "bubble ninjutsu floating over a blue lake"
+    },
+    {
+      "id": "L1-BLUE-05",
+      "en": "Karui",
+      "ko": "카루이",
+      "color": "blue",
+      "level": 1,
+      "cue": "Hidden Cloud sky and blue mountain distance, red hair intact"
+    },
+    {
+      "id": "L1-BLUE-06",
+      "en": "Rin Nohara",
+      "ko": "노하라 린",
+      "color": "blue",
+      "level": 1,
+      "cue": "cool blue water aura evoking the Three-Tails, young Leaf shinobi unharmed"
+    },
+    {
+      "id": "L1-BLUE-07",
+      "en": "Aoba Yamashiro",
+      "ko": "야마시로 아오바",
+      "color": "blue",
+      "level": 1,
+      "cue": "blue ink birds circling above Leaf rooftops"
+    },
+    {
+      "id": "L1-BLUE-08",
+      "en": "Izumo Kamizuki",
+      "ko": "카미즈키 이즈모",
+      "color": "blue",
+      "level": 1,
+      "cue": "Water Release syrup stream in a Leaf Village canal"
+    },
+    {
+      "id": "L2-BLUE-01",
+      "en": "Zabuza Momochi",
+      "ko": "모모치 자부자",
+      "color": "blue",
+      "level": 2,
+      "cue": "blue fog over the famous Mist bridge, restrained masked swordsman"
+    },
+    {
+      "id": "L2-BLUE-02",
+      "en": "Mei Terumi",
+      "ko": "테루미 메이",
+      "color": "blue",
+      "level": 2,
+      "cue": "Mizukage at the Hidden Mist waterfront with blue water ribbons"
+    },
+    {
+      "id": "L2-BLUE-03",
+      "en": "Yagura Karatachi",
+      "ko": "카라타치 야구라",
+      "color": "blue",
+      "level": 2,
+      "cue": "Hidden Mist lake and cool water reflections"
+    },
+    {
+      "id": "L2-BLUE-04",
+      "en": "Gengetsu Hozuki",
+      "ko": "호즈키 겐게츠",
+      "color": "blue",
+      "level": 2,
+      "cue": "watery mirage and blue mist around the Second Mizukage"
+    },
+    {
+      "id": "L2-BLUE-05",
+      "en": "Yugito Nii",
+      "ko": "니이 유기토",
+      "color": "blue",
+      "level": 2,
+      "cue": "gentle blue Two-Tails flame aura, human warrior unaltered"
+    },
+    {
+      "id": "L2-BLUE-06",
+      "en": "Yahiko",
+      "ko": "야히코",
+      "color": "blue",
+      "level": 2,
+      "cue": "Rain Village rooftops in a blue downpour, bright hopeful expression"
+    },
+    {
+      "id": "L3-BLUE-01",
+      "en": "Kisame Hoshigaki",
+      "ko": "호시가키 키사메",
+      "color": "blue",
+      "level": 3,
+      "cue": "deep ocean-blue water swirl, Samehada fully wrapped, human face friendly rather than shark-like"
+    },
+    {
+      "id": "L3-BLUE-02",
+      "en": "Nagato",
+      "ko": "나가토",
+      "color": "blue",
+      "level": 3,
+      "cue": "Rain Village blue rain and reflective puddles, healthy face without piercings"
+    },
+    {
+      "id": "L3-BLUE-03",
+      "en": "Han Five-Tails Jinchuriki",
+      "ko": "한",
+      "color": "blue",
+      "level": 3,
+      "cue": "blue steam curling over a mountain waterfall; red armor kept recognizable"
+    },
+    {
+      "id": "L3-BLUE-04",
+      "en": "Indra Otsutsuki",
+      "ko": "오오츠츠키 인드라",
+      "color": "blue",
+      "level": 3,
+      "cue": "indigo-blue lightning chakra over a moonlit ancient battlefield"
+    },
+    {
+      "id": "L1-GREEN-01",
+      "en": "Rock Lee",
+      "ko": "록 리",
+      "color": "green",
+      "level": 1,
+      "cue": "green jumpsuit and Leaf training field, taijutsu motion"
+    },
+    {
+      "id": "L1-GREEN-02",
+      "en": "Choji Akimichi",
+      "ko": "아키미치 쵸지",
+      "color": "green",
+      "level": 1,
+      "cue": "Leaf Village forest and sunlit green leaves, friendly expression"
+    },
+    {
+      "id": "L1-GREEN-03",
+      "en": "Kiba Inuzuka",
+      "ko": "이누즈카 키바",
+      "color": "green",
+      "level": 1,
+      "cue": "Leaf woodland path with small dog Akamaru nearby, one human"
+    },
+    {
+      "id": "L1-GREEN-04",
+      "en": "Konohamaru Sarutobi",
+      "ko": "사루토비 코노하마루",
+      "color": "green",
+      "level": 1,
+      "cue": "green-leaf rooftops of Konoha and youthful energy"
+    },
+    {
+      "id": "L1-GREEN-05",
+      "en": "Tenten",
+      "ko": "텐텐",
+      "color": "green",
+      "level": 1,
+      "cue": "training scrolls in a leafy Konoha practice ground"
+    },
+    {
+      "id": "L1-GREEN-06",
+      "en": "Ino Yamanaka",
+      "ko": "야마나카 이노",
+      "color": "green",
+      "level": 1,
+      "cue": "Yamanaka flower shop and fresh green leaves, blonde hair intact"
+    },
+    {
+      "id": "L1-GREEN-07",
+      "en": "Iruka Umino",
+      "ko": "우미노 이루카",
+      "color": "green",
+      "level": 1,
+      "cue": "Leaf academy garden, warm teacher expression"
+    },
+    {
+      "id": "L1-GREEN-08",
+      "en": "Ebisu",
+      "ko": "에비스",
+      "color": "green",
+      "level": 1,
+      "cue": "Leaf academy rooftops framed by trees"
+    },
+    {
+      "id": "L2-GREEN-01",
+      "en": "Yamato",
+      "ko": "야마토",
+      "color": "green",
+      "level": 2,
+      "cue": "Wood Style branches growing around a Leaf shinobi, no body mutation"
+    },
+    {
+      "id": "L2-GREEN-02",
+      "en": "Shino Aburame",
+      "ko": "아부라메 시노",
+      "color": "green",
+      "level": 2,
+      "cue": "tiny harmless beetles amid green forest leaves, never on skin"
+    },
+    {
+      "id": "L2-GREEN-03",
+      "en": "Temari",
+      "ko": "테마리",
+      "color": "green",
+      "level": 2,
+      "cue": "large folding fan and visible green wind currents over Sand dunes"
+    },
+    {
+      "id": "L2-GREEN-04",
+      "en": "Fu Seven-Tails Jinchuriki",
+      "ko": "후우",
+      "color": "green",
+      "level": 2,
+      "cue": "soft green Seven-Tails chakra wings in a forest, human figure intact"
+    },
+    {
+      "id": "L2-GREEN-05",
+      "en": "Kotetsu Hagane",
+      "ko": "하가네 코테츠",
+      "color": "green",
+      "level": 2,
+      "cue": "Leaf gate and sunlit green trees"
+    },
+    {
+      "id": "L2-GREEN-06",
+      "en": "Genma Shiranui",
+      "ko": "시라누이 겐마",
+      "color": "green",
+      "level": 2,
+      "cue": "Konoha rooftop and green trees, toothpick at lips"
+    },
+    {
+      "id": "L3-GREEN-01",
+      "en": "Naruto Uzumaki",
+      "ko": "우즈마키 나루토",
+      "color": "green",
+      "level": 3,
+      "cue": "wind chakra spirals among emerald leaves and Leaf cliffs"
+    },
+    {
+      "id": "L3-GREEN-02",
+      "en": "Might Guy",
+      "ko": "마이트 가이",
+      "color": "green",
+      "level": 3,
+      "cue": "green jumpsuit, Leaf training field, dynamic taijutsu"
+    },
+    {
+      "id": "L3-GREEN-03",
+      "en": "Asuma Sarutobi",
+      "ko": "사루토비 아스마",
+      "color": "green",
+      "level": 3,
+      "cue": "green wind chakra around twin trench knives in Leaf forest"
+    },
+    {
+      "id": "L3-GREEN-04",
+      "en": "Ashura Otsutsuki",
+      "ko": "오오츠츠키 아수라",
+      "color": "green",
+      "level": 3,
+      "cue": "lush Wood Style-like nature chakra, ancient green forest"
+    },
+    {
+      "id": "L1-RED-01",
+      "en": "Sakura Haruno",
+      "ko": "하루노 사쿠라",
+      "color": "red",
+      "level": 1,
+      "cue": "pink petals and vivid scarlet Leaf battle energy, kind determined face"
+    },
+    {
+      "id": "L1-RED-02",
+      "en": "Gaara",
+      "ko": "가아라",
+      "color": "red",
+      "level": 1,
+      "cue": "red sandstone Sand Village at sunset, tan sand gourd and auburn hair"
+    },
+    {
+      "id": "L1-RED-03",
+      "en": "Karin",
+      "ko": "카린",
+      "color": "red",
+      "level": 1,
+      "cue": "red hair and crimson sensory chakra ribbons, human face clear"
+    },
+    {
+      "id": "L1-RED-04",
+      "en": "Kushina Uzumaki",
+      "ko": "우즈마키 쿠시나",
+      "color": "red",
+      "level": 1,
+      "cue": "red hair and Uzumaki chakra chains glowing crimson"
+    },
+    {
+      "id": "L1-RED-05",
+      "en": "Mito Uzumaki",
+      "ko": "우즈마키 미토",
+      "color": "red",
+      "level": 1,
+      "cue": "long red hair and sealing scrolls in warm red light"
+    },
+    {
+      "id": "L1-RED-06",
+      "en": "Pakura",
+      "ko": "파쿠라",
+      "color": "red",
+      "level": 1,
+      "cue": "Scorch Release orange-red heat over Sand desert, no injury"
+    },
+    {
+      "id": "L1-RED-07",
+      "en": "Tayuya",
+      "ko": "타유야",
+      "color": "red",
+      "level": 1,
+      "cue": "red hair and flute on a Sound Village sunset rooftop"
+    },
+    {
+      "id": "L1-RED-08",
+      "en": "Baki",
+      "ko": "바키",
+      "color": "red",
+      "level": 1,
+      "cue": "Sand Village red canyon at dusk, face shaded but friendly"
+    },
+    {
+      "id": "L2-RED-01",
+      "en": "Itachi Uchiha",
+      "ko": "우치하 이타치",
+      "color": "red",
+      "level": 2,
+      "cue": "Uchiha fire glow and red Akatsuki cloud cloak, calm face"
+    },
+    {
+      "id": "L2-RED-02",
+      "en": "Rasa Fourth Kazekage",
+      "ko": "4대 카제카게 라사",
+      "color": "red",
+      "level": 2,
+      "cue": "gold-dust Kazekage technique against red Sand Village sunset"
+    },
+    {
+      "id": "L2-RED-03",
+      "en": "Chiyo",
+      "ko": "치요",
+      "color": "red",
+      "level": 2,
+      "cue": "fine puppet threads in a warm Sand Village canyon, puppets distant and non-scary"
+    },
+    {
+      "id": "L2-RED-04",
+      "en": "Roshi Four-Tails Jinchuriki",
+      "ko": "로우시",
+      "color": "red",
+      "level": 2,
+      "cue": "Four-Tails lava glow in red volcanic mist, human figure healthy"
+    },
+    {
+      "id": "L2-RED-05",
+      "en": "Fugaku Uchiha",
+      "ko": "우치하 후가쿠",
+      "color": "red",
+      "level": 2,
+      "cue": "Uchiha district and red firelight, mature dignified expression"
+    },
+    {
+      "id": "L2-RED-06",
+      "en": "Shisui Uchiha",
+      "ko": "우치하 시스이",
+      "color": "red",
+      "level": 2,
+      "cue": "red Uchiha fire wisps and crimson autumn leaves"
+    },
+    {
+      "id": "L3-RED-01",
+      "en": "Sasuke Uchiha",
+      "ko": "우치하 사스케",
+      "color": "red",
+      "level": 3,
+      "cue": "red Uchiha fire and violet lightning, dark cloak, adult recognizable face"
+    },
+    {
+      "id": "L3-RED-02",
+      "en": "Obito Uchiha",
+      "ko": "우치하 오비토",
+      "color": "red",
+      "level": 3,
+      "cue": "Sharingan red glow and ember-lit Leaf forest, no injuries"
+    },
+    {
+      "id": "L3-RED-03",
+      "en": "Izuna Uchiha",
+      "ko": "우치하 이즈나",
+      "color": "red",
+      "level": 3,
+      "cue": "Uchiha firelight and red autumn Konoha leaves, dark long hair"
+    },
+    {
+      "id": "L3-RED-04",
+      "en": "Deidara",
+      "ko": "데이다라",
+      "color": "red",
+      "level": 3,
+      "cue": "warm orange-red explosion sparks at a safe distance, expressive blond artist"
+    },
+    {
+      "id": "L1-BLACK-01",
+      "en": "Jugo",
+      "ko": "쥬고",
+      "color": "black",
+      "level": 1,
+      "cue": "dark Sound Village woodland, transformation only hinted by violet aura, healthy human"
+    },
+    {
+      "id": "L1-BLACK-02",
+      "en": "Kabuto Yakushi",
+      "ko": "야쿠시 카부토",
+      "color": "black",
+      "level": 1,
+      "cue": "black-clad medical spy in a dim Sound laboratory, no grotesque elements"
+    },
+    {
+      "id": "L1-BLACK-03",
+      "en": "Dosu Kinuta",
+      "ko": "키누타 도스",
+      "color": "black",
+      "level": 1,
+      "cue": "Sound shinobi in charcoal twilight, wrapped arm normal and harmless"
+    },
+    {
+      "id": "L1-BLACK-04",
+      "en": "Zaku Abumi",
+      "ko": "아부미 자쿠",
+      "color": "black",
+      "level": 1,
+      "cue": "Sound Village night path, dark charcoal air, human anatomy normal"
+    },
+    {
+      "id": "L1-BLACK-05",
+      "en": "Kin Tsuchi",
+      "ko": "츠치 킨",
+      "color": "black",
+      "level": 1,
+      "cue": "Sound Village night roof, long dark hair, calm face"
+    },
+    {
+      "id": "L1-BLACK-06",
+      "en": "Mizuki",
+      "ko": "미즈키",
+      "color": "black",
+      "level": 1,
+      "cue": "Leaf rogue ninja beneath a black night sky, human expression"
+    },
+    {
+      "id": "L1-BLACK-07",
+      "en": "Kankuro",
+      "ko": "칸쿠로",
+      "color": "black",
+      "level": 1,
+      "cue": "black-clad puppet master above Sand Village at night, no scary puppet face"
+    },
+    {
+      "id": "L1-BLACK-08",
+      "en": "Anko Mitarashi",
+      "ko": "미타라시 앙코",
+      "color": "black",
+      "level": 1,
+      "cue": "dark Leaf training forest, purple jacket, only gentle snake-shaped mist"
+    },
+    {
+      "id": "L2-BLACK-01",
+      "en": "Shikamaru Nara",
+      "ko": "나라 시카마루",
+      "color": "black",
+      "level": 2,
+      "cue": "Shadow Possession Jutsu flowing across Konoha stones at dusk"
+    },
+    {
+      "id": "L2-BLACK-02",
+      "en": "Kitsuchi",
+      "ko": "키츠치",
+      "color": "black",
+      "level": 2,
+      "cue": "Stone Village charcoal cliffs, earth jutsu boulders"
+    },
+    {
+      "id": "L2-BLACK-03",
+      "en": "Sasori",
+      "ko": "사소리",
+      "color": "black",
+      "level": 2,
+      "cue": "red-haired human puppeteer in a black Akatsuki cloak, no puppet body or dismemberment"
+    },
+    {
+      "id": "L2-BLACK-04",
+      "en": "Hidan",
+      "ko": "히단",
+      "color": "black",
+      "level": 2,
+      "cue": "black Akatsuki cloak under a night sky, no ritual markings or blood"
+    },
+    {
+      "id": "L2-BLACK-05",
+      "en": "Kakuzu",
+      "ko": "카쿠즈",
+      "color": "black",
+      "level": 2,
+      "cue": "black Akatsuki cloak, masked lower face, no stitches or tentacles"
+    },
+    {
+      "id": "L2-BLACK-06",
+      "en": "Danzo Shimura",
+      "ko": "시무라 단조",
+      "color": "black",
+      "level": 2,
+      "cue": "Root shinobi in shadowed Leaf corridor, bandaged eye covered"
+    },
+    {
+      "id": "L3-BLACK-01",
+      "en": "Onoki",
+      "ko": "오오노키",
+      "color": "black",
+      "level": 3,
+      "cue": "Earth Release dark stone cliffs of Stone Village"
+    },
+    {
+      "id": "L3-BLACK-02",
+      "en": "Kurotsuchi",
+      "ko": "쿠로츠치",
+      "color": "black",
+      "level": 3,
+      "cue": "dark basalt Stone Village and earth jutsu columns"
+    },
+    {
+      "id": "L3-BLACK-03",
+      "en": "Madara Uchiha",
+      "ko": "우치하 마다라",
+      "color": "black",
+      "level": 3,
+      "cue": "shadowy Susanoo silhouette behind a composed human face, no horror"
+    },
+    {
+      "id": "L3-BLACK-04",
+      "en": "Orochimaru",
+      "ko": "오로치마루",
+      "color": "black",
+      "level": 3,
+      "cue": "Sound Village moonlit cavern, pale healthy human face, no snakes emerging from body"
+    },
+    {
+      "id": "NOBLE-01",
+      "en": "Minato Namikaze",
+      "ko": "나미카제 미나토",
+      "cue": "Yellow Flying Thunder God light over the Leaf village skyline; white Hokage cloak"
+    },
+    {
+      "id": "NOBLE-02",
+      "en": "Hashirama Senju",
+      "ko": "센쥬 하시라마",
+      "cue": "Wood Release trees rising around the Leaf village founders monument"
+    },
+    {
+      "id": "NOBLE-03",
+      "en": "Tobirama Senju",
+      "ko": "센쥬 토비라마",
+      "cue": "Water Release waves and ceremonial Leaf village courtyard"
+    },
+    {
+      "id": "NOBLE-04",
+      "en": "Hiruzen Sarutobi",
+      "ko": "사루토비 히루젠",
+      "cue": "Fire Release dragon and old Leaf Hokage office at sunset"
+    },
+    {
+      "id": "NOBLE-05",
+      "en": "Tsunade",
+      "ko": "츠나데",
+      "cue": "Warm golden medical chakra and Leaf village hospital courtyard"
+    },
+    {
+      "id": "NOBLE-06",
+      "en": "Jiraiya",
+      "ko": "지라이야",
+      "cue": "Toad sage red markings, leafy training ground and warm sunset"
+    },
+    {
+      "id": "NOBLE-07",
+      "en": "Hagoromo Otsutsuki",
+      "ko": "오오츠츠키 하고로모",
+      "cue": "Six Paths golden chakra rings against celestial blue night"
+    },
+    {
+      "id": "NOBLE-08",
+      "en": "Kurenai Yuhi",
+      "ko": "유우히 쿠레나이",
+      "cue": "Red-eyed genjutsu in a quiet Leaf woodland at dusk"
+    },
+    {
+      "id": "NOBLE-09",
+      "en": "Shikaku Nara",
+      "ko": "나라 시카쿠",
+      "cue": "Nara shadow technique over Leaf village strategy room floor"
+    },
+    {
+      "id": "NOBLE-10",
+      "en": "Inoichi Yamanaka",
+      "ko": "야마나카 이노이치",
+      "cue": "Yamanaka Mind Transfer chakra flowers in the Leaf garden"
+    }
+  ]
+}

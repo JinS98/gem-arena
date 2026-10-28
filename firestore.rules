@@ -35,7 +35,7 @@ service cloud.firestore {
         data.title.size() <= 32 &&
         data.title.matches('^[^\\s\\p{Z}\\x{FEFF}].*[^\\s\\p{Z}\\x{FEFF}]$') &&
         !data.title.matches('.*[\\r\\n].*') &&
-        (!('theme' in data) || data.theme in ['default', 'lol', 'demon-slayer', 'hidden']) &&
+        (!('theme' in data) || data.theme in ['default', 'lol', 'demon-slayer', 'naruto', 'hidden']) &&
         data.hostUid == request.auth.uid &&
         data.status == 'waiting' &&
         data.capacity == 4 &&
@@ -83,7 +83,7 @@ service cloud.firestore {
         before.hostUid == request.auth.uid &&
         after.diff(before).affectedKeys().hasOnly(['theme', 'updatedAt']) &&
         after.diff(before).affectedKeys().hasAll(['theme', 'updatedAt']) &&
-        after.theme in ['default', 'lol', 'demon-slayer', 'hidden'] &&
+        after.theme in ['default', 'lol', 'demon-slayer', 'naruto', 'hidden'] &&
         after.updatedAt == request.time;
     }
 

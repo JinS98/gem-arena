@@ -13,6 +13,7 @@ const homeThemeDescriptions: Record<GameTheme, string> = {
   default: '보석 상인의 도시',
   lol: '룬테라의 챔피언',
   'demon-slayer': '귀살대와 호흡',
+  naruto: '닌자와 차크라',
 };
 
 function Home() {
@@ -29,7 +30,7 @@ function Home() {
       <div className="welcome-page__details">
         <span><strong>02–04</strong> 플레이어</span>
         <span><strong>03:00</strong> 온라인 턴 제한</span>
-        <span><strong>03</strong> 선택 가능한 테마</span>
+        <span><strong>{String(GAME_THEMES.length - 1).padStart(2, '0')}</strong> 선택 가능한 테마</span>
       </div>
     </div>
     <div className="welcome-showcase" aria-label="게임 테마 미리보기">
